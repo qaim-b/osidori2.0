@@ -44,7 +44,6 @@ app.*.map.json
 /android/app/profile
 /android/app/release
 
-# Local assistant/tooling artifacts
-.claude/
+# Local tooling artifacts
 .vercel/
 nul
