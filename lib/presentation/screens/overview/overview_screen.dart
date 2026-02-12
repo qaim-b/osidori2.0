@@ -165,7 +165,9 @@ class OverviewScreen extends ConsumerWidget {
                       _MemberAvatarBubble(
                         profile: youProfile,
                         fallbackAsset: roleColors.mascotImage,
-                        label: 'You',
+                        label: youProfile?.name.isNotEmpty == true
+                            ? '${youProfile!.name} (You)'
+                            : 'You',
                         backgroundColor: roleColors.primary.withValues(
                           alpha: 0.16,
                         ),
@@ -178,7 +180,9 @@ class OverviewScreen extends ConsumerWidget {
                             : (partnerProfile?.role == 'solo'
                                   ? 'assets/images/stitchangel.svg'
                                   : 'assets/images/stitch.svg'),
-                        label: 'Partner',
+                        label: partnerProfile?.name.isNotEmpty == true
+                            ? partnerProfile!.name
+                            : 'Partner',
                         backgroundColor: roleColors.accent.withValues(
                           alpha: 0.16,
                         ),
