@@ -55,9 +55,15 @@ final activeGroupMemberProfilesProvider = FutureProvider<List<UserModel>>((
     group = groups.first;
   }
   final repo = ref.read(authRepositoryProvider);
-  final profiles = await Future.wait(
-    group.memberIds.map((id) => repo.getProfile(id)),
-  );
+  final profiles = <UserModel>[];
+  for (final id in group.memberIds) {
+    try {
+      final profile = await repo.getProfile(id);
+      profiles.add(profile);
+    } catch (_) {
+      // Keep UI usable even if one member profile cannot be read.
+    }
+  }
   profiles.sort((a, b) {
     if (a.id == currentUserId) return -1;
     if (b.id == currentUserId) return 1;
