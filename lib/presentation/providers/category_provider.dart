@@ -1,4 +1,5 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:uuid/uuid.dart';
 import '../../data/repositories/category_repository.dart';
 import '../../data/models/category_model.dart';
 import 'auth_provider.dart';
@@ -19,6 +20,7 @@ class CategoriesNotifier
     extends StateNotifier<AsyncValue<List<CategoryModel>>> {
   final CategoryRepository _repo;
   final String? _userId;
+  static const _uuid = Uuid();
 
   CategoriesNotifier(this._repo, this._userId)
       : super(const AsyncValue.loading()) {
@@ -43,6 +45,35 @@ class CategoriesNotifier
 
   Future<void> updateCategory(CategoryModel category) async {
     await _repo.update(category);
+    await load();
+  }
+
+  Future<void> addCategory({
+    required String type,
+    required String name,
+    required String emoji,
+    required int displayNumber,
+    String? parentKey,
+  }) async {
+    if (_userId == null) return;
+    final now = DateTime.now();
+    final category = CategoryModel(
+      id: _uuid.v4(),
+      displayNumber: displayNumber,
+      name: name,
+      emoji: emoji,
+      type: type,
+      parentKey: parentKey,
+      isEnabled: true,
+      sortOrder: displayNumber,
+      createdAt: now,
+    );
+    await _repo.create(userId: _userId, category: category);
+    await load();
+  }
+
+  Future<void> deleteCategory(String categoryId) async {
+    await _repo.delete(categoryId);
     await load();
   }
 

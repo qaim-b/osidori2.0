@@ -46,7 +46,7 @@ class AccountsNotifier
   Future<void> addAccount({
     required String name,
     required AccountType type,
-    required OwnerScope ownerScope,
+    OwnerScope ownerScope = OwnerScope.shared,
     String? groupId,
     String currency = 'JPY',
     double initialBalance = 0,

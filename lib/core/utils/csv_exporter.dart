@@ -1,4 +1,6 @@
 import 'dart:io';
+import 'dart:convert';
+import 'package:flutter/foundation.dart';
 import 'package:csv/csv.dart';
 import 'package:intl/intl.dart';
 import 'package:path_provider/path_provider.dart';
@@ -67,20 +69,16 @@ class CsvExporter {
     rows.add(['', '', 'Total Expense', totalExpense.toString(), '', '', '', '', '']);
     rows.add(['', '', 'Net', (totalIncome - totalExpense).toString(), '', '', '', '', '']);
 
-    // Convert to CSV string
     final csvString = const ListToCsvConverter().convert(rows);
-
-    // Write to file
-    final dir = await getApplicationDocumentsDirectory();
     final fileName = '${AppConstants.csvFileName}_$monthLabel.csv';
-    final file = File('${dir.path}/$fileName');
-    await file.writeAsString(csvString);
-
-    return file.path;
+    return _persistCsv(csvString: csvString, fileName: fileName);
   }
 
   /// Share the CSV file using the system share sheet.
   static Future<void> shareFile(String filePath) async {
+    if (kIsWeb && filePath.startsWith('web://')) {
+      return;
+    }
     await Share.shareXFiles(
       [XFile(filePath)],
       subject: 'Osidori 2.0 Transactions Export',
@@ -102,10 +100,7 @@ class CsvExporter {
           t.date.isBefore(to);
     }).toList();
 
-    final categoryIds = expenseTxns
-        .map((t) => t.categoryId)
-        .toSet()
-        .toList()
+    final categoryIds = categoryNames.keys.toList()
       ..sort((a, b) {
         final an = categoryNames[a] ?? a;
         final bn = categoryNames[b] ?? b;
@@ -125,7 +120,10 @@ class CsvExporter {
       dateMap[txn.categoryId] = (dateMap[txn.categoryId] ?? 0) + txn.amount;
     }
 
-    final dateKeys = byDate.keys.toList()..sort();
+    final dateKeys = List.generate(
+      DateTime(year, month + 1, 0).day,
+      (i) => DateFormat('yyyy-MM-dd').format(DateTime(year, month, i + 1)),
+    );
 
     final rows = <List<String>>[header];
     final categoryTotals = <String, double>{for (final id in categoryIds) id: 0};
@@ -139,7 +137,7 @@ class CsvExporter {
         final amount = values[id] ?? 0;
         rowTotal += amount;
         categoryTotals[id] = (categoryTotals[id] ?? 0) + amount;
-        row.add(amount == 0 ? '' : amount.toStringAsFixed(2));
+        row.add(amount.toStringAsFixed(2));
       }
       grandTotal += rowTotal;
       row.add(rowTotal.toStringAsFixed(2));
@@ -150,15 +148,37 @@ class CsvExporter {
       'TOTAL',
       ...categoryIds.map((id) {
         final total = categoryTotals[id] ?? 0;
-        return total == 0 ? '' : total.toStringAsFixed(2);
+        return total.toStringAsFixed(2);
       }),
       grandTotal.toStringAsFixed(2),
     ]);
 
     final csvString = const ListToCsvConverter().convert(rows);
-    final dir = await getApplicationDocumentsDirectory();
     final fileName =
         '${AppConstants.csvFileName}_category_matrix_${DateFormat('yyyy-MM').format(from)}.csv';
+    return _persistCsv(csvString: csvString, fileName: fileName);
+  }
+
+  static Future<String> _persistCsv({
+    required String csvString,
+    required String fileName,
+  }) async {
+    if (kIsWeb) {
+      final bytes = Uint8List.fromList(utf8.encode(csvString));
+      await Share.shareXFiles(
+        [
+          XFile.fromData(
+            bytes,
+            mimeType: 'text/csv',
+            name: fileName,
+          ),
+        ],
+        subject: 'Osidori 2.0 CSV',
+      );
+      return 'web://$fileName';
+    }
+
+    final dir = await getApplicationDocumentsDirectory();
     final file = File('${dir.path}/$fileName');
     await file.writeAsString(csvString);
     return file.path;

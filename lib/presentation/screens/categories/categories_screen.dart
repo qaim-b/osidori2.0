@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../../../core/theme/app_colors.dart';
 import '../../../core/constants/category_defaults.dart';
-import '../../providers/category_provider.dart';
+import '../../../core/theme/app_colors.dart';
 import '../../../data/models/category_model.dart';
+import '../../providers/category_provider.dart';
 
 class CategoriesScreen extends ConsumerStatefulWidget {
   const CategoriesScreen({super.key});
@@ -41,32 +41,126 @@ class _CategoriesScreenState extends ConsumerState<CategoriesScreen>
           unselectedLabelColor: AppColors.textHint,
           indicatorColor: AppColors.primary,
           tabs: const [
-            Tab(text: '📤 Expense'),
-            Tab(text: '📥 Income'),
+            Tab(text: 'Expense'),
+            Tab(text: 'Income'),
           ],
         ),
       ),
+      floatingActionButton: FloatingActionButton.extended(
+        onPressed: () => _showAddCategoryDialog(
+          context,
+          ref,
+          _tabController.index == 0 ? 'expense' : 'income',
+        ),
+        icon: const Icon(Icons.add),
+        label: const Text('Add'),
+      ),
       body: categoriesAsync.when(
         data: (categories) {
-          final expenses =
-              categories.where((c) => c.isExpense).toList()
-                ..sort((a, b) => a.sortOrder.compareTo(b.sortOrder));
-          final incomes =
-              categories.where((c) => c.isIncome).toList()
-                ..sort((a, b) => a.sortOrder.compareTo(b.sortOrder));
+          final expenses = categories.where((c) => c.isExpense).toList()
+            ..sort((a, b) => a.sortOrder.compareTo(b.sortOrder));
+          final incomes = categories.where((c) => c.isIncome).toList()
+            ..sort((a, b) => a.sortOrder.compareTo(b.sortOrder));
 
           return TabBarView(
             controller: _tabController,
             children: [
               _CategoryList(
-                  categories: expenses, parentDefs: CategoryDefaults.parentCategories),
+                categories: expenses,
+                parentDefs: CategoryDefaults.parentCategories,
+              ),
               _CategoryList(
-                  categories: incomes, parentDefs: const []),
+                categories: incomes,
+                parentDefs: const [],
+              ),
             ],
           );
         },
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (e, _) => Center(child: Text('Error: $e')),
+      ),
+    );
+  }
+
+  Future<void> _showAddCategoryDialog(
+    BuildContext context,
+    WidgetRef ref,
+    String type,
+  ) async {
+    final categories = ref.read(categoriesProvider).valueOrNull ?? [];
+    final existing = categories.where((c) => c.type == type).toList();
+    final maxNumber = existing.isEmpty
+        ? 0
+        : existing.map((e) => e.displayNumber).reduce((a, b) => a > b ? a : b);
+
+    final emojiController = TextEditingController(text: type == 'expense' ? '🧾' : '💰');
+    final nameController = TextEditingController();
+    final numberController = TextEditingController(text: '${maxNumber + 1}');
+    String? parentKey = type == 'income' ? 'income' : CategoryDefaults.parentCategories.first.key;
+
+    await showDialog<void>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Text('Add ${type == 'expense' ? 'Expense' : 'Income'} Category'),
+        content: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextField(
+                controller: emojiController,
+                decoration: const InputDecoration(labelText: 'Emoji'),
+              ),
+              const SizedBox(height: 8),
+              TextField(
+                controller: nameController,
+                decoration: const InputDecoration(labelText: 'Name'),
+              ),
+              const SizedBox(height: 8),
+              TextField(
+                controller: numberController,
+                keyboardType: TextInputType.number,
+                decoration: const InputDecoration(labelText: 'Display Number'),
+              ),
+              if (type == 'expense') ...[
+                const SizedBox(height: 8),
+                DropdownButtonFormField<String>(
+                  initialValue: parentKey,
+                  items: CategoryDefaults.parentCategories
+                      .map((p) => DropdownMenuItem(
+                            value: p.key,
+                            child: Text('${p.emoji} ${p.name}'),
+                          ))
+                      .toList(),
+                  onChanged: (v) => parentKey = v,
+                  decoration: const InputDecoration(labelText: 'Parent'),
+                ),
+              ],
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            onPressed: () async {
+              final number = int.tryParse(numberController.text.trim());
+              final name = nameController.text.trim();
+              if (number == null || name.isEmpty) return;
+              await ref.read(categoriesProvider.notifier).addCategory(
+                    type: type,
+                    name: name,
+                    emoji: emojiController.text.trim().isEmpty ? '🧾' : emojiController.text.trim(),
+                    displayNumber: number,
+                    parentKey: parentKey,
+                  );
+              if (!ctx.mounted) return;
+              Navigator.of(ctx).pop();
+            },
+            child: const Text('Save'),
+          ),
+        ],
       ),
     );
   }
@@ -87,7 +181,6 @@ class _CategoryList extends ConsumerWidget {
       return const Center(child: Text('No categories'));
     }
 
-    // Group by parentKey
     final grouped = <String, List<CategoryModel>>{};
     for (final cat in categories) {
       final key = cat.parentKey ?? 'other';
@@ -109,15 +202,12 @@ class _CategoryList extends ConsumerWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Parent header
               Padding(
                 padding: const EdgeInsets.fromLTRB(16, 14, 16, 4),
                 child: Row(
                   children: [
-                    Text(
-                      parentDef?.emoji ?? '📋',
-                      style: const TextStyle(fontSize: 18),
-                    ),
+                    Text(parentDef?.emoji ?? '📋',
+                        style: const TextStyle(fontSize: 18)),
                     const SizedBox(width: 8),
                     Text(
                       parentDef?.name ?? parentKey,
@@ -127,8 +217,6 @@ class _CategoryList extends ConsumerWidget {
                 ),
               ),
               const Divider(height: 1),
-
-              // Sub-categories with toggle
               ...children.map((cat) => _CategoryTile(category: cat)),
             ],
           ),
@@ -151,24 +239,125 @@ class _CategoryTile extends ConsumerWidget {
         '${category.displayNumber}. ${category.name}',
         style: TextStyle(
           fontSize: 14,
-          color: category.isEnabled
-              ? AppColors.textPrimary
-              : AppColors.textHint,
-          decoration:
-              category.isEnabled ? null : TextDecoration.lineThrough,
+          color: category.isEnabled ? AppColors.textPrimary : AppColors.textHint,
+          decoration: category.isEnabled ? null : TextDecoration.lineThrough,
         ),
       ),
-      trailing: Switch.adaptive(
-        value: category.isEnabled,
-        activeTrackColor: AppColors.primary.withValues(alpha: 0.4),
-        activeThumbColor: AppColors.primary,
-        onChanged: (val) {
-          ref
-              .read(categoriesProvider.notifier)
-              .toggleEnabled(category.id, val);
-        },
+      subtitle: Text(category.type),
+      trailing: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          IconButton(
+            tooltip: 'Edit',
+            onPressed: () => _showEditDialog(context, ref, category),
+            icon: const Icon(Icons.edit_outlined, size: 18),
+          ),
+          IconButton(
+            tooltip: 'Delete',
+            onPressed: () => _confirmDelete(context, ref, category),
+            icon: const Icon(Icons.delete_outline, color: AppColors.expense, size: 18),
+          ),
+          Switch.adaptive(
+            value: category.isEnabled,
+            activeTrackColor: AppColors.primary.withValues(alpha: 0.4),
+            activeThumbColor: AppColors.primary,
+            onChanged: (val) {
+              ref.read(categoriesProvider.notifier).toggleEnabled(category.id, val);
+            },
+          ),
+        ],
       ),
       dense: true,
     );
+  }
+
+  Future<void> _showEditDialog(
+      BuildContext context, WidgetRef ref, CategoryModel category) async {
+    final emojiController = TextEditingController(text: category.emoji);
+    final nameController = TextEditingController(text: category.name);
+    final numberController =
+        TextEditingController(text: category.displayNumber.toString());
+
+    await showDialog<void>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Edit Category'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            TextField(
+              controller: emojiController,
+              decoration: const InputDecoration(labelText: 'Emoji'),
+            ),
+            const SizedBox(height: 8),
+            TextField(
+              controller: nameController,
+              decoration: const InputDecoration(labelText: 'Name'),
+            ),
+            const SizedBox(height: 8),
+            TextField(
+              controller: numberController,
+              keyboardType: TextInputType.number,
+              decoration: const InputDecoration(labelText: 'Display Number'),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            onPressed: () async {
+              final number = int.tryParse(numberController.text.trim());
+              if (number == null || nameController.text.trim().isEmpty) return;
+              final updated = CategoryModel(
+                id: category.id,
+                displayNumber: number,
+                name: nameController.text.trim(),
+                emoji: emojiController.text.trim().isEmpty
+                    ? category.emoji
+                    : emojiController.text.trim(),
+                type: category.type,
+                parentId: category.parentId,
+                parentKey: category.parentKey,
+                isEnabled: category.isEnabled,
+                sortOrder: number,
+                createdAt: category.createdAt,
+              );
+              await ref.read(categoriesProvider.notifier).updateCategory(updated);
+              if (!ctx.mounted) return;
+              Navigator.of(ctx).pop();
+            },
+            child: const Text('Save'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _confirmDelete(
+      BuildContext context, WidgetRef ref, CategoryModel category) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Delete Category?'),
+        content: Text(
+            'Delete "${category.displayNumber}. ${category.name}"? Existing transactions keep their category id.'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(false),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(true),
+            child: const Text('Delete'),
+          ),
+        ],
+      ),
+    );
+    if (confirmed == true) {
+      await ref.read(categoriesProvider.notifier).deleteCategory(category.id);
+    }
   }
 }

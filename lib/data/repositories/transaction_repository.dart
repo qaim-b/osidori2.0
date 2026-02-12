@@ -44,7 +44,6 @@ class TransactionRepository {
         .from(AppSupabase.transactionsTable)
         .select()
         .eq('group_id', groupId)
-        .eq('visibility', 'shared')
         .neq('owner_user_id', userId)
         .gte('date', from.toIso8601String())
         .lte('date', to.toIso8601String())

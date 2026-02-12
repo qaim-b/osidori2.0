@@ -1,13 +1,14 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../../core/extensions/datetime_ext.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/utils/currency_formatter.dart';
-import '../../../core/extensions/datetime_ext.dart';
-import '../../../domain/entities/transaction_entity.dart';
 import '../../../domain/entities/category_entity.dart';
+import '../../../domain/entities/transaction_entity.dart';
 import '../../../domain/enums/transaction_type.dart';
+import '../../providers/auth_provider.dart';
 
-/// Single transaction row — shows category emoji, name, amount, date.
-class TransactionTile extends StatelessWidget {
+class TransactionTile extends ConsumerWidget {
   final TransactionEntity transaction;
   final CategoryEntity? category;
   final VoidCallback? onTap;
@@ -20,7 +21,7 @@ class TransactionTile extends StatelessWidget {
   });
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final isExpense = transaction.type == TransactionType.expense;
     final isTransfer = transaction.type == TransactionType.transfer;
 
@@ -29,6 +30,12 @@ class TransactionTile extends StatelessWidget {
         : (isExpense ? AppColors.expense : AppColors.income);
     final sign = isExpense ? '-' : (isTransfer ? '' : '+');
 
+    final currentUserId = ref.watch(currentUserIdProvider);
+    final isMine = currentUserId != null && transaction.ownerUserId == currentUserId;
+    final ownerLabel = isMine
+        ? 'You'
+        : 'Partner ${transaction.ownerUserId.substring(0, 6)}';
+
     return InkWell(
       onTap: onTap,
       borderRadius: BorderRadius.circular(16),
@@ -36,7 +43,6 @@ class TransactionTile extends StatelessWidget {
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
         child: Row(
           children: [
-            // Category emoji circle
             Container(
               width: 44,
               height: 44,
@@ -51,8 +57,6 @@ class TransactionTile extends StatelessWidget {
               ),
             ),
             const SizedBox(width: 12),
-
-            // Name + date
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -68,20 +72,30 @@ class TransactionTile extends StatelessWidget {
                   const SizedBox(height: 2),
                   Row(
                     children: [
-                      // Visibility badge
                       Container(
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 6, vertical: 1),
+                        padding:
+                            const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
                         decoration: BoxDecoration(
                           color: transaction.isShared
-                              ? AppColors.angelPink
-                                  .withValues(alpha: 0.15)
-                              : AppColors.stitchBlue
-                                  .withValues(alpha: 0.15),
+                              ? AppColors.angelPink.withValues(alpha: 0.15)
+                              : AppColors.stitchBlue.withValues(alpha: 0.15),
                           borderRadius: BorderRadius.circular(8),
                         ),
                         child: Text(
-                          transaction.isShared ? '👥' : '🔒',
+                          transaction.isShared ? 'Shared' : 'Personal',
+                          style: const TextStyle(fontSize: 10),
+                        ),
+                      ),
+                      const SizedBox(width: 6),
+                      Container(
+                        padding:
+                            const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
+                        decoration: BoxDecoration(
+                          color: AppColors.surfaceVariant,
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: Text(
+                          ownerLabel,
                           style: const TextStyle(fontSize: 10),
                         ),
                       ),
@@ -99,8 +113,8 @@ class TransactionTile extends StatelessWidget {
                         Flexible(
                           child: Text(
                             transaction.note!,
-                            style: TextStyle(
-                                fontSize: 11, color: AppColors.textHint),
+                            style:
+                                const TextStyle(fontSize: 11, color: AppColors.textHint),
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
                           ),
@@ -111,8 +125,6 @@ class TransactionTile extends StatelessWidget {
                 ],
               ),
             ),
-
-            // Amount
             Text(
               '$sign${CurrencyFormatter.format(transaction.amount, currency: transaction.currency)}',
               style: TextStyle(

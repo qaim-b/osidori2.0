@@ -11,6 +11,7 @@ import '../../../domain/entities/account_entity.dart';
 import '../../providers/transaction_provider.dart';
 import '../../providers/category_provider.dart';
 import '../../providers/account_provider.dart';
+import '../../providers/group_provider.dart';
 
 class AddTransactionScreen extends ConsumerStatefulWidget {
   const AddTransactionScreen({super.key});
@@ -91,6 +92,7 @@ class _AddTransactionScreenState
     setState(() => _isSaving = true);
 
     try {
+      final activeGroupId = ref.read(activeGroupIdProvider);
       await ref.read(monthlyTransactionsProvider.notifier).addTransaction(
             type: _type,
             amount: amount,
@@ -103,6 +105,7 @@ class _AddTransactionScreenState
                 ? _noteController.text
                 : null,
             visibility: _visibility,
+            groupId: activeGroupId,
           );
 
       if (mounted) {

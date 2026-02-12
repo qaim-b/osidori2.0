@@ -85,4 +85,18 @@ class CategoryRepository {
         .update(category.toJson())
         .eq('id', category.id);
   }
+
+  Future<CategoryModel> create({
+    required String userId,
+    required CategoryModel category,
+  }) async {
+    final json = category.toJson();
+    json['user_id'] = userId;
+    await _client.from(AppSupabase.categoriesTable).insert(json);
+    return category;
+  }
+
+  Future<void> delete(String categoryId) async {
+    await _client.from(AppSupabase.categoriesTable).delete().eq('id', categoryId);
+  }
 }

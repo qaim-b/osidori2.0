@@ -8,6 +8,7 @@ import '../../../core/utils/csv_exporter.dart';
 import '../../providers/appearance_provider.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/group_provider.dart';
+import '../../providers/category_provider.dart';
 import '../../providers/transaction_provider.dart';
 
 class SettingsScreen extends ConsumerWidget {
@@ -171,11 +172,18 @@ class SettingsScreen extends ConsumerWidget {
                         userId: userId,
                         year: selectedMonth.year,
                         month: selectedMonth.month,
+                        groupId: ref.read(activeGroupIdProvider),
                       );
+
+                      final categories =
+                          ref.read(categoriesProvider).valueOrNull ?? [];
+                      final catNameMap = <String, String>{
+                        for (final c in categories) c.id: c.shortLabel,
+                      };
 
                       final path = await CsvExporter.exportTransactions(
                         transactions: txns,
-                        categoryNames: const {},
+                        categoryNames: catNameMap,
                         year: selectedMonth.year,
                         month: selectedMonth.month,
                       );
