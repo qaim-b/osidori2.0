@@ -2,6 +2,7 @@ import 'dart:convert';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:image_picker/image_picker.dart';
@@ -16,6 +17,7 @@ import '../../providers/appearance_provider.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/category_provider.dart';
 import '../../providers/group_provider.dart';
+import '../../providers/theme_provider.dart';
 import '../../providers/transaction_provider.dart';
 
 class SettingsScreen extends ConsumerWidget {
@@ -25,6 +27,7 @@ class SettingsScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final user = ref.watch(authStateProvider).valueOrNull;
     final activePreset = ref.watch(themePresetProvider);
+    final roleColors = ref.watch(roleColorsProvider);
     final groupsAsync = ref.watch(groupsProvider);
     final activeGroupId = ref.watch(activeGroupIdProvider);
     final currentUserId = ref.watch(currentUserIdProvider);
@@ -57,15 +60,11 @@ class SettingsScreen extends ConsumerWidget {
                     backgroundColor: AppColors.primary.withValues(alpha: 0.16),
                     backgroundImage: avatarProvider,
                     child: avatarProvider == null
-                        ? Text(
-                            user?.name.isNotEmpty == true
-                                ? user!.name[0].toUpperCase()
-                                : '?',
-                            style: const TextStyle(
-                              fontSize: 24,
-                              fontWeight: FontWeight.w700,
-                              color: Colors.white,
-                            ),
+                        ? SvgPicture.asset(
+                            roleColors.mascotImage,
+                            width: 32,
+                            height: 32,
+                            fit: BoxFit.contain,
                           )
                         : null,
                   ),

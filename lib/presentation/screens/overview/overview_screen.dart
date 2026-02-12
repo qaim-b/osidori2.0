@@ -118,7 +118,20 @@ class OverviewScreen extends ConsumerWidget {
                             ],
                           ),
                         ),
-                        MiniMascot(imagePath: roleColors.mascotImage, size: 24),
+                        CircleAvatar(
+                          radius: 12,
+                          backgroundColor: roleColors.primary.withValues(
+                            alpha: 0.15,
+                          ),
+                          backgroundImage: myAvatarProvider,
+                          child: myAvatarProvider == null
+                              ? SvgPicture.asset(
+                                  roleColors.mascotImage,
+                                  width: 14,
+                                  height: 14,
+                                )
+                              : null,
+                        ),
                         const SizedBox(width: 8),
                         IconButton(
                           icon: const Icon(
