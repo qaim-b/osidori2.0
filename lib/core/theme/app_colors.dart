@@ -19,6 +19,13 @@ class AppColors {
   static const Color angelAccent = Color(0xFFFF80AB);
   static const Color angelBg = Color(0xFFFDE8F0);
 
+  // Solo / chill vibe
+  static const Color soloMint = Color(0xFF4F9B8E);
+  static const Color soloMintLight = Color(0xFF7DBFB4);
+  static const Color soloMintDark = Color(0xFF2F6F66);
+  static const Color soloAccent = Color(0xFF9CCB8A);
+  static const Color soloBg = Color(0xFFEFF8F5);
+
   // ── Default / shared (Stitch blue as default) ──
   static const Color primary = stitchBlue;
   static const Color primaryLight = stitchBlueLight;
@@ -83,6 +90,12 @@ class AppColors {
 
   static const LinearGradient angelGradient = LinearGradient(
     colors: [angelPink, angelAccent],
+    begin: Alignment.topLeft,
+    end: Alignment.bottomRight,
+  );
+
+  static const LinearGradient soloGradient = LinearGradient(
+    colors: [soloMint, soloAccent],
     begin: Alignment.topLeft,
     end: Alignment.bottomRight,
   );

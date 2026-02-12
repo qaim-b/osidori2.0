@@ -26,19 +26,42 @@ class AccountRepository {
         .from(AppSupabase.accountsTable)
         .select()
         .eq('group_id', groupId)
-        .eq('owner_scope', 'shared')
         .order('created_at');
     return data.map((json) => AccountModel.fromJson(json)).toList();
   }
 
   /// All accounts visible to a user (their own + shared group ones)
   Future<List<AccountModel>> getAllVisible(
-      String userId, String? groupId) async {
+    String userId,
+    List<String> groupIds,
+    List<String> groupMemberIds,
+  ) async {
     final personal = await getForUser(userId);
-    if (groupId == null) return personal;
+    if (groupIds.isEmpty && groupMemberIds.isEmpty) return personal;
 
-    final shared = await getForGroup(groupId);
-    return [...personal, ...shared];
+    final all = <AccountModel>[...personal];
+
+    if (groupIds.isNotEmpty) {
+      final sharedData = await _client
+          .from(AppSupabase.accountsTable)
+          .select()
+          .inFilter('group_id', groupIds)
+          .order('created_at');
+      all.addAll(sharedData.map((json) => AccountModel.fromJson(json)));
+    }
+
+    final partnerIds = groupMemberIds.where((id) => id != userId).toList();
+    if (partnerIds.isNotEmpty) {
+      final partnerData = await _client
+          .from(AppSupabase.accountsTable)
+          .select()
+          .inFilter('owner_user_id', partnerIds)
+          .order('created_at');
+      all.addAll(partnerData.map((json) => AccountModel.fromJson(json)));
+    }
+
+    final dedup = <String, AccountModel>{for (final a in all) a.id: a};
+    return dedup.values.toList();
   }
 
   Future<void> update(AccountModel account) async {
@@ -50,5 +73,20 @@ class AccountRepository {
 
   Future<void> delete(String id) async {
     await _client.from(AppSupabase.accountsTable).delete().eq('id', id);
+  }
+
+  /// Repairs legacy rows where "shared" accounts were saved with null group_id.
+  Future<int> assignUngroupedSharedToGroup({
+    required String userId,
+    required String groupId,
+  }) async {
+    final updated = await _client
+        .from(AppSupabase.accountsTable)
+        .update({'group_id': groupId})
+        .eq('owner_user_id', userId)
+        .eq('owner_scope', 'shared')
+        .isFilter('group_id', null)
+        .select('id');
+    return updated.length;
   }
 }

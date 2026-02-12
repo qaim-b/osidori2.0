@@ -27,6 +27,7 @@ class BudgetScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final selectedMonth = ref.watch(selectedMonthProvider);
     final categoryTotals = ref.watch(categoryTotalsProvider);
+    final txns = ref.watch(monthlyTransactionsProvider).valueOrNull ?? [];
     final categories = ref.watch(categoriesProvider);
     final totals = ref.watch(monthlyTotalsProvider);
     final roleColors = ref.watch(roleColorsProvider);
@@ -34,9 +35,19 @@ class BudgetScreen extends ConsumerWidget {
 
     final catEntityMap = <String, CategoryEntity>{};
     final catNameMap = <String, String>{};
+    final catSnapshotNameMap = <String, String>{};
+    final catSnapshotEmojiMap = <String, String>{};
     for (final cat in categories.valueOrNull ?? <CategoryEntity>[]) {
       catEntityMap[cat.id] = cat;
       catNameMap[cat.id] = cat.shortLabel;
+    }
+    for (final txn in txns) {
+      if (txn.categoryNameSnapshot != null) {
+        catSnapshotNameMap[txn.categoryId] = txn.categoryNameSnapshot!;
+      }
+      if (txn.categoryEmojiSnapshot != null) {
+        catSnapshotEmojiMap[txn.categoryId] = txn.categoryEmojiSnapshot!;
+      }
     }
 
     return Scaffold(
@@ -57,8 +68,13 @@ class BudgetScreen extends ConsumerWidget {
                     IconButton(
                       icon: const Icon(Icons.chevron_left),
                       onPressed: () {
-                        ref.read(selectedMonthProvider.notifier).state =
-                            DateTime(selectedMonth.year, selectedMonth.month - 1, 1);
+                        ref
+                            .read(selectedMonthProvider.notifier)
+                            .state = DateTime(
+                          selectedMonth.year,
+                          selectedMonth.month - 1,
+                          1,
+                        );
                       },
                     ),
                     Text(
@@ -68,8 +84,13 @@ class BudgetScreen extends ConsumerWidget {
                     IconButton(
                       icon: const Icon(Icons.chevron_right),
                       onPressed: () {
-                        ref.read(selectedMonthProvider.notifier).state =
-                            DateTime(selectedMonth.year, selectedMonth.month + 1, 1);
+                        ref
+                            .read(selectedMonthProvider.notifier)
+                            .state = DateTime(
+                          selectedMonth.year,
+                          selectedMonth.month + 1,
+                          1,
+                        );
                       },
                     ),
                   ],
@@ -89,8 +110,10 @@ class BudgetScreen extends ConsumerWidget {
                         ),
                         child: Row(
                           children: [
-                            const Icon(Icons.arrow_upward_rounded,
-                                color: AppColors.income),
+                            const Icon(
+                              Icons.arrow_upward_rounded,
+                              color: AppColors.income,
+                            ),
                             const SizedBox(width: 8),
                             Text(
                               'Income',
@@ -99,7 +122,8 @@ class BudgetScreen extends ConsumerWidget {
                             const Spacer(),
                             Text(
                               CurrencyFormatter.format(
-                                  (totals['income'] ?? 0.0).toDouble()),
+                                (totals['income'] ?? 0.0).toDouble(),
+                              ),
                               style: const TextStyle(
                                 color: AppColors.income,
                                 fontWeight: FontWeight.w700,
@@ -128,7 +152,8 @@ class BudgetScreen extends ConsumerWidget {
                             const SizedBox(height: 4),
                             Text(
                               CurrencyFormatter.format(
-                                  (totals['expense'] ?? 0.0).toDouble()),
+                                (totals['expense'] ?? 0.0).toDouble(),
+                              ),
                               style: const TextStyle(
                                 color: Colors.white,
                                 fontSize: 28,
@@ -155,23 +180,28 @@ class BudgetScreen extends ConsumerWidget {
                           style: Theme.of(context).textTheme.titleMedium,
                         ),
                         const SizedBox(height: 16),
-                        Builder(builder: (context) {
-                          final total = categoryTotals.values
-                              .fold<double>(0, (sum, v) => sum + v);
-                          if (total == 0) {
-                            return const Padding(
-                              padding: EdgeInsets.all(32),
-                              child:
-                                  Center(child: Text('No expenses this month')),
+                        Builder(
+                          builder: (context) {
+                            final total = categoryTotals.values.fold<double>(
+                              0,
+                              (sum, v) => sum + v,
                             );
-                          }
-                          return CategoryDonutChart(
-                            categoryTotals: categoryTotals,
-                            categoryNames: catNameMap,
-                            currency: 'JPY',
-                            totalAmount: total,
-                          );
-                        }),
+                            if (total == 0) {
+                              return const Padding(
+                                padding: EdgeInsets.all(32),
+                                child: Center(
+                                  child: Text('No expenses this month'),
+                                ),
+                              );
+                            }
+                            return CategoryDonutChart(
+                              categoryTotals: categoryTotals,
+                              categoryNames: catNameMap,
+                              currency: 'JPY',
+                              totalAmount: total,
+                            );
+                          },
+                        ),
                       ],
                     ),
                   ),
@@ -180,44 +210,61 @@ class BudgetScreen extends ConsumerWidget {
               SliverToBoxAdapter(
                 child: Padding(
                   padding: const EdgeInsets.fromLTRB(20, 4, 20, 8),
-                  child: Text(
-                    'By Category',
-                    style: Theme.of(context).textTheme.titleMedium,
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: Text(
+                          'By Category',
+                          style: Theme.of(context).textTheme.titleMedium,
+                        ),
+                      ),
+                      TextButton.icon(
+                        onPressed: () => context.push('/budget/planner'),
+                        icon: const Icon(Icons.tune_rounded, size: 18),
+                        label: const Text('All Budgets'),
+                      ),
+                    ],
                   ),
                 ),
               ),
-              Builder(builder: (context) {
-                final total =
-                    categoryTotals.values.fold<double>(0, (sum, v) => sum + v);
-                final sorted = categoryTotals.entries.toList()
-                  ..sort((a, b) => b.value.compareTo(a.value));
-
-                if (sorted.isEmpty) {
-                  return const SliverToBoxAdapter(
-                    child: Padding(
-                      padding: EdgeInsets.all(32),
-                      child: Center(child: Text('No data yet')),
-                    ),
+              Builder(
+                builder: (context) {
+                  final total = categoryTotals.values.fold<double>(
+                    0,
+                    (sum, v) => sum + v,
                   );
-                }
+                  final sorted = categoryTotals.entries.toList()
+                    ..sort((a, b) => b.value.compareTo(a.value));
 
-                return SliverList(
-                  delegate: SliverChildBuilderDelegate(
-                    (context, index) {
+                  if (sorted.isEmpty) {
+                    return const SliverToBoxAdapter(
+                      child: Padding(
+                        padding: EdgeInsets.all(32),
+                        child: Center(child: Text('No data yet')),
+                      ),
+                    );
+                  }
+
+                  return SliverList(
+                    delegate: SliverChildBuilderDelegate((context, index) {
                       final entry = sorted[index];
                       final cat = catEntityMap[entry.key];
                       final pct = total > 0 ? (entry.value / total * 100) : 0.0;
                       final budgetLimit = budgetLimitMap[entry.key];
-                      final limitProgress = budgetLimit != null && budgetLimit > 0
+                      final limitProgress =
+                          budgetLimit != null && budgetLimit > 0
                           ? (entry.value / budgetLimit).clamp(0.0, 1.5)
                           : null;
 
                       return Card(
                         margin: const EdgeInsets.symmetric(
-                            horizontal: 16, vertical: 4),
+                          horizontal: 16,
+                          vertical: 4,
+                        ),
                         child: InkWell(
                           borderRadius: BorderRadius.circular(12),
-                          onTap: () => context.push('/budget/category/${entry.key}'),
+                          onTap: () =>
+                              context.push('/budget/category/${entry.key}'),
                           child: Padding(
                             padding: const EdgeInsets.all(12),
                             child: Column(
@@ -227,16 +274,21 @@ class BudgetScreen extends ConsumerWidget {
                                     CircleAvatar(
                                       backgroundColor: AppColors.surfaceVariant,
                                       child: Text(
-                                        cat?.emoji ?? '📋',
+                                        cat?.emoji ??
+                                            catSnapshotEmojiMap[entry.key] ??
+                                            '📋',
                                         style: const TextStyle(fontSize: 16),
                                       ),
                                     ),
                                     const SizedBox(width: 10),
                                     Expanded(
                                       child: Text(
-                                        cat?.name ?? 'Unknown',
+                                        cat?.name ??
+                                            catSnapshotNameMap[entry.key] ??
+                                            'Unknown',
                                         style: const TextStyle(
-                                            fontWeight: FontWeight.w600),
+                                          fontWeight: FontWeight.w600,
+                                        ),
                                       ),
                                     ),
                                     Text(
@@ -247,8 +299,10 @@ class BudgetScreen extends ConsumerWidget {
                                       ),
                                     ),
                                     const SizedBox(width: 4),
-                                    const Icon(Icons.chevron_right,
-                                        color: AppColors.textHint),
+                                    const Icon(
+                                      Icons.chevron_right,
+                                      color: AppColors.textHint,
+                                    ),
                                   ],
                                 ),
                                 if (budgetLimit != null) ...[
@@ -285,11 +339,10 @@ class BudgetScreen extends ConsumerWidget {
                           ),
                         ),
                       );
-                    },
-                    childCount: sorted.length,
-                  ),
-                );
-              }),
+                    }, childCount: sorted.length > 8 ? 8 : sorted.length),
+                  );
+                },
+              ),
               const SliverToBoxAdapter(child: SizedBox(height: 110)),
             ],
           ),

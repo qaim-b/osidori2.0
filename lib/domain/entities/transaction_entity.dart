@@ -17,6 +17,9 @@ class TransactionEntity implements Comparable<TransactionEntity> {
   final String currency;
   final DateTime date;
   final String categoryId;
+  final String? categoryNameSnapshot;
+  final String? categoryEmojiSnapshot;
+  final int? categoryDisplayNumberSnapshot;
   final String fromAccountId;
   final String? toAccountId; // Only for transfers
   final String? note;
@@ -33,6 +36,9 @@ class TransactionEntity implements Comparable<TransactionEntity> {
     required this.currency,
     required this.date,
     required this.categoryId,
+    this.categoryNameSnapshot,
+    this.categoryEmojiSnapshot,
+    this.categoryDisplayNumberSnapshot,
     required this.fromAccountId,
     this.toAccountId,
     this.note,
@@ -69,6 +75,9 @@ class TransactionEntity implements Comparable<TransactionEntity> {
     String? currency,
     DateTime? date,
     String? categoryId,
+    String? categoryNameSnapshot,
+    String? categoryEmojiSnapshot,
+    int? categoryDisplayNumberSnapshot,
     String? fromAccountId,
     String? toAccountId,
     String? note,
@@ -85,6 +94,11 @@ class TransactionEntity implements Comparable<TransactionEntity> {
       currency: currency ?? this.currency,
       date: date ?? this.date,
       categoryId: categoryId ?? this.categoryId,
+      categoryNameSnapshot: categoryNameSnapshot ?? this.categoryNameSnapshot,
+      categoryEmojiSnapshot:
+          categoryEmojiSnapshot ?? this.categoryEmojiSnapshot,
+      categoryDisplayNumberSnapshot:
+          categoryDisplayNumberSnapshot ?? this.categoryDisplayNumberSnapshot,
       fromAccountId: fromAccountId ?? this.fromAccountId,
       toAccountId: toAccountId ?? this.toAccountId,
       note: note ?? this.note,

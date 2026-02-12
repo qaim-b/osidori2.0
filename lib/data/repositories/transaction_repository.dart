@@ -18,7 +18,7 @@ class TransactionRepository {
   /// Includes personal + shared (if groupId provided).
   Future<List<TransactionModel>> getForUser({
     required String userId,
-    String? groupId,
+    List<String> groupIds = const [],
     required DateTime from,
     required DateTime to,
     int page = 0,
@@ -37,13 +37,13 @@ class TransactionRepository {
     final personalTxns =
         data.map((json) => TransactionModel.fromJson(json)).toList();
 
-    if (groupId == null) return personalTxns;
+    if (groupIds.isEmpty) return personalTxns;
 
     // Also fetch shared transactions from other group members
     final sharedData = await _client
         .from(AppSupabase.transactionsTable)
         .select()
-        .eq('group_id', groupId)
+        .inFilter('group_id', groupIds)
         .neq('owner_user_id', userId)
         .gte('date', from.toIso8601String())
         .lte('date', to.toIso8601String())
@@ -64,14 +64,14 @@ class TransactionRepository {
     required String userId,
     required int year,
     required int month,
-    String? groupId,
+    List<String> groupIds = const [],
   }) async {
     final from = DateTime(year, month, 1);
     final to = DateTime(year, month + 1, 0, 23, 59, 59);
 
     return getForUser(
       userId: userId,
-      groupId: groupId,
+      groupIds: groupIds,
       from: from,
       to: to,
       pageSize: 10000, // No pagination for export
@@ -172,5 +172,20 @@ class TransactionRepository {
 
   Future<void> delete(String id) async {
     await _client.from(AppSupabase.transactionsTable).delete().eq('id', id);
+  }
+
+  /// Repairs legacy rows where "shared" transactions were saved with null group_id.
+  Future<int> assignUngroupedSharedToGroup({
+    required String userId,
+    required String groupId,
+  }) async {
+    final updated = await _client
+        .from(AppSupabase.transactionsTable)
+        .update({'group_id': groupId})
+        .eq('owner_user_id', userId)
+        .eq('visibility', 'shared')
+        .isFilter('group_id', null)
+        .select('id');
+    return updated.length;
   }
 }

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'package:go_router/go_router.dart';
 import '../../../core/extensions/datetime_ext.dart';
 import '../../../core/theme/app_colors.dart';
@@ -71,18 +72,26 @@ class OverviewScreen extends ConsumerWidget {
                           onTap: () => context.push('/settings'),
                           child: CircleAvatar(
                             radius: 20,
-                            backgroundColor:
-                                roleColors.primary.withValues(alpha: 0.15),
+                            backgroundColor: roleColors.primary.withValues(
+                              alpha: 0.15,
+                            ),
                             backgroundImage: user?.avatarUrl != null
                                 ? NetworkImage(user!.avatarUrl!)
                                 : null,
                             child: user?.avatarUrl == null
-                                ? Image.asset(
-                                    roleColors.mascotImage,
-                                    width: 28,
-                                    height: 28,
-                                    fit: BoxFit.contain,
-                                  )
+                                ? roleColors.mascotImage.endsWith('.svg')
+                                      ? SvgPicture.asset(
+                                          roleColors.mascotImage,
+                                          width: 28,
+                                          height: 28,
+                                          fit: BoxFit.contain,
+                                        )
+                                      : Image.asset(
+                                          roleColors.mascotImage,
+                                          width: 28,
+                                          height: 28,
+                                          fit: BoxFit.contain,
+                                        )
                                 : null,
                           ),
                         ),
@@ -93,9 +102,7 @@ class OverviewScreen extends ConsumerWidget {
                             children: [
                               Text(
                                 'Hi, ${user?.name ?? 'there'}!',
-                                style: Theme.of(context)
-                                    .textTheme
-                                    .titleMedium
+                                style: Theme.of(context).textTheme.titleMedium
                                     ?.copyWith(fontWeight: FontWeight.w700),
                               ),
                               Text(
@@ -111,8 +118,10 @@ class OverviewScreen extends ConsumerWidget {
                         MiniMascot(imagePath: roleColors.mascotImage, size: 24),
                         const SizedBox(width: 8),
                         IconButton(
-                          icon: const Icon(Icons.settings_outlined,
-                              color: AppColors.textSecondary),
+                          icon: const Icon(
+                            Icons.settings_outlined,
+                            color: AppColors.textSecondary,
+                          ),
                           onPressed: () => context.push('/settings'),
                         ),
                       ],
@@ -129,9 +138,13 @@ class OverviewScreen extends ConsumerWidget {
                       IconButton(
                         icon: const Icon(Icons.chevron_left, size: 28),
                         onPressed: () {
-                          ref.read(selectedMonthProvider.notifier).state =
-                              DateTime(selectedMonth.year,
-                                  selectedMonth.month - 1, 1);
+                          ref
+                              .read(selectedMonthProvider.notifier)
+                              .state = DateTime(
+                            selectedMonth.year,
+                            selectedMonth.month - 1,
+                            1,
+                          );
                         },
                       ),
                       GestureDetector(
@@ -148,9 +161,13 @@ class OverviewScreen extends ConsumerWidget {
                       IconButton(
                         icon: const Icon(Icons.chevron_right, size: 28),
                         onPressed: () {
-                          ref.read(selectedMonthProvider.notifier).state =
-                              DateTime(selectedMonth.year,
-                                  selectedMonth.month + 1, 1);
+                          ref
+                              .read(selectedMonthProvider.notifier)
+                              .state = DateTime(
+                            selectedMonth.year,
+                            selectedMonth.month + 1,
+                            1,
+                          );
                         },
                       ),
                     ],
@@ -205,26 +222,34 @@ class OverviewScreen extends ConsumerWidget {
               const SliverToBoxAdapter(child: GoalsCard()),
               SliverToBoxAdapter(
                 child: Card(
-                  margin:
-                      const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                  margin: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 12,
+                  ),
                   child: Padding(
                     padding: const EdgeInsets.all(20),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text('Expense Breakdown',
-                            style: Theme.of(context).textTheme.titleMedium),
+                        Text(
+                          'Expense Breakdown',
+                          style: Theme.of(context).textTheme.titleMedium,
+                        ),
                         const SizedBox(height: 16),
-                        Builder(builder: (context) {
-                          final total = categoryTotals.values
-                              .fold<double>(0, (sum, v) => sum + v);
-                          return CategoryDonutChart(
-                            categoryTotals: categoryTotals,
-                            categoryNames: catMap,
-                            currency: 'JPY',
-                            totalAmount: total,
-                          );
-                        }),
+                        Builder(
+                          builder: (context) {
+                            final total = categoryTotals.values.fold<double>(
+                              0,
+                              (sum, v) => sum + v,
+                            );
+                            return CategoryDonutChart(
+                              categoryTotals: categoryTotals,
+                              categoryNames: catMap,
+                              currency: 'JPY',
+                              totalAmount: total,
+                            );
+                          },
+                        ),
                       ],
                     ),
                   ),
@@ -234,8 +259,10 @@ class OverviewScreen extends ConsumerWidget {
               SliverToBoxAdapter(
                 child: Padding(
                   padding: const EdgeInsets.fromLTRB(20, 20, 20, 8),
-                  child: Text('Recent Transactions',
-                      style: Theme.of(context).textTheme.titleMedium),
+                  child: Text(
+                    'Recent Transactions',
+                    style: Theme.of(context).textTheme.titleMedium,
+                  ),
                 ),
               ),
               transactions.when(
@@ -252,14 +279,14 @@ class OverviewScreen extends ConsumerWidget {
                               glowColor: roleColors.primary,
                             ),
                             const SizedBox(height: 16),
-                            Text('No transactions this month',
-                                style: Theme.of(context).textTheme.bodyMedium),
+                            Text(
+                              'No transactions this month',
+                              style: Theme.of(context).textTheme.bodyMedium,
+                            ),
                             const SizedBox(height: 4),
                             Text(
                               'Tap + to add your first one!',
-                              style: Theme.of(context)
-                                  .textTheme
-                                  .bodyMedium
+                              style: Theme.of(context).textTheme.bodyMedium
                                   ?.copyWith(color: AppColors.textHint),
                             ),
                           ],
@@ -270,20 +297,19 @@ class OverviewScreen extends ConsumerWidget {
 
                   final displayTxns = txns.take(20).toList();
                   return SliverList(
-                    delegate: SliverChildBuilderDelegate(
-                      (context, index) {
-                        final txn = displayTxns[index];
-                        return Card(
-                          margin: const EdgeInsets.symmetric(
-                              horizontal: 16, vertical: 3),
-                          child: TransactionTile(
-                            transaction: txn,
-                            category: catEntityMap[txn.categoryId],
-                          ),
-                        );
-                      },
-                      childCount: displayTxns.length,
-                    ),
+                    delegate: SliverChildBuilderDelegate((context, index) {
+                      final txn = displayTxns[index];
+                      return Card(
+                        margin: const EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 3,
+                        ),
+                        child: TransactionTile(
+                          transaction: txn,
+                          category: catEntityMap[txn.categoryId],
+                        ),
+                      );
+                    }, childCount: displayTxns.length),
                   );
                 },
                 loading: () => const SliverToBoxAdapter(

@@ -10,13 +10,33 @@ final groupRepositoryProvider = Provider<GroupRepository>((ref) {
 
 final groupsProvider =
     StateNotifierProvider<GroupNotifier, AsyncValue<List<GroupModel>>>((ref) {
-  final userId = ref.watch(currentUserIdProvider);
-  final repo = ref.read(groupRepositoryProvider);
-  return GroupNotifier(repo, userId);
+      final userId = ref.watch(currentUserIdProvider);
+      final repo = ref.read(groupRepositoryProvider);
+      return GroupNotifier(repo, userId);
+    });
+
+final activeGroupIdStateProvider = StateProvider<String?>((ref) => null);
+
+final groupIdsProvider = Provider<List<String>>((ref) {
+  final groups = ref.watch(groupsProvider).valueOrNull ?? [];
+  return groups.map((g) => g.id).toList();
+});
+
+final groupMemberIdsProvider = Provider<List<String>>((ref) {
+  final groups = ref.watch(groupsProvider).valueOrNull ?? [];
+  final seen = <String>{};
+  for (final g in groups) {
+    seen.addAll(g.memberIds);
+  }
+  return seen.toList();
 });
 
 final activeGroupIdProvider = Provider<String?>((ref) {
   final groups = ref.watch(groupsProvider).valueOrNull ?? [];
+  final selected = ref.watch(activeGroupIdStateProvider);
+  if (selected != null && groups.any((g) => g.id == selected)) {
+    return selected;
+  }
   return groups.isEmpty ? null : groups.first.id;
 });
 
@@ -44,7 +64,7 @@ class GroupNotifier extends StateNotifier<AsyncValue<List<GroupModel>>> {
     }
   }
 
-  Future<void> createCoupleGroup({
+  Future<String?> createCoupleGroup({
     required String partnerUserId,
     String? name,
   }) async {
@@ -61,21 +81,26 @@ class GroupNotifier extends StateNotifier<AsyncValue<List<GroupModel>>> {
         .replaceAll(RegExp(r'\s+'), '');
 
     if (trimmedPartner.isEmpty || trimmedPartner == _userId) {
-      return;
+      return null;
     }
     final uuidPattern = RegExp(
       r'^[0-9a-fA-F]{8}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{12}$',
     );
     if (!uuidPattern.hasMatch(trimmedPartner)) {
       throw Exception(
-          'Partner code is invalid. Paste the full user ID (UUID) exactly.');
+        'Partner code is invalid. Paste the full user ID (UUID) exactly.',
+      );
     }
 
     final currentGroups = state.valueOrNull ?? [];
     final alreadyLinked = currentGroups.any(
       (g) => g.memberIds.contains(trimmedPartner),
     );
-    if (alreadyLinked) return;
+    if (alreadyLinked) {
+      return currentGroups
+          .firstWhere((g) => g.memberIds.contains(trimmedPartner))
+          .id;
+    }
 
     final groupId = _uuid.v4();
     await _repo.createGroup(
@@ -85,5 +110,6 @@ class GroupNotifier extends StateNotifier<AsyncValue<List<GroupModel>>> {
       memberIds: [_userId, trimmedPartner],
     );
     await load();
+    return groupId;
   }
 }

@@ -15,78 +15,85 @@ class AppShell extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final preset = ref.watch(activeThemePresetDataProvider);
+    final bottomInset = MediaQuery.of(context).viewPadding.bottom;
+    final extraBottom = bottomInset > 0 ? bottomInset : 10.0;
 
     return Scaffold(
       body: navigationShell,
-      bottomNavigationBar: ClipRRect(
-        borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
-        child: BackdropFilter(
-          filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
-          child: Container(
-            decoration: BoxDecoration(
-              color: preset.surface.withValues(alpha: 0.90),
-              border: Border(
-                top: BorderSide(
-                  color: Colors.white.withValues(alpha: 0.4),
-                ),
-              ),
-              boxShadow: [
-                BoxShadow(
-                  color: AppColors.shadow,
-                  blurRadius: 12,
-                  offset: const Offset(0, -2),
-                ),
-              ],
-            ),
-            child: SafeArea(
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceAround,
-                  children: [
-                _NavItem(
-                  index: 0,
-                  currentIndex: navigationShell.currentIndex,
-                  icon: Icons.home_rounded,
-                  label: 'Home',
-                  activeColor: preset.primary,
-                  onTap: () => navigationShell.goBranch(0),
-                ),
-                _NavItem(
-                  index: 1,
-                  currentIndex: navigationShell.currentIndex,
-                  icon: Icons.analytics_rounded,
-                  label: 'Summary',
-                  activeColor: preset.primary,
-                  onTap: () => navigationShell.goBranch(1),
-                ),
-                // Center add button
-                _AddButton(
-                  gradient: LinearGradient(
-                    colors: [preset.primary, preset.secondary],
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
+      bottomNavigationBar: Padding(
+        padding: EdgeInsets.only(bottom: extraBottom),
+        child: ClipRRect(
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+          child: BackdropFilter(
+            filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
+            child: Container(
+              decoration: BoxDecoration(
+                color: preset.surface.withValues(alpha: 0.90),
+                border: Border(
+                  top: BorderSide(
+                    color: Colors.white.withValues(alpha: 0.4),
                   ),
-                  glowColor: preset.primary,
-                  onTap: () => context.push('/add'),
                 ),
-                _NavItem(
-                  index: 2,
-                  currentIndex: navigationShell.currentIndex,
-                  icon: Icons.pie_chart_rounded,
-                  label: 'Budget',
-                  activeColor: preset.primary,
-                  onTap: () => navigationShell.goBranch(2),
-                ),
-                _NavItem(
-                  index: 3,
-                  currentIndex: navigationShell.currentIndex,
-                  icon: Icons.calendar_month_rounded,
-                  label: 'Calendar',
-                  activeColor: preset.primary,
-                  onTap: () => navigationShell.goBranch(3),
-                ),
-                  ],
+                boxShadow: [
+                  BoxShadow(
+                    color: AppColors.shadow,
+                    blurRadius: 12,
+                    offset: const Offset(0, -2),
+                  ),
+                ],
+              ),
+              child: SafeArea(
+                top: false,
+                bottom: false,
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceAround,
+                    children: [
+                      _NavItem(
+                        index: 0,
+                        currentIndex: navigationShell.currentIndex,
+                        icon: Icons.home_rounded,
+                        label: 'Home',
+                        activeColor: preset.primary,
+                        onTap: () => navigationShell.goBranch(0),
+                      ),
+                      _NavItem(
+                        index: 1,
+                        currentIndex: navigationShell.currentIndex,
+                        icon: Icons.analytics_rounded,
+                        label: 'Summary',
+                        activeColor: preset.primary,
+                        onTap: () => navigationShell.goBranch(1),
+                      ),
+                      // Center add button
+                      _AddButton(
+                        gradient: LinearGradient(
+                          colors: [preset.primary, preset.secondary],
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                        ),
+                        glowColor: preset.primary,
+                        onTap: () => context.push('/add'),
+                      ),
+                      _NavItem(
+                        index: 2,
+                        currentIndex: navigationShell.currentIndex,
+                        icon: Icons.pie_chart_rounded,
+                        label: 'Budget',
+                        activeColor: preset.primary,
+                        onTap: () => navigationShell.goBranch(2),
+                      ),
+                      _NavItem(
+                        index: 3,
+                        currentIndex: navigationShell.currentIndex,
+                        icon: Icons.calendar_month_rounded,
+                        label: 'Calendar',
+                        activeColor: preset.primary,
+                        onTap: () => navigationShell.goBranch(3),
+                      ),
+                    ],
+                  ),
                 ),
               ),
             ),

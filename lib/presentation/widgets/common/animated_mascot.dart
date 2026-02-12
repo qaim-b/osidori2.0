@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 
 /// Cute bouncing animated mascot that floats around.
 /// Shows Stitch or Angel image based on role.
@@ -37,25 +38,28 @@ class _AnimatedMascotState extends State<AnimatedMascot>
       duration: const Duration(milliseconds: 1500),
       vsync: this,
     )..repeat(reverse: true);
-    _bounceAnim = Tween<double>(begin: 0, end: -12).animate(
-      CurvedAnimation(parent: _bounceCtrl, curve: Curves.easeInOut),
-    );
+    _bounceAnim = Tween<double>(
+      begin: 0,
+      end: -12,
+    ).animate(CurvedAnimation(parent: _bounceCtrl, curve: Curves.easeInOut));
 
     _floatCtrl = AnimationController(
       duration: const Duration(milliseconds: 3000),
       vsync: this,
     )..repeat(reverse: true);
-    _floatAnim = Tween<double>(begin: -8, end: 8).animate(
-      CurvedAnimation(parent: _floatCtrl, curve: Curves.easeInOut),
-    );
+    _floatAnim = Tween<double>(
+      begin: -8,
+      end: 8,
+    ).animate(CurvedAnimation(parent: _floatCtrl, curve: Curves.easeInOut));
 
     _rotateCtrl = AnimationController(
       duration: const Duration(milliseconds: 2000),
       vsync: this,
     )..repeat(reverse: true);
-    _rotateAnim = Tween<double>(begin: -0.05, end: 0.05).animate(
-      CurvedAnimation(parent: _rotateCtrl, curve: Curves.easeInOut),
-    );
+    _rotateAnim = Tween<double>(
+      begin: -0.05,
+      end: 0.05,
+    ).animate(CurvedAnimation(parent: _rotateCtrl, curve: Curves.easeInOut));
   }
 
   @override
@@ -73,10 +77,7 @@ class _AnimatedMascotState extends State<AnimatedMascot>
       builder: (context, child) {
         return Transform.translate(
           offset: Offset(_floatAnim.value, _bounceAnim.value),
-          child: Transform.rotate(
-            angle: _rotateAnim.value,
-            child: child,
-          ),
+          child: Transform.rotate(angle: _rotateAnim.value, child: child),
         );
       },
       child: Container(
@@ -94,11 +95,17 @@ class _AnimatedMascotState extends State<AnimatedMascot>
         ),
         child: Center(
           child: widget.imagePath != null
-              ? Image.asset(
-                  widget.imagePath!,
-                  height: widget.size * 0.8,
-                  fit: BoxFit.contain,
-                )
+              ? widget.imagePath!.endsWith('.svg')
+                    ? SvgPicture.asset(
+                        widget.imagePath!,
+                        height: widget.size * 0.8,
+                        fit: BoxFit.contain,
+                      )
+                    : Image.asset(
+                        widget.imagePath!,
+                        height: widget.size * 0.8,
+                        fit: BoxFit.contain,
+                      )
               : Text(
                   widget.emoji!,
                   style: TextStyle(fontSize: widget.size * 0.7),
@@ -115,12 +122,8 @@ class MiniMascot extends StatefulWidget {
   final String? emoji;
   final double size;
 
-  const MiniMascot({
-    super.key,
-    this.imagePath,
-    this.emoji,
-    this.size = 28,
-  }) : assert(imagePath != null || emoji != null);
+  const MiniMascot({super.key, this.imagePath, this.emoji, this.size = 28})
+    : assert(imagePath != null || emoji != null);
 
   @override
   State<MiniMascot> createState() => _MiniMascotState();
@@ -138,9 +141,10 @@ class _MiniMascotState extends State<MiniMascot>
       duration: const Duration(milliseconds: 1200),
       vsync: this,
     )..repeat(reverse: true);
-    _anim = Tween<double>(begin: 0, end: -4).animate(
-      CurvedAnimation(parent: _ctrl, curve: Curves.easeInOut),
-    );
+    _anim = Tween<double>(
+      begin: 0,
+      end: -4,
+    ).animate(CurvedAnimation(parent: _ctrl, curve: Curves.easeInOut));
   }
 
   @override
@@ -160,11 +164,17 @@ class _MiniMascotState extends State<MiniMascot>
         );
       },
       child: widget.imagePath != null
-          ? Image.asset(
-              widget.imagePath!,
-              height: widget.size,
-              fit: BoxFit.contain,
-            )
+          ? widget.imagePath!.endsWith('.svg')
+                ? SvgPicture.asset(
+                    widget.imagePath!,
+                    height: widget.size,
+                    fit: BoxFit.contain,
+                  )
+                : Image.asset(
+                    widget.imagePath!,
+                    height: widget.size,
+                    fit: BoxFit.contain,
+                  )
           : Text(widget.emoji!, style: TextStyle(fontSize: widget.size)),
     );
   }

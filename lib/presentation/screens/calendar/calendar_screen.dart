@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:intl/intl.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/utils/currency_formatter.dart';
 import '../../../core/extensions/datetime_ext.dart';
@@ -8,6 +9,7 @@ import '../../../domain/entities/category_entity.dart';
 import '../../providers/transaction_provider.dart';
 import '../../providers/category_provider.dart';
 import '../../providers/theme_provider.dart';
+import '../../providers/auth_provider.dart';
 import '../../widgets/common/themed_backdrop.dart';
 import '../../widgets/transaction/transaction_tile.dart';
 
@@ -39,16 +41,22 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
 
   void _prevMonth() {
     setState(() {
-      _displayedMonth =
-          DateTime(_displayedMonth.year, _displayedMonth.month - 1, 1);
+      _displayedMonth = DateTime(
+        _displayedMonth.year,
+        _displayedMonth.month - 1,
+        1,
+      );
       _selectedDay = null;
     });
   }
 
   void _nextMonth() {
     setState(() {
-      _displayedMonth =
-          DateTime(_displayedMonth.year, _displayedMonth.month + 1, 1);
+      _displayedMonth = DateTime(
+        _displayedMonth.year,
+        _displayedMonth.month + 1,
+        1,
+      );
       _selectedDay = null;
     });
   }
@@ -90,9 +98,14 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
 
     // Calendar grid info
     final daysInMonth = DateUtils.getDaysInMonth(
-        _displayedMonth.year, _displayedMonth.month);
-    final firstWeekday =
-        DateTime(_displayedMonth.year, _displayedMonth.month, 1).weekday;
+      _displayedMonth.year,
+      _displayedMonth.month,
+    );
+    final firstWeekday = DateTime(
+      _displayedMonth.year,
+      _displayedMonth.month,
+      1,
+    ).weekday;
     // Adjust to Monday=0 start
     final startOffset = (firstWeekday - 1) % 7;
 
@@ -106,123 +119,132 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
               parent: BouncingScrollPhysics(),
             ),
             slivers: [
-          // App bar with month nav
-          SliverAppBar(
-            pinned: true,
-            title: Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                IconButton(
-                  icon: const Icon(Icons.chevron_left),
-                  onPressed: _prevMonth,
-                ),
-                Text(
-                  _displayedMonth.monthYear,
-                  style: Theme.of(context).textTheme.titleLarge,
-                ),
-                IconButton(
-                  icon: const Icon(Icons.chevron_right),
-                  onPressed: _nextMonth,
-                ),
-              ],
-            ),
-          ),
-
-          // Monthly summary bar
-          SliverToBoxAdapter(
-            child: Padding(
-              padding: const EdgeInsets.fromLTRB(16, 8, 16, 4),
-              child: Row(
-                children: [
-                  _SummaryPill(
-                    label: 'Income',
-                    amount: dailyIncome.values
-                        .fold<double>(0, (s, v) => s + v),
-                    color: AppColors.income,
-                  ),
-                  const SizedBox(width: 8),
-                  _SummaryPill(
-                    label: 'Expense',
-                    amount: dailyExpense.values
-                        .fold<double>(0, (s, v) => s + v),
-                    color: AppColors.expense,
-                  ),
-                ],
-              ),
-            ),
-          ),
-
-          // Weekday headers
-          SliverToBoxAdapter(
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-              child: Row(
-                children: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
-                    .map((d) => Expanded(
-                          child: Center(
-                            child: Text(
-                              d,
-                              style: TextStyle(
-                                fontSize: 11,
-                                fontWeight: FontWeight.w600,
-                                color: d == 'Sun'
-                                    ? AppColors.expense
-                                    : (d == 'Sat'
-                                        ? roleColors.primary
-                                        : AppColors.textSecondary),
-                              ),
-                            ),
-                          ),
-                        ))
-                    .toList(),
-              ),
-            ),
-          ),
-
-          // Calendar grid
-          SliverToBoxAdapter(
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 12),
-              child: Column(
-                children: _buildCalendarRows(
-                  daysInMonth: daysInMonth,
-                  startOffset: startOffset,
-                  dailyExpense: dailyExpense,
-                  dailyIncome: dailyIncome,
-                  roleColors: roleColors,
-                ),
-              ),
-            ),
-          ),
-
-          // Selected day detail
-          if (_selectedDay != null) ...[
-            SliverToBoxAdapter(
-              child: Padding(
-                padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
-                child: Row(
+              // App bar with month nav
+              SliverAppBar(
+                pinned: true,
+                title: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    Container(
-                      width: 4,
-                      height: 20,
-                      decoration: BoxDecoration(
-                        color: roleColors.primary,
-                        borderRadius: BorderRadius.circular(2),
-                      ),
+                    IconButton(
+                      icon: const Icon(Icons.chevron_left),
+                      onPressed: _prevMonth,
                     ),
-                    const SizedBox(width: 8),
                     Text(
-                      '${_selectedDay!.month}/${_selectedDay!.day} Details',
-                      style: Theme.of(context).textTheme.titleMedium,
+                      _displayedMonth.monthYear,
+                      style: Theme.of(context).textTheme.titleLarge,
+                    ),
+                    IconButton(
+                      icon: const Icon(Icons.chevron_right),
+                      onPressed: _nextMonth,
                     ),
                   ],
                 ),
               ),
-            ),
-            _buildDayTransactions(transactions, roleColors, catEntityMap),
-          ],
 
-          const SliverToBoxAdapter(child: SizedBox(height: 110)),
+              // Monthly summary bar
+              SliverToBoxAdapter(
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 8, 16, 4),
+                  child: Row(
+                    children: [
+                      _SummaryPill(
+                        label: 'Income',
+                        amount: dailyIncome.values.fold<double>(
+                          0,
+                          (s, v) => s + v,
+                        ),
+                        color: AppColors.income,
+                      ),
+                      const SizedBox(width: 8),
+                      _SummaryPill(
+                        label: 'Expense',
+                        amount: dailyExpense.values.fold<double>(
+                          0,
+                          (s, v) => s + v,
+                        ),
+                        color: AppColors.expense,
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+
+              // Weekday headers
+              SliverToBoxAdapter(
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 8,
+                  ),
+                  child: Row(
+                    children: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
+                        .map(
+                          (d) => Expanded(
+                            child: Center(
+                              child: Text(
+                                d,
+                                style: TextStyle(
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.w600,
+                                  color: d == 'Sun'
+                                      ? AppColors.expense
+                                      : (d == 'Sat'
+                                            ? roleColors.primary
+                                            : AppColors.textSecondary),
+                                ),
+                              ),
+                            ),
+                          ),
+                        )
+                        .toList(),
+                  ),
+                ),
+              ),
+
+              // Calendar grid
+              SliverToBoxAdapter(
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 12),
+                  child: Column(
+                    children: _buildCalendarRows(
+                      daysInMonth: daysInMonth,
+                      startOffset: startOffset,
+                      dailyExpense: dailyExpense,
+                      dailyIncome: dailyIncome,
+                      roleColors: roleColors,
+                    ),
+                  ),
+                ),
+              ),
+
+              // Selected day detail
+              if (_selectedDay != null) ...[
+                SliverToBoxAdapter(
+                  child: Padding(
+                    padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+                    child: Row(
+                      children: [
+                        Container(
+                          width: 4,
+                          height: 20,
+                          decoration: BoxDecoration(
+                            color: roleColors.primary,
+                            borderRadius: BorderRadius.circular(2),
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        Text(
+                          '${DateFormat('d MMMM').format(_selectedDay!)} Details',
+                          style: Theme.of(context).textTheme.titleMedium,
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+                _buildDayTransactions(transactions, roleColors, catEntityMap),
+              ],
+
+              const SliverToBoxAdapter(child: SizedBox(height: 110)),
             ],
           ),
         ),
@@ -254,10 +276,12 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
           final day = dayCounter;
           final expense = dailyExpense[day] ?? 0;
           final income = dailyIncome[day] ?? 0;
-          final isToday = today.year == _displayedMonth.year &&
+          final isToday =
+              today.year == _displayedMonth.year &&
               today.month == _displayedMonth.month &&
               today.day == day;
-          final isSelected = _selectedDay != null &&
+          final isSelected =
+              _selectedDay != null &&
               _selectedDay!.year == _displayedMonth.year &&
               _selectedDay!.month == _displayedMonth.month &&
               _selectedDay!.day == day;
@@ -268,7 +292,10 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
                 onTap: () {
                   setState(() {
                     _selectedDay = DateTime(
-                        _displayedMonth.year, _displayedMonth.month, day);
+                      _displayedMonth.year,
+                      _displayedMonth.month,
+                      day,
+                    );
                   });
                 },
                 child: AnimatedContainer(
@@ -291,30 +318,33 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
                         '$day',
                         style: TextStyle(
                           fontSize: 13,
-                          fontWeight:
-                              isToday ? FontWeight.w700 : FontWeight.w500,
+                          fontWeight: isToday
+                              ? FontWeight.w700
+                              : FontWeight.w500,
                           color: col == 6
                               ? AppColors.expense
                               : (col == 5
-                                  ? roleColors.primary
-                                  : AppColors.textPrimary),
+                                    ? roleColors.primary
+                                    : AppColors.textPrimary),
                         ),
                       ),
                       if (expense > 0)
                         Text(
                           '-${_shortAmount(expense)}',
                           style: const TextStyle(
-                              fontSize: 8,
-                              color: AppColors.expense,
-                              fontWeight: FontWeight.w600),
+                            fontSize: 8,
+                            color: AppColors.expense,
+                            fontWeight: FontWeight.w600,
+                          ),
                         ),
                       if (income > 0)
                         Text(
                           '+${_shortAmount(income)}',
                           style: const TextStyle(
-                              fontSize: 8,
-                              color: AppColors.income,
-                              fontWeight: FontWeight.w600),
+                            fontSize: 8,
+                            color: AppColors.income,
+                            fontWeight: FontWeight.w600,
+                          ),
                         ),
                     ],
                   ),
@@ -331,9 +361,10 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
   }
 
   Widget _buildDayTransactions(
-      AsyncValue<List<TransactionModel>> transactions,
-      RoleColors roleColors,
-      Map<String, CategoryEntity> catEntityMap) {
+    AsyncValue<List<TransactionModel>> transactions,
+    RoleColors roleColors,
+    Map<String, CategoryEntity> catEntityMap,
+  ) {
     return transactions.when(
       data: (txns) {
         final dayTxns = txns.where((t) {
@@ -358,21 +389,17 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
         }
 
         return SliverList(
-          delegate: SliverChildBuilderDelegate(
-            (context, index) {
-              final txn = dayTxns[index];
-              return Card(
-                margin:
-                    const EdgeInsets.symmetric(horizontal: 16, vertical: 3),
-                child: TransactionTile(
-                  transaction: txn,
-                  category: catEntityMap[txn.categoryId],
-                  onTap: () => _showTransactionActions(context, txn),
-                ),
-              );
-            },
-            childCount: dayTxns.length,
-          ),
+          delegate: SliverChildBuilderDelegate((context, index) {
+            final txn = dayTxns[index];
+            return Card(
+              margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 3),
+              child: TransactionTile(
+                transaction: txn,
+                category: catEntityMap[txn.categoryId],
+                onTap: () => _showTransactionActions(context, txn),
+              ),
+            );
+          }, childCount: dayTxns.length),
         );
       },
       loading: () => const SliverToBoxAdapter(
@@ -396,7 +423,19 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
   }
 
   Future<void> _showTransactionActions(
-      BuildContext context, TransactionModel txn) async {
+    BuildContext context,
+    TransactionModel txn,
+  ) async {
+    final currentUserId = ref.read(currentUserIdProvider);
+    final isMine = currentUserId != null && currentUserId == txn.ownerUserId;
+    if (!isMine) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('You can only edit your own transactions.'),
+        ),
+      );
+      return;
+    }
     showModalBottomSheet(
       context: context,
       builder: (ctx) {
@@ -413,10 +452,14 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
                 },
               ),
               ListTile(
-                leading:
-                    const Icon(Icons.delete_outline, color: AppColors.expense),
-                title: const Text('Delete Transaction',
-                    style: TextStyle(color: AppColors.expense)),
+                leading: const Icon(
+                  Icons.delete_outline,
+                  color: AppColors.expense,
+                ),
+                title: const Text(
+                  'Delete Transaction',
+                  style: TextStyle(color: AppColors.expense),
+                ),
                 onTap: () async {
                   Navigator.of(ctx).pop();
                   final confirmed = await showDialog<bool>(
@@ -424,8 +467,7 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
                     builder: (confirmCtx) {
                       return AlertDialog(
                         title: const Text('Delete Transaction?'),
-                        content: const Text(
-                            'This action cannot be undone.'),
+                        content: const Text('This action cannot be undone.'),
                         actions: [
                           TextButton(
                             onPressed: () =>
@@ -433,8 +475,7 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
                             child: const Text('Cancel'),
                           ),
                           TextButton(
-                            onPressed: () =>
-                                Navigator.of(confirmCtx).pop(true),
+                            onPressed: () => Navigator.of(confirmCtx).pop(true),
                             child: const Text('Delete'),
                           ),
                         ],
@@ -457,11 +498,26 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
   }
 
   Future<void> _showEditDialog(
-      BuildContext context, TransactionModel txn) async {
-    final amountController =
-        TextEditingController(text: txn.amount.toStringAsFixed(0));
+    BuildContext context,
+    TransactionModel txn,
+  ) async {
+    final categories = ref.read(categoriesProvider).valueOrNull ?? [];
+    final filteredCategories =
+        categories
+            .where(
+              (c) =>
+                  c.isEnabled &&
+                  ((txn.isExpense && c.isExpense) ||
+                      (txn.isIncome && c.isIncome)),
+            )
+            .toList()
+          ..sort((a, b) => a.sortOrder.compareTo(b.sortOrder));
+    final amountController = TextEditingController(
+      text: txn.amount.toStringAsFixed(0),
+    );
     final noteController = TextEditingController(text: txn.note ?? '');
     DateTime selectedDate = txn.date;
+    String selectedCategoryId = txn.categoryId;
 
     final updated = await showDialog<bool>(
       context: context,
@@ -475,8 +531,9 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
                 children: [
                   TextField(
                     controller: amountController,
-                    keyboardType:
-                        const TextInputType.numberWithOptions(decimal: true),
+                    keyboardType: const TextInputType.numberWithOptions(
+                      decimal: true,
+                    ),
                     decoration: const InputDecoration(
                       labelText: 'Amount',
                       prefixText: '¥ ',
@@ -485,16 +542,40 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
                   const SizedBox(height: 8),
                   TextField(
                     controller: noteController,
-                    decoration: const InputDecoration(
-                      labelText: 'Note',
-                    ),
+                    decoration: const InputDecoration(labelText: 'Note'),
+                  ),
+                  const SizedBox(height: 8),
+                  DropdownButtonFormField<String>(
+                    initialValue:
+                        filteredCategories.any(
+                          (c) => c.id == selectedCategoryId,
+                        )
+                        ? selectedCategoryId
+                        : (filteredCategories.isEmpty
+                              ? null
+                              : filteredCategories.first.id),
+                    decoration: const InputDecoration(labelText: 'Category'),
+                    items: filteredCategories
+                        .map(
+                          (c) => DropdownMenuItem<String>(
+                            value: c.id,
+                            child: Text(c.displayLabel),
+                          ),
+                        )
+                        .toList(),
+                    onChanged: (value) {
+                      if (value != null) {
+                        setDialogState(() => selectedCategoryId = value);
+                      }
+                    },
                   ),
                   const SizedBox(height: 8),
                   ListTile(
                     contentPadding: EdgeInsets.zero,
                     title: const Text('Date'),
                     subtitle: Text(
-                        '${selectedDate.year}-${selectedDate.month.toString().padLeft(2, '0')}-${selectedDate.day.toString().padLeft(2, '0')}'),
+                      '${selectedDate.year}-${selectedDate.month.toString().padLeft(2, '0')}-${selectedDate.day.toString().padLeft(2, '0')}',
+                    ),
                     trailing: const Icon(Icons.calendar_today),
                     onTap: () async {
                       final picked = await showDatePicker(
@@ -536,7 +617,19 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
         amount: parsedAmount,
         currency: txn.currency,
         date: selectedDate,
-        categoryId: txn.categoryId,
+        categoryId: selectedCategoryId,
+        categoryNameSnapshot: filteredCategories
+            .where((c) => c.id == selectedCategoryId)
+            .map((c) => c.name)
+            .firstOrNull,
+        categoryEmojiSnapshot: filteredCategories
+            .where((c) => c.id == selectedCategoryId)
+            .map((c) => c.emoji)
+            .firstOrNull,
+        categoryDisplayNumberSnapshot: filteredCategories
+            .where((c) => c.id == selectedCategoryId)
+            .map((c) => c.displayNumber)
+            .firstOrNull,
         fromAccountId: txn.fromAccountId,
         toAccountId: txn.toAccountId,
         note: noteController.text.trim().isEmpty
@@ -593,9 +686,10 @@ class _SummaryPill extends StatelessWidget {
                   Text(
                     label,
                     style: TextStyle(
-                        fontSize: 11,
-                        color: AppColors.textSecondary,
-                        fontWeight: FontWeight.w500),
+                      fontSize: 11,
+                      color: AppColors.textSecondary,
+                      fontWeight: FontWeight.w500,
+                    ),
                   ),
                   Text(
                     CurrencyFormatter.format(amount),

@@ -11,8 +11,8 @@ final authRepositoryProvider = Provider<AuthRepository>((ref) {
 /// Auth state: null = not logged in, UserModel = logged in
 final authStateProvider =
     StateNotifierProvider<AuthNotifier, AsyncValue<UserModel?>>((ref) {
-  return AuthNotifier(ref.read(authRepositoryProvider));
-});
+      return AuthNotifier(ref.read(authRepositoryProvider));
+    });
 
 class AuthNotifier extends StateNotifier<AsyncValue<UserModel?>> {
   final AuthRepository _repo;
@@ -53,10 +53,7 @@ class AuthNotifier extends StateNotifier<AsyncValue<UserModel?>> {
     }
   }
 
-  Future<void> signIn({
-    required String email,
-    required String password,
-  }) async {
+  Future<void> signIn({required String email, required String password}) async {
     state = const AsyncValue.loading();
     try {
       final user = await _repo.signIn(email: email, password: password);
@@ -72,6 +69,20 @@ class AuthNotifier extends StateNotifier<AsyncValue<UserModel?>> {
     if (user == null) return;
     try {
       final updated = await _repo.updateRole(user.id, role);
+      state = AsyncValue.data(updated);
+    } catch (e, st) {
+      state = AsyncValue.error(_friendlyError(e), st);
+    }
+  }
+
+  Future<void> setPreferredCurrency(String currencyCode) async {
+    final user = state.valueOrNull;
+    if (user == null) return;
+    try {
+      final updated = await _repo.updatePreferredCurrency(
+        user.id,
+        currencyCode,
+      );
       state = AsyncValue.data(updated);
     } catch (e, st) {
       state = AsyncValue.error(_friendlyError(e), st);
@@ -117,4 +128,8 @@ class AuthNotifier extends StateNotifier<AsyncValue<UserModel?>> {
 /// Convenience: current user ID (non-null when logged in)
 final currentUserIdProvider = Provider<String?>((ref) {
   return ref.watch(authStateProvider).valueOrNull?.id;
+});
+
+final currentCurrencyProvider = Provider<String>((ref) {
+  return ref.watch(authStateProvider).valueOrNull?.preferredCurrency ?? 'JPY';
 });

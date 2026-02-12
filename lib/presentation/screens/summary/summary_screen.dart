@@ -35,7 +35,19 @@ class SummaryScreen extends ConsumerWidget {
     final selectedMonth = ref.watch(selectedMonthProvider);
     final roleColors = ref.watch(roleColorsProvider);
 
-    final catMap = <String, CategoryEntity>{for (final c in categories) c.id: c};
+    final catMap = <String, CategoryEntity>{
+      for (final c in categories) c.id: c,
+    };
+    final catSnapshotNameMap = <String, String>{};
+    final catSnapshotEmojiMap = <String, String>{};
+    for (final t in txns) {
+      if (t.categoryNameSnapshot != null) {
+        catSnapshotNameMap[t.categoryId] = t.categoryNameSnapshot!;
+      }
+      if (t.categoryEmojiSnapshot != null) {
+        catSnapshotEmojiMap[t.categoryId] = t.categoryEmojiSnapshot!;
+      }
+    }
     final expense = (totals['expense'] ?? 0.0).toDouble();
     final income = (totals['income'] ?? 0.0).toDouble();
     final net = (totals['net'] ?? 0.0).toDouble();
@@ -44,9 +56,8 @@ class SummaryScreen extends ConsumerWidget {
       ..sort((a, b) => b.value.compareTo(a.value));
     final top3Sliced = top3.take(3).toList();
 
-    final dailyAverage = txns
-            .where((t) => t.isExpense)
-            .fold<double>(0, (s, t) => s + t.amount) /
+    final dailyAverage =
+        txns.where((t) => t.isExpense).fold<double>(0, (s, t) => s + t.amount) /
         (DateTime.now().day.clamp(1, 31));
 
     return Scaffold(
@@ -123,18 +134,24 @@ class SummaryScreen extends ConsumerWidget {
                         Container(
                           width: double.infinity,
                           padding: const EdgeInsets.symmetric(
-                              horizontal: 12, vertical: 10),
+                            horizontal: 12,
+                            vertical: 10,
+                          ),
                           decoration: BoxDecoration(
                             color: Colors.white.withValues(alpha: 0.16),
                             borderRadius: BorderRadius.circular(14),
                           ),
                           child: Row(
                             children: [
-                              const Icon(Icons.auto_graph_rounded,
-                                  color: Colors.white),
+                              const Icon(
+                                Icons.auto_graph_rounded,
+                                color: Colors.white,
+                              ),
                               const SizedBox(width: 8),
-                              const Text('Net',
-                                  style: TextStyle(color: Colors.white)),
+                              const Text(
+                                'Net',
+                                style: TextStyle(color: Colors.white),
+                              ),
                               const Spacer(),
                               Text(
                                 CurrencyFormatter.format(net),
@@ -155,8 +172,10 @@ class SummaryScreen extends ConsumerWidget {
               SliverToBoxAdapter(
                 child: Padding(
                   padding: const EdgeInsets.fromLTRB(16, 18, 16, 0),
-                  child: Text('Budget vs Actual',
-                      style: Theme.of(context).textTheme.titleMedium),
+                  child: Text(
+                    'Budget vs Actual',
+                    style: Theme.of(context).textTheme.titleMedium,
+                  ),
                 ),
               ),
               SliverToBoxAdapter(
@@ -168,7 +187,8 @@ class SummaryScreen extends ConsumerWidget {
                         ? const Padding(
                             padding: EdgeInsets.all(8),
                             child: Text(
-                                'No budget limits yet. Tap the top-right sliders icon to add them.'),
+                              'No budget limits yet. Tap the top-right sliders icon to add them.',
+                            ),
                           )
                         : Column(
                             children: budgetLimits.entries.map((entry) {
@@ -177,8 +197,9 @@ class SummaryScreen extends ConsumerWidget {
                               final limit = entry.value;
                               final ratio = limit <= 0 ? 0.0 : (actual / limit);
                               final over = ratio > 1;
-                              final barColor =
-                                  over ? AppColors.expense : AppColors.income;
+                              final barColor = over
+                                  ? AppColors.expense
+                                  : AppColors.income;
 
                               return Padding(
                                 padding: const EdgeInsets.only(bottom: 12),
@@ -186,11 +207,17 @@ class SummaryScreen extends ConsumerWidget {
                                   children: [
                                     Row(
                                       children: [
-                                        Text(cat?.emoji ?? '📋'),
+                                        Text(
+                                          cat?.emoji ??
+                                              catSnapshotEmojiMap[entry.key] ??
+                                              '📋',
+                                        ),
                                         const SizedBox(width: 8),
                                         Expanded(
                                           child: Text(
-                                            cat?.name ?? 'Unknown',
+                                            cat?.name ??
+                                                catSnapshotNameMap[entry.key] ??
+                                                'Unknown',
                                             overflow: TextOverflow.ellipsis,
                                           ),
                                         ),
@@ -208,8 +235,10 @@ class SummaryScreen extends ConsumerWidget {
                                         value: ratio.clamp(0.0, 1.0),
                                         backgroundColor:
                                             AppColors.surfaceVariant,
-                                        valueColor: AlwaysStoppedAnimation<Color>(
-                                            barColor),
+                                        valueColor:
+                                            AlwaysStoppedAnimation<Color>(
+                                              barColor,
+                                            ),
                                       ),
                                     ),
                                   ],
@@ -223,8 +252,10 @@ class SummaryScreen extends ConsumerWidget {
               SliverToBoxAdapter(
                 child: Padding(
                   padding: const EdgeInsets.fromLTRB(16, 18, 16, 0),
-                  child: Text('Top Categories',
-                      style: Theme.of(context).textTheme.titleMedium),
+                  child: Text(
+                    'Top Categories',
+                    style: Theme.of(context).textTheme.titleMedium,
+                  ),
                 ),
               ),
               SliverToBoxAdapter(
@@ -237,22 +268,32 @@ class SummaryScreen extends ConsumerWidget {
                         : Column(
                             children: top3Sliced.map((entry) {
                               final cat = catMap[entry.key];
-                              final pct =
-                                  expense <= 0 ? 0 : (entry.value / expense * 100);
+                              final pct = expense <= 0
+                                  ? 0
+                                  : (entry.value / expense * 100);
                               return Padding(
                                 padding: const EdgeInsets.only(bottom: 10),
                                 child: Row(
                                   children: [
-                                    Text(cat?.emoji ?? '📋'),
+                                    Text(
+                                      cat?.emoji ??
+                                          catSnapshotEmojiMap[entry.key] ??
+                                          '📋',
+                                    ),
                                     const SizedBox(width: 8),
                                     Expanded(
-                                      child: Text(cat?.name ?? 'Unknown'),
+                                      child: Text(
+                                        cat?.name ??
+                                            catSnapshotNameMap[entry.key] ??
+                                            'Unknown',
+                                      ),
                                     ),
                                     Text(
                                       '${CurrencyFormatter.format(entry.value)} (${pct.toStringAsFixed(1)}%)',
                                       style: const TextStyle(
-                                          fontSize: 12,
-                                          fontWeight: FontWeight.w600),
+                                        fontSize: 12,
+                                        fontWeight: FontWeight.w600,
+                                      ),
                                     ),
                                   ],
                                 ),
@@ -265,8 +306,10 @@ class SummaryScreen extends ConsumerWidget {
               SliverToBoxAdapter(
                 child: Padding(
                   padding: const EdgeInsets.fromLTRB(16, 18, 16, 0),
-                  child: Text('Insights',
-                      style: Theme.of(context).textTheme.titleMedium),
+                  child: Text(
+                    'Insights',
+                    style: Theme.of(context).textTheme.titleMedium,
+                  ),
                 ),
               ),
               SliverToBoxAdapter(
@@ -280,7 +323,8 @@ class SummaryScreen extends ConsumerWidget {
                       children: [
                         _InsightChip(
                           icon: Icons.calendar_today_rounded,
-                          text: 'Daily avg: ${CurrencyFormatter.format(dailyAverage)}',
+                          text:
+                              'Daily avg: ${CurrencyFormatter.format(dailyAverage)}',
                         ),
                         _InsightChip(
                           icon: Icons.category_rounded,
@@ -298,8 +342,10 @@ class SummaryScreen extends ConsumerWidget {
               SliverToBoxAdapter(
                 child: Padding(
                   padding: const EdgeInsets.fromLTRB(16, 18, 16, 0),
-                  child: Text('Exports',
-                      style: Theme.of(context).textTheme.titleMedium),
+                  child: Text(
+                    'Exports',
+                    style: Theme.of(context).textTheme.titleMedium,
+                  ),
                 ),
               ),
               SliverToBoxAdapter(
@@ -313,27 +359,31 @@ class SummaryScreen extends ConsumerWidget {
                           contentPadding: EdgeInsets.zero,
                           leading: const Icon(Icons.table_chart_rounded),
                           title: const Text(
-                              'Export Expense Category Matrix CSV'),
+                            'Export Expense Category Matrix XLSX',
+                          ),
                           subtitle: const Text(
-                              'Columns = expense categories, rows = dates'),
+                            'Columns = expense categories, rows = dates',
+                          ),
                           onTap: () async {
                             final catNameMap = <String, String>{
-                              for (final c in categories.where((c) => c.isExpense))
+                              for (final c in categories.where(
+                                (c) => c.isExpense,
+                              ))
                                 c.id: c.shortLabel,
                             };
                             final path =
-                                await CsvExporter.exportExpenseCategoryMatrix(
-                              transactions: txns,
-                              categoryNames: catNameMap,
-                              year: selectedMonth.year,
-                              month: selectedMonth.month,
-                            );
+                                await CsvExporter.exportExpenseCategoryMatrixXlsx(
+                                  transactions: txns,
+                                  categoryNames: catNameMap,
+                                  year: selectedMonth.year,
+                                  month: selectedMonth.month,
+                                );
                             await CsvExporter.shareFile(path);
                             if (!context.mounted) return;
                             ScaffoldMessenger.of(context).showSnackBar(
                               const SnackBar(
-                                  content:
-                                      Text('Category matrix CSV exported')),
+                                content: Text('Category matrix XLSX exported'),
+                              ),
                             );
                           },
                         ),
@@ -341,23 +391,27 @@ class SummaryScreen extends ConsumerWidget {
                         ListTile(
                           contentPadding: EdgeInsets.zero,
                           leading: const Icon(Icons.download_rounded),
-                          title: const Text('Export Standard Transactions CSV'),
+                          title: const Text(
+                            'Export Standard Transactions XLSX',
+                          ),
                           subtitle: const Text('General transaction export'),
                           onTap: () async {
                             final catNameMap = <String, String>{
-                              for (final c in categories) c.id: c.shortLabel
+                              for (final c in categories) c.id: c.shortLabel,
                             };
-                            final path = await CsvExporter.exportTransactions(
-                              transactions: txns,
-                              categoryNames: catNameMap,
-                              year: selectedMonth.year,
-                              month: selectedMonth.month,
-                            );
+                            final path =
+                                await CsvExporter.exportTransactionsXlsx(
+                                  transactions: txns,
+                                  categoryNames: catNameMap,
+                                  year: selectedMonth.year,
+                                  month: selectedMonth.month,
+                                );
                             await CsvExporter.shareFile(path);
                             if (!context.mounted) return;
                             ScaffoldMessenger.of(context).showSnackBar(
                               const SnackBar(
-                                  content: Text('Transactions CSV exported')),
+                                content: Text('Transactions XLSX exported'),
+                              ),
                             );
                           },
                         ),
@@ -431,10 +485,7 @@ class _InsightChip extends StatelessWidget {
   final IconData icon;
   final String text;
 
-  const _InsightChip({
-    required this.icon,
-    required this.text,
-  });
+  const _InsightChip({required this.icon, required this.text});
 
   @override
   Widget build(BuildContext context) {

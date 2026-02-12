@@ -1,0 +1,36 @@
+﻿<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" fill="none">
+  <defs>
+    <linearGradient id="left" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#5BA8D9"/>
+      <stop offset="100%" stop-color="#2F7FB8"/>
+    </linearGradient>
+    <linearGradient id="right" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#F59BC2"/>
+      <stop offset="100%" stop-color="#DE5E9A"/>
+    </linearGradient>
+    <linearGradient id="heart" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#FFFFFF"/>
+      <stop offset="100%" stop-color="#F4F6FF"/>
+    </linearGradient>
+    <filter id="glow" x="-30%" y="-30%" width="160%" height="160%">
+      <feGaussianBlur stdDeviation="3" result="b"/>
+      <feMerge>
+        <feMergeNode in="b"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+  </defs>
+
+  <circle cx="90" cy="90" r="54" fill="url(#left)" filter="url(#glow)"/>
+  <circle cx="166" cy="90" r="54" fill="url(#right)" filter="url(#glow)"/>
+
+  <path d="M128 205c40-24 62-50 62-80 0-18-14-33-33-33-12 0-22 6-29 17-7-11-17-17-29-17-19 0-33 15-33 33 0 30 22 56 62 80z" fill="url(#heart)"/>
+
+  <circle cx="74" cy="76" r="6" fill="#fff" fill-opacity=".9"/>
+  <circle cx="105" cy="76" r="6" fill="#fff" fill-opacity=".9"/>
+  <path d="M74 102c8 8 23 8 31 0" stroke="#fff" stroke-width="5" stroke-linecap="round"/>
+
+  <circle cx="150" cy="76" r="6" fill="#fff" fill-opacity=".9"/>
+  <circle cx="181" cy="76" r="6" fill="#fff" fill-opacity=".9"/>
+  <path d="M150 102c8 8 23 8 31 0" stroke="#fff" stroke-width="5" stroke-linecap="round"/>
+</svg>

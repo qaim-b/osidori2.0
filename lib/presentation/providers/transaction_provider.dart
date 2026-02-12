@@ -8,8 +8,9 @@ import '../../domain/enums/transaction_source.dart';
 import 'auth_provider.dart';
 import 'group_provider.dart';
 
-final transactionRepositoryProvider =
-    Provider<TransactionRepository>((ref) => TransactionRepository());
+final transactionRepositoryProvider = Provider<TransactionRepository>(
+  (ref) => TransactionRepository(),
+);
 
 /// Selected month for overview/reports — defaults to current month
 final selectedMonthProvider = StateProvider<DateTime>((ref) {
@@ -21,25 +22,28 @@ final selectedMonthProvider = StateProvider<DateTime>((ref) {
 final visibilityFilterProvider = StateProvider<String?>((ref) => null);
 
 /// Transactions for the selected month
-final monthlyTransactionsProvider = StateNotifierProvider<
-    TransactionsNotifier, AsyncValue<List<TransactionModel>>>((ref) {
-  final userId = ref.watch(currentUserIdProvider);
-  final groupId = ref.watch(activeGroupIdProvider);
-  final selectedMonth = ref.watch(selectedMonthProvider);
-  final repo = ref.read(transactionRepositoryProvider);
-  return TransactionsNotifier(repo, userId, selectedMonth, groupId);
-});
+final monthlyTransactionsProvider =
+    StateNotifierProvider<
+      TransactionsNotifier,
+      AsyncValue<List<TransactionModel>>
+    >((ref) {
+      final userId = ref.watch(currentUserIdProvider);
+      final groupIds = ref.watch(groupIdsProvider);
+      final selectedMonth = ref.watch(selectedMonthProvider);
+      final repo = ref.read(transactionRepositoryProvider);
+      return TransactionsNotifier(repo, userId, selectedMonth, groupIds);
+    });
 
 class TransactionsNotifier
     extends StateNotifier<AsyncValue<List<TransactionModel>>> {
   final TransactionRepository _repo;
   final String? _userId;
   final DateTime _month;
-  final String? _groupId;
+  final List<String> _groupIds;
   static const _uuid = Uuid();
 
-  TransactionsNotifier(this._repo, this._userId, this._month, this._groupId)
-      : super(const AsyncValue.loading()) {
+  TransactionsNotifier(this._repo, this._userId, this._month, this._groupIds)
+    : super(const AsyncValue.loading()) {
     if (_userId != null) load();
   }
 
@@ -51,7 +55,7 @@ class TransactionsNotifier
       final to = DateTime(_month.year, _month.month + 1, 0, 23, 59, 59);
       final txns = await _repo.getForUser(
         userId: _userId,
-        groupId: _groupId,
+        groupIds: _groupIds,
         from: from,
         to: to,
       );
@@ -67,6 +71,9 @@ class TransactionsNotifier
     required String currency,
     required DateTime date,
     required String categoryId,
+    String? categoryNameSnapshot,
+    String? categoryEmojiSnapshot,
+    int? categoryDisplayNumberSnapshot,
     required String fromAccountId,
     String? toAccountId,
     String? note,
@@ -74,6 +81,13 @@ class TransactionsNotifier
     String? groupId,
   }) async {
     if (_userId == null) return;
+    final resolvedGroupId =
+        groupId ?? (_groupIds.isEmpty ? null : _groupIds.first);
+    if (visibility == VisibilityType.shared && resolvedGroupId == null) {
+      throw Exception(
+        'No active group found. Connect your partner in Settings first.',
+      );
+    }
 
     final txn = TransactionModel(
       id: _uuid.v4(),
@@ -82,12 +96,15 @@ class TransactionsNotifier
       currency: currency,
       date: date,
       categoryId: categoryId,
+      categoryNameSnapshot: categoryNameSnapshot,
+      categoryEmojiSnapshot: categoryEmojiSnapshot,
+      categoryDisplayNumberSnapshot: categoryDisplayNumberSnapshot,
       fromAccountId: fromAccountId,
       toAccountId: toAccountId,
       note: note,
       visibility: visibility,
       ownerUserId: _userId,
-      groupId: groupId ?? _groupId,
+      groupId: resolvedGroupId,
       source: TransactionSource.manual,
       createdAt: DateTime.now(),
     );
@@ -108,8 +125,7 @@ class TransactionsNotifier
 }
 
 /// Monthly totals for the overview
-final monthlyTotalsProvider =
-    Provider<Map<String, double>>((ref) {
+final monthlyTotalsProvider = Provider<Map<String, double>>((ref) {
   final txns = ref.watch(monthlyTransactionsProvider).valueOrNull ?? [];
   final visibility = ref.watch(visibilityFilterProvider);
 
@@ -125,16 +141,11 @@ final monthlyTotalsProvider =
     if (txn.isExpense) expense += txn.amount;
   }
 
-  return {
-    'income': income,
-    'expense': expense,
-    'net': income - expense,
-  };
+  return {'income': income, 'expense': expense, 'net': income - expense};
 });
 
 /// Category totals for the donut chart
-final categoryTotalsProvider =
-    Provider<Map<String, double>>((ref) {
+final categoryTotalsProvider = Provider<Map<String, double>>((ref) {
   final txns = ref.watch(monthlyTransactionsProvider).valueOrNull ?? [];
   final visibility = ref.watch(visibilityFilterProvider);
 

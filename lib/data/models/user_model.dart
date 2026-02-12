@@ -7,6 +7,7 @@ class UserModel extends UserEntity {
     required super.name,
     super.avatarUrl,
     super.role,
+    super.preferredCurrency,
     required super.createdAt,
   });
 
@@ -17,6 +18,7 @@ class UserModel extends UserEntity {
       name: json['name'] as String? ?? '',
       avatarUrl: json['avatar_url'] as String?,
       role: json['role'] as String?,
+      preferredCurrency: json['preferred_currency'] as String? ?? 'JPY',
       createdAt: DateTime.parse(json['created_at'] as String),
     );
   }
@@ -28,6 +30,7 @@ class UserModel extends UserEntity {
       'name': name,
       'avatar_url': avatarUrl,
       'role': role,
+      'preferred_currency': preferredCurrency,
       'created_at': createdAt.toIso8601String(),
     };
   }
@@ -39,6 +42,7 @@ class UserModel extends UserEntity {
       name: entity.name,
       avatarUrl: entity.avatarUrl,
       role: entity.role,
+      preferredCurrency: entity.preferredCurrency,
       createdAt: entity.createdAt,
     );
   }

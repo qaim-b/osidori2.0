@@ -97,14 +97,27 @@ class AuthRepository {
   Future<void> updateName(String userId, String name) async {
     await _client
         .from(AppSupabase.usersTable)
-        .update({'name': name}).eq('id', userId);
+        .update({'name': name})
+        .eq('id', userId);
   }
 
-  /// Set role (stitch / angel) and avatar
+  /// Set role (stitch / angel / solo)
   Future<UserModel> updateRole(String userId, String role) async {
     await _client
         .from(AppSupabase.usersTable)
-        .update({'role': role}).eq('id', userId);
+        .update({'role': role})
+        .eq('id', userId);
+    return getProfile(userId);
+  }
+
+  Future<UserModel> updatePreferredCurrency(
+    String userId,
+    String currencyCode,
+  ) async {
+    await _client
+        .from(AppSupabase.usersTable)
+        .update({'preferred_currency': currencyCode})
+        .eq('id', userId);
     return getProfile(userId);
   }
 
@@ -112,7 +125,8 @@ class AuthRepository {
   Future<void> updateAvatar(String userId, String avatarUrl) async {
     await _client
         .from(AppSupabase.usersTable)
-        .update({'avatar_url': avatarUrl}).eq('id', userId);
+        .update({'avatar_url': avatarUrl})
+        .eq('id', userId);
   }
 
   /// Sign out

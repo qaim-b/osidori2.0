@@ -7,12 +7,15 @@ import '../screens/app_shell.dart';
 import '../screens/auth/login_screen.dart';
 import '../screens/auth/signup_screen.dart';
 import '../screens/budget/budget_screen.dart';
+import '../screens/budget/budget_planner_screen.dart';
 import '../screens/budget/category_transactions_screen.dart';
 import '../screens/calendar/calendar_screen.dart';
 import '../screens/categories/categories_screen.dart';
 import '../screens/onboarding/role_selection_screen.dart';
 import '../screens/overview/overview_screen.dart';
 import '../screens/settings/manage_goals_screen.dart';
+import '../screens/settings/group_management_screen.dart';
+import '../screens/settings/group_status_screen.dart';
 import '../screens/settings/settings_screen.dart';
 import '../screens/summary/set_budget_limit_screen.dart';
 import '../screens/summary/summary_screen.dart';
@@ -27,7 +30,8 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       final user = authState.valueOrNull;
       final isLoggedIn = user != null;
       final isAuthRoute =
-          state.matchedLocation == '/login' || state.matchedLocation == '/signup';
+          state.matchedLocation == '/login' ||
+          state.matchedLocation == '/signup';
       final isOnboarding = state.matchedLocation == '/onboarding';
 
       if (!isLoggedIn && !isAuthRoute) return '/login';
@@ -44,10 +48,7 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       return null;
     },
     routes: [
-      GoRoute(
-        path: '/login',
-        builder: (context, state) => const LoginScreen(),
-      ),
+      GoRoute(path: '/login', builder: (context, state) => const LoginScreen()),
       GoRoute(
         path: '/signup',
         builder: (context, state) => const SignupScreen(),
@@ -120,8 +121,20 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         builder: (context, state) => const ManageGoalsScreen(),
       ),
       GoRoute(
+        path: '/settings/group-management',
+        builder: (context, state) => const GroupManagementScreen(),
+      ),
+      GoRoute(
+        path: '/settings/group-status',
+        builder: (context, state) => const GroupStatusScreen(),
+      ),
+      GoRoute(
         path: '/summary/set-budget',
         builder: (context, state) => const SetBudgetLimitScreen(),
+      ),
+      GoRoute(
+        path: '/budget/planner',
+        builder: (context, state) => const BudgetPlannerScreen(),
       ),
       GoRoute(
         path: '/budget/category/:categoryId',

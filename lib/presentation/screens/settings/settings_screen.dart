@@ -1,14 +1,17 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:intl/intl.dart';
+
 import '../../../core/constants/app_constants.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/utils/csv_exporter.dart';
+import '../../../data/models/transaction_model.dart';
+import '../../providers/account_provider.dart';
 import '../../providers/appearance_provider.dart';
 import '../../providers/auth_provider.dart';
-import '../../providers/group_provider.dart';
 import '../../providers/category_provider.dart';
+import '../../providers/group_provider.dart';
 import '../../providers/transaction_provider.dart';
 
 class SettingsScreen extends ConsumerWidget {
@@ -19,6 +22,19 @@ class SettingsScreen extends ConsumerWidget {
     final user = ref.watch(authStateProvider).valueOrNull;
     final activePreset = ref.watch(themePresetProvider);
     final groupsAsync = ref.watch(groupsProvider);
+    final activeGroupId = ref.watch(activeGroupIdProvider);
+    final currentUserId = ref.watch(currentUserIdProvider);
+    final monthlyTxns =
+        ref.watch(monthlyTransactionsProvider).valueOrNull ?? [];
+
+    final sharedTxns = monthlyTxns.where((t) => t.isShared).toList()
+      ..sort((a, b) => b.date.compareTo(a.date));
+    final partnerTxns = sharedTxns
+        .where((t) => t.ownerUserId != currentUserId)
+        .toList();
+    final yourTxns = sharedTxns
+        .where((t) => t.ownerUserId == currentUserId)
+        .toList();
 
     return Scaffold(
       appBar: AppBar(title: const Text('Settings')),
@@ -41,7 +57,7 @@ class SettingsScreen extends ConsumerWidget {
                     child: Text(
                       user?.name.isNotEmpty == true
                           ? user!.name[0].toUpperCase()
-                          : '*',
+                          : '?',
                       style: const TextStyle(
                         fontSize: 24,
                         fontWeight: FontWeight.w700,
@@ -54,11 +70,15 @@ class SettingsScreen extends ConsumerWidget {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(user?.name ?? 'Guest',
-                            style: Theme.of(context).textTheme.titleLarge),
+                        Text(
+                          user?.name ?? 'Guest',
+                          style: Theme.of(context).textTheme.titleLarge,
+                        ),
                         const SizedBox(height: 2),
-                        Text(user?.email ?? '',
-                            style: Theme.of(context).textTheme.bodyMedium),
+                        Text(
+                          user?.email ?? '',
+                          style: Theme.of(context).textTheme.bodyMedium,
+                        ),
                       ],
                     ),
                   ),
@@ -73,29 +93,35 @@ class SettingsScreen extends ConsumerWidget {
               children: [
                 _SettingsTile(
                   label: 'Group Management',
-                  subtitle: 'Connect your partner account',
-                  emoji: '👥',
-                  onTap: () => _showGroupManagement(context, ref),
+                  subtitle: 'Connect partner and check sync health',
+                  icon: Icons.group_rounded,
+                  onTap: () => context.push('/settings/group-management'),
                 ),
                 const Divider(height: 1, indent: 56),
                 _SettingsTile(
-                  label: 'Currency',
-                  subtitle: AppConstants.defaultCurrency,
-                  emoji: '💱',
-                  onTap: () {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content: Text('Multi-currency support coming soon'),
-                      ),
-                    );
-                  },
+                  label: 'Group Status',
+                  subtitle: 'Active group, health, shared activity',
+                  icon: Icons.hub_rounded,
+                  onTap: () => context.push('/settings/group-status'),
                 ),
                 const Divider(height: 1, indent: 56),
                 _SettingsTile(
                   label: 'Shared Goals',
                   subtitle: 'Add and manage up to 3 goals',
-                  emoji: '🎯',
+                  icon: Icons.flag_circle_rounded,
                   onTap: () => context.push('/settings/goals'),
+                ),
+                const Divider(height: 1, indent: 56),
+                _SettingsTile(
+                  label: 'Currency',
+                  subtitle:
+                      ref
+                          .watch(authStateProvider)
+                          .valueOrNull
+                          ?.preferredCurrency ??
+                      AppConstants.defaultCurrency,
+                  icon: Icons.currency_yen_rounded,
+                  onTap: () => _pickCurrency(context, ref),
                 ),
               ],
             ),
@@ -128,18 +154,52 @@ class SettingsScreen extends ConsumerWidget {
               data: (groups) {
                 if (groups.isEmpty) {
                   return const ListTile(
-                    leading: Text('🔗'),
+                    leading: Icon(Icons.link_off_rounded),
                     title: Text('No linked group yet'),
-                    subtitle:
-                        Text('Open Group Management to connect with your partner'),
+                    subtitle: Text(
+                      'Open Group Management and connect your partner.',
+                    ),
                   );
                 }
-                final group = groups.first;
-                return ListTile(
-                  leading: const Text('👥'),
-                  title: Text(group.name),
-                  subtitle: Text(
-                    'Members: ${group.memberCount} | ID: ${group.id.substring(0, 8)}...',
+                final selectedId = activeGroupId ?? groups.first.id;
+                return Padding(
+                  padding: const EdgeInsets.all(12),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Connected groups: ${groups.length}',
+                        style: const TextStyle(fontWeight: FontWeight.w700),
+                      ),
+                      const SizedBox(height: 8),
+                      Wrap(
+                        spacing: 8,
+                        runSpacing: 8,
+                        children: groups.map((g) {
+                          final isActive = g.id == selectedId;
+                          return ChoiceChip(
+                            label: Text('${g.name} (${g.memberCount})'),
+                            selected: isActive,
+                            onSelected: (_) {
+                              ref
+                                      .read(activeGroupIdStateProvider.notifier)
+                                      .state =
+                                  g.id;
+                            },
+                          );
+                        }).toList(),
+                      ),
+                      const SizedBox(height: 10),
+                      ...groups.where((g) => g.id == selectedId).map((group) {
+                        final short = group.id.length > 8
+                            ? group.id.substring(0, 8)
+                            : group.id;
+                        return Text(
+                          'Active group id: $short\nMembers: ${group.memberCount}',
+                          style: const TextStyle(fontSize: 12),
+                        );
+                      }),
+                    ],
                   ),
                 );
               },
@@ -151,14 +211,123 @@ class SettingsScreen extends ConsumerWidget {
             ),
           ),
           const SizedBox(height: 16),
+          const _SectionHeader(title: 'Transparency This Month'),
+          Card(
+            child: Padding(
+              padding: const EdgeInsets.all(12),
+              child: Column(
+                children: [
+                  Row(
+                    children: [
+                      Expanded(
+                        child: _StatBox(
+                          label: 'Shared',
+                          value: '${sharedTxns.length}',
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: _StatBox(
+                          label: 'You',
+                          value: '${yourTxns.length}',
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: _StatBox(
+                          label: 'Partner',
+                          value: '${partnerTxns.length}',
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 10),
+                  if (partnerTxns.isEmpty)
+                    Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.all(10),
+                      decoration: BoxDecoration(
+                        color: Colors.orange.withValues(alpha: 0.08),
+                        borderRadius: BorderRadius.circular(10),
+                        border: Border.all(
+                          color: Colors.orange.withValues(alpha: 0.25),
+                        ),
+                      ),
+                      child: const Text(
+                        'No partner transactions visible this month. If your partner already added records, run Group Repair below on both devices.',
+                        style: TextStyle(fontSize: 12),
+                      ),
+                    ),
+                ],
+              ),
+            ),
+          ),
+          const SizedBox(height: 16),
+          const _SectionHeader(title: 'Group Repair'),
+          Card(
+            child: ListTile(
+              leading: const Icon(Icons.build_circle_outlined),
+              title: const Text('Repair legacy shared records'),
+              subtitle: const Text(
+                'Assign your shared rows without group_id to the active group',
+              ),
+              trailing: FilledButton(
+                onPressed: activeGroupId == null
+                    ? null
+                    : () async {
+                        final messenger = ScaffoldMessenger.of(context);
+                        try {
+                          final userId = ref.read(currentUserIdProvider);
+                          final groupId = ref.read(activeGroupIdProvider);
+                          if (userId == null || groupId == null) return;
+
+                          final txnCount = await ref
+                              .read(transactionRepositoryProvider)
+                              .assignUngroupedSharedToGroup(
+                                userId: userId,
+                                groupId: groupId,
+                              );
+                          final accCount = await ref
+                              .read(accountRepositoryProvider)
+                              .assignUngroupedSharedToGroup(
+                                userId: userId,
+                                groupId: groupId,
+                              );
+
+                          await ref
+                              .read(monthlyTransactionsProvider.notifier)
+                              .load();
+                          await ref.read(accountsProvider.notifier).load();
+
+                          messenger.showSnackBar(
+                            SnackBar(
+                              content: Text(
+                                'Repair completed: $txnCount transactions, $accCount accounts updated.',
+                              ),
+                            ),
+                          );
+                        } catch (e) {
+                          messenger.showSnackBar(
+                            SnackBar(content: Text('Repair failed: $e')),
+                          );
+                        }
+                      },
+                child: const Text('Run Repair'),
+              ),
+            ),
+          ),
+          const SizedBox(height: 16),
+          const _SectionHeader(title: 'Shared Activity'),
+          Card(child: _SharedActivityList(sharedTxns: sharedTxns)),
+          const SizedBox(height: 16),
           const _SectionHeader(title: 'Data'),
           Card(
             child: Column(
               children: [
                 _SettingsTile(
                   label: 'Export CSV',
-                  subtitle: 'Download this month\'s transactions',
-                  emoji: '📊',
+                  subtitle: 'Download this month transactions',
+                  icon: Icons.download_rounded,
                   onTap: () async {
                     final messenger = ScaffoldMessenger.of(context);
                     final primaryColor = Theme.of(context).colorScheme.primary;
@@ -172,7 +341,7 @@ class SettingsScreen extends ConsumerWidget {
                         userId: userId,
                         year: selectedMonth.year,
                         month: selectedMonth.month,
-                        groupId: ref.read(activeGroupIdProvider),
+                        groupIds: ref.read(groupIdsProvider),
                       );
 
                       final categories =
@@ -205,9 +374,16 @@ class SettingsScreen extends ConsumerWidget {
                 const Divider(height: 1, indent: 56),
                 _SettingsTile(
                   label: 'Manage Categories',
-                  subtitle: 'Enable/disable, edit categories',
-                  emoji: '🗂',
+                  subtitle: 'Enable, disable, edit categories',
+                  icon: Icons.category_rounded,
                   onTap: () => context.push('/categories'),
+                ),
+                const Divider(height: 1, indent: 56),
+                _SettingsTile(
+                  label: 'Manage Accounts',
+                  subtitle: 'Edit or delete bank/wallet accounts',
+                  icon: Icons.account_balance_wallet_rounded,
+                  onTap: () => context.push('/accounts'),
                 ),
               ],
             ),
@@ -218,7 +394,7 @@ class SettingsScreen extends ConsumerWidget {
             child: _SettingsTile(
               label: AppConstants.appName,
               subtitle: 'v1.0.0',
-              emoji: '⭐',
+              icon: Icons.info_outline_rounded,
               onTap: _showAbout(context),
             ),
           ),
@@ -251,8 +427,10 @@ class SettingsScreen extends ConsumerWidget {
                 }
               },
               icon: const Icon(Icons.logout, color: AppColors.expense),
-              label: const Text('Sign Out',
-                  style: TextStyle(color: AppColors.expense)),
+              label: const Text(
+                'Sign Out',
+                style: TextStyle(color: AppColors.expense),
+              ),
               style: OutlinedButton.styleFrom(
                 side: const BorderSide(color: AppColors.expense),
                 padding: const EdgeInsets.symmetric(vertical: 14),
@@ -265,86 +443,40 @@ class SettingsScreen extends ConsumerWidget {
     );
   }
 
-  Future<void> _showGroupManagement(BuildContext context, WidgetRef ref) async {
-    final userId = ref.read(currentUserIdProvider);
-    final partnerCodeController = TextEditingController();
-    final groupNameController = TextEditingController(text: 'Our Shared Space');
-
-    await showDialog<void>(
+  Future<void> _pickCurrency(BuildContext context, WidgetRef ref) async {
+    final current = ref.read(currentCurrencyProvider);
+    final selected = await showDialog<String>(
       context: context,
-      builder: (ctx) {
-        return AlertDialog(
-          title: const Text('Group Management'),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const Text('Share this code with your partner:'),
-              const SizedBox(height: 6),
-              Row(
-                children: [
-                  Expanded(
-                    child: SelectableText(
-                      userId ?? '-',
-                      style: const TextStyle(fontWeight: FontWeight.w700),
-                    ),
-                  ),
-                  IconButton(
-                    tooltip: 'Copy',
-                    onPressed: userId == null
-                        ? null
-                        : () async {
-                            await Clipboard.setData(ClipboardData(text: userId));
-                            if (!ctx.mounted) return;
-                            ScaffoldMessenger.of(ctx).showSnackBar(
-                              const SnackBar(content: Text('Code copied')),
-                            );
-                          },
-                    icon: const Icon(Icons.copy_rounded, size: 18),
-                  ),
-                ],
+      builder: (ctx) => AlertDialog(
+        title: const Text('Choose Currency'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ListTile(
+              leading: Icon(
+                current == 'JPY'
+                    ? Icons.radio_button_checked
+                    : Icons.radio_button_off,
               ),
-              const SizedBox(height: 12),
-              TextField(
-                controller: partnerCodeController,
-                decoration: const InputDecoration(
-                  labelText: 'Partner Code (their user ID)',
-                ),
-              ),
-              const SizedBox(height: 8),
-              TextField(
-                controller: groupNameController,
-                decoration: const InputDecoration(labelText: 'Group Name'),
-              ),
-            ],
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(ctx).pop(),
-              child: const Text('Close'),
+              title: const Text('JPY (¥ Japanese Yen)'),
+              onTap: () => Navigator.pop(ctx, 'JPY'),
             ),
-            FilledButton(
-              onPressed: () async {
-                try {
-                  await ref.read(groupsProvider.notifier).createCoupleGroup(
-                        partnerUserId: partnerCodeController.text,
-                        name: groupNameController.text,
-                      );
-                  if (!ctx.mounted) return;
-                  Navigator.of(ctx).pop();
-                } catch (e) {
-                  if (!ctx.mounted) return;
-                  ScaffoldMessenger.of(ctx).showSnackBar(
-                    SnackBar(content: Text('Failed to connect: $e')),
-                  );
-                }
-              },
-              child: const Text('Connect'),
+            ListTile(
+              leading: Icon(
+                current == 'MYR'
+                    ? Icons.radio_button_checked
+                    : Icons.radio_button_off,
+              ),
+              title: const Text('MYR (RM Malaysian Ringgit)'),
+              onTap: () => Navigator.pop(ctx, 'MYR'),
             ),
           ],
-        );
-      },
+        ),
+      ),
     );
+    if (selected != null) {
+      await ref.read(authStateProvider.notifier).setPreferredCurrency(selected);
+    }
   }
 
   VoidCallback _showAbout(BuildContext context) {
@@ -352,17 +484,23 @@ class SettingsScreen extends ConsumerWidget {
       showDialog(
         context: context,
         builder: (ctx) => AlertDialog(
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(20),
+          ),
           content: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              const Text('* * *', style: TextStyle(fontSize: 24)),
+              const Icon(Icons.favorite_rounded, size: 28),
               const SizedBox(height: 12),
-              Text(AppConstants.appName,
-                  style: Theme.of(ctx).textTheme.headlineMedium),
+              Text(
+                AppConstants.appName,
+                style: Theme.of(ctx).textTheme.headlineMedium,
+              ),
               const SizedBox(height: 4),
-              Text(AppConstants.appTagline,
-                  style: Theme.of(ctx).textTheme.bodyMedium),
+              Text(
+                AppConstants.appTagline,
+                style: Theme.of(ctx).textTheme.bodyMedium,
+              ),
             ],
           ),
           actions: [
@@ -377,8 +515,87 @@ class SettingsScreen extends ConsumerWidget {
   }
 }
 
+class _SharedActivityList extends StatelessWidget {
+  final List<TransactionModel> sharedTxns;
+
+  const _SharedActivityList({required this.sharedTxns});
+
+  @override
+  Widget build(BuildContext context) {
+    if (sharedTxns.isEmpty) {
+      return const ListTile(
+        leading: Icon(Icons.timeline_rounded),
+        title: Text('No shared activity yet'),
+        subtitle: Text('New shared expenses and income appear here.'),
+      );
+    }
+
+    final preview = sharedTxns.take(10).toList();
+    return Column(
+      children: preview.map((t) {
+        final ownerShort = t.ownerUserId.length >= 6
+            ? t.ownerUserId.substring(0, 6)
+            : t.ownerUserId;
+        final sign = t.isExpense ? '-' : '+';
+
+        return ListTile(
+          dense: true,
+          leading: Icon(
+            t.isExpense ? Icons.south_west_rounded : Icons.north_east_rounded,
+            size: 18,
+          ),
+          title: Text(
+            '${DateFormat('MMM d').format(t.date)}  |  by $ownerShort',
+            style: const TextStyle(fontSize: 12),
+          ),
+          subtitle: Text(
+            t.note?.isNotEmpty == true ? t.note! : 'No note',
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+          ),
+          trailing: Text(
+            '$sign${t.amount.toStringAsFixed(0)}',
+            style: TextStyle(
+              color: t.isExpense ? AppColors.expense : AppColors.income,
+            ),
+          ),
+        );
+      }).toList(),
+    );
+  }
+}
+
+class _StatBox extends StatelessWidget {
+  final String label;
+  final String value;
+
+  const _StatBox({required this.label, required this.value});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(vertical: 10),
+      decoration: BoxDecoration(
+        color: AppColors.surfaceVariant,
+        borderRadius: BorderRadius.circular(10),
+      ),
+      child: Column(
+        children: [
+          Text(
+            value,
+            style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w700),
+          ),
+          const SizedBox(height: 2),
+          Text(label, style: const TextStyle(fontSize: 11)),
+        ],
+      ),
+    );
+  }
+}
+
 class _SectionHeader extends StatelessWidget {
   final String title;
+
   const _SectionHeader({required this.title});
 
   @override
@@ -388,9 +605,9 @@ class _SectionHeader extends StatelessWidget {
       child: Text(
         title,
         style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-              fontWeight: FontWeight.w600,
-              fontSize: 13,
-            ),
+          fontWeight: FontWeight.w600,
+          fontSize: 13,
+        ),
       ),
     );
   }
@@ -399,20 +616,20 @@ class _SectionHeader extends StatelessWidget {
 class _SettingsTile extends StatelessWidget {
   final String label;
   final String subtitle;
-  final String emoji;
+  final IconData icon;
   final VoidCallback onTap;
 
   const _SettingsTile({
     required this.label,
     required this.subtitle,
-    required this.emoji,
+    required this.icon,
     required this.onTap,
   });
 
   @override
   Widget build(BuildContext context) {
     return ListTile(
-      leading: Text(emoji, style: const TextStyle(fontSize: 22)),
+      leading: Icon(icon),
       title: Text(label, style: const TextStyle(fontSize: 14)),
       subtitle: Text(subtitle, style: const TextStyle(fontSize: 12)),
       trailing: const Icon(Icons.chevron_right, color: AppColors.textHint),

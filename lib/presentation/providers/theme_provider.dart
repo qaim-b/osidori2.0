@@ -11,12 +11,16 @@ final userRoleProvider = Provider<String>((ref) {
 
 final primaryColorProvider = Provider<Color>((ref) {
   final role = ref.watch(userRoleProvider);
-  return role == 'angel' ? AppColors.angelPink : AppColors.stitchBlue;
+  if (role == 'angel') return AppColors.angelPink;
+  if (role == 'solo') return AppColors.soloMint;
+  return AppColors.stitchBlue;
 });
 
 final roleColorsProvider = Provider<RoleColors>((ref) {
   final role = ref.watch(userRoleProvider);
-  return role == 'angel' ? RoleColors.angel() : RoleColors.stitch();
+  if (role == 'angel') return RoleColors.angel();
+  if (role == 'solo') return RoleColors.solo();
+  return RoleColors.stitch();
 });
 
 class RoleColors {
@@ -43,26 +47,38 @@ class RoleColors {
   });
 
   factory RoleColors.stitch() => const RoleColors(
-        primary: AppColors.stitchBlue,
-        primaryLight: AppColors.stitchBlueLight,
-        primaryDark: AppColors.stitchBlueDark,
-        accent: AppColors.stitchAccent,
-        background: AppColors.stitchBg,
-        gradient: AppColors.stitchGradient,
-        mascotEmoji: '👾',
-        mascotName: 'Stitch',
-        mascotImage: 'assets/images/stitch.png',
-      );
+    primary: AppColors.stitchBlue,
+    primaryLight: AppColors.stitchBlueLight,
+    primaryDark: AppColors.stitchBlueDark,
+    accent: AppColors.stitchAccent,
+    background: AppColors.stitchBg,
+    gradient: AppColors.stitchGradient,
+    mascotEmoji: '👾',
+    mascotName: 'Stitch',
+    mascotImage: 'assets/images/stitch.svg',
+  );
 
   factory RoleColors.angel() => const RoleColors(
-        primary: AppColors.angelPink,
-        primaryLight: AppColors.angelPinkLight,
-        primaryDark: AppColors.angelPinkDark,
-        accent: AppColors.angelAccent,
-        background: AppColors.angelBg,
-        gradient: AppColors.angelGradient,
-        mascotEmoji: '🩷',
-        mascotName: 'Angel',
-        mascotImage: 'assets/images/angel.png',
-      );
+    primary: AppColors.angelPink,
+    primaryLight: AppColors.angelPinkLight,
+    primaryDark: AppColors.angelPinkDark,
+    accent: AppColors.angelAccent,
+    background: AppColors.angelBg,
+    gradient: AppColors.angelGradient,
+    mascotEmoji: '🩷',
+    mascotName: 'Angel',
+    mascotImage: 'assets/images/angel.svg',
+  );
+
+  factory RoleColors.solo() => const RoleColors(
+    primary: AppColors.soloMint,
+    primaryLight: AppColors.soloMintLight,
+    primaryDark: AppColors.soloMintDark,
+    accent: AppColors.soloAccent,
+    background: AppColors.soloBg,
+    gradient: AppColors.soloGradient,
+    mascotEmoji: '🌿',
+    mascotName: 'Solo',
+    mascotImage: 'assets/images/stitchangel.svg',
+  );
 }

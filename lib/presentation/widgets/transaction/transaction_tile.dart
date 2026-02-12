@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+
 import '../../../core/extensions/datetime_ext.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/utils/currency_formatter.dart';
@@ -24,6 +25,10 @@ class TransactionTile extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final isExpense = transaction.type == TransactionType.expense;
     final isTransfer = transaction.type == TransactionType.transfer;
+    final categoryEmoji =
+        category?.emoji ?? transaction.categoryEmojiSnapshot ?? '📋';
+    final categoryName =
+        category?.name ?? transaction.categoryNameSnapshot ?? 'Unknown';
 
     final amountColor = isTransfer
         ? AppColors.transfer
@@ -31,7 +36,8 @@ class TransactionTile extends ConsumerWidget {
     final sign = isExpense ? '-' : (isTransfer ? '' : '+');
 
     final currentUserId = ref.watch(currentUserIdProvider);
-    final isMine = currentUserId != null && transaction.ownerUserId == currentUserId;
+    final isMine =
+        currentUserId != null && transaction.ownerUserId == currentUserId;
     final ownerLabel = isMine
         ? 'You'
         : 'Partner ${transaction.ownerUserId.substring(0, 6)}';
@@ -51,10 +57,7 @@ class TransactionTile extends ConsumerWidget {
                 borderRadius: BorderRadius.circular(14),
               ),
               alignment: Alignment.center,
-              child: Text(
-                category?.emoji ?? '📋',
-                style: const TextStyle(fontSize: 20),
-              ),
+              child: Text(categoryEmoji, style: const TextStyle(fontSize: 20)),
             ),
             const SizedBox(width: 12),
             Expanded(
@@ -62,10 +65,10 @@ class TransactionTile extends ConsumerWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    category?.name ?? 'Unknown',
-                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                          fontSize: 14,
-                        ),
+                    categoryName,
+                    style: Theme.of(
+                      context,
+                    ).textTheme.titleMedium?.copyWith(fontSize: 14),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                   ),
@@ -73,8 +76,10 @@ class TransactionTile extends ConsumerWidget {
                   Row(
                     children: [
                       Container(
-                        padding:
-                            const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 6,
+                          vertical: 1,
+                        ),
                         decoration: BoxDecoration(
                           color: transaction.isShared
                               ? AppColors.angelPink.withValues(alpha: 0.15)
@@ -88,8 +93,10 @@ class TransactionTile extends ConsumerWidget {
                       ),
                       const SizedBox(width: 6),
                       Container(
-                        padding:
-                            const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 6,
+                          vertical: 1,
+                        ),
                         decoration: BoxDecoration(
                           color: AppColors.surfaceVariant,
                           borderRadius: BorderRadius.circular(8),
@@ -102,10 +109,9 @@ class TransactionTile extends ConsumerWidget {
                       const SizedBox(width: 6),
                       Text(
                         transaction.date.shortDate,
-                        style: Theme.of(context)
-                            .textTheme
-                            .bodyMedium
-                            ?.copyWith(fontSize: 12),
+                        style: Theme.of(
+                          context,
+                        ).textTheme.bodyMedium?.copyWith(fontSize: 12),
                       ),
                       if (transaction.note != null &&
                           transaction.note!.isNotEmpty) ...[
@@ -113,8 +119,10 @@ class TransactionTile extends ConsumerWidget {
                         Flexible(
                           child: Text(
                             transaction.note!,
-                            style:
-                                const TextStyle(fontSize: 11, color: AppColors.textHint),
+                            style: const TextStyle(
+                              fontSize: 11,
+                              color: AppColors.textHint,
+                            ),
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
                           ),

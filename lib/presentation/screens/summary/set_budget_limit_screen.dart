@@ -8,7 +8,8 @@ class SetBudgetLimitScreen extends ConsumerStatefulWidget {
   const SetBudgetLimitScreen({super.key});
 
   @override
-  ConsumerState<SetBudgetLimitScreen> createState() => _SetBudgetLimitScreenState();
+  ConsumerState<SetBudgetLimitScreen> createState() =>
+      _SetBudgetLimitScreenState();
 }
 
 class _SetBudgetLimitScreenState extends ConsumerState<SetBudgetLimitScreen> {
@@ -59,7 +60,9 @@ class _SetBudgetLimitScreenState extends ConsumerState<SetBudgetLimitScreen> {
                     width: 120,
                     child: TextField(
                       controller: _controllers[cat.id],
-                      keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                      keyboardType: const TextInputType.numberWithOptions(
+                        decimal: true,
+                      ),
                       textAlign: TextAlign.right,
                       decoration: const InputDecoration(
                         hintText: '0',
@@ -82,10 +85,20 @@ class _SetBudgetLimitScreenState extends ConsumerState<SetBudgetLimitScreen> {
               final messenger = ScaffoldMessenger.of(context);
               final navigator = Navigator.of(context);
               final notifier = ref.read(budgetLimitsProvider.notifier);
+              final existingLimits =
+                  ref.read(budgetLimitsProvider).valueOrNull ?? [];
               for (final cat in expenseCategories) {
-                final value = double.tryParse(_controllers[cat.id]?.text.trim() ?? '');
+                final raw = _controllers[cat.id]?.text.trim() ?? '';
+                final value = double.tryParse(raw);
                 if (value != null && value > 0) {
                   await notifier.setLimit(categoryId: cat.id, amount: value);
+                } else {
+                  final existing = existingLimits
+                      .where((l) => l.categoryId == cat.id)
+                      .firstOrNull;
+                  if (existing != null) {
+                    await notifier.removeLimit(existing.id);
+                  }
                 }
               }
               if (!mounted) return;

@@ -12,6 +12,7 @@ import '../../providers/transaction_provider.dart';
 import '../../providers/category_provider.dart';
 import '../../providers/account_provider.dart';
 import '../../providers/group_provider.dart';
+import '../../providers/auth_provider.dart';
 
 class AddTransactionScreen extends ConsumerStatefulWidget {
   const AddTransactionScreen({super.key});
@@ -21,8 +22,7 @@ class AddTransactionScreen extends ConsumerStatefulWidget {
       _AddTransactionScreenState();
 }
 
-class _AddTransactionScreenState
-    extends ConsumerState<AddTransactionScreen> {
+class _AddTransactionScreenState extends ConsumerState<AddTransactionScreen> {
   TransactionType _type = TransactionType.expense;
   final VisibilityType _visibility = VisibilityType.shared;
   final _amountController = TextEditingController();
@@ -65,21 +65,21 @@ class _AddTransactionScreenState
   Future<void> _save() async {
     final amount = double.tryParse(_amountController.text);
     if (amount == null || amount <= 0) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Enter a valid amount')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Enter a valid amount')));
       return;
     }
     if (_selectedCategoryId == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Select a category')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Select a category')));
       return;
     }
     if (_selectedFromAccountId == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Select an account')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Select an account')));
       return;
     }
     if (_type == TransactionType.transfer && _selectedToAccountId == null) {
@@ -92,18 +92,30 @@ class _AddTransactionScreenState
     setState(() => _isSaving = true);
 
     try {
+      final appCurrency = ref.read(currentCurrencyProvider);
+      final categories = ref.read(categoriesProvider).valueOrNull ?? [];
+      CategoryEntity? selectedCategory;
+      for (final c in categories) {
+        if (c.id == _selectedCategoryId) {
+          selectedCategory = c;
+          break;
+        }
+      }
       final activeGroupId = ref.read(activeGroupIdProvider);
-      await ref.read(monthlyTransactionsProvider.notifier).addTransaction(
+      await ref
+          .read(monthlyTransactionsProvider.notifier)
+          .addTransaction(
             type: _type,
             amount: amount,
-            currency: 'JPY',
+            currency: appCurrency,
             date: _date,
             categoryId: _selectedCategoryId!,
+            categoryNameSnapshot: selectedCategory?.name,
+            categoryEmojiSnapshot: selectedCategory?.emoji,
+            categoryDisplayNumberSnapshot: selectedCategory?.displayNumber,
             fromAccountId: _selectedFromAccountId!,
             toAccountId: _selectedToAccountId,
-            note: _noteController.text.isNotEmpty
-                ? _noteController.text
-                : null,
+            note: _noteController.text.isNotEmpty ? _noteController.text : null,
             visibility: _visibility,
             groupId: activeGroupId,
           );
@@ -115,26 +127,29 @@ class _AddTransactionScreenState
             content: Row(
               children: [
                 const Text('✨ '),
-                Text(_type == TransactionType.expense
-                    ? 'Expense added!'
-                    : (_type == TransactionType.income
-                        ? 'Income added!'
-                        : 'Transfer recorded!')),
+                Text(
+                  _type == TransactionType.expense
+                      ? 'Expense added!'
+                      : (_type == TransactionType.income
+                            ? 'Income added!'
+                            : 'Transfer recorded!'),
+                ),
               ],
             ),
             backgroundColor: AppColors.primary,
             behavior: SnackBarBehavior.floating,
-            shape:
-                RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
           ),
         );
         context.pop();
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error: $e')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Error: $e')));
       }
     } finally {
       if (mounted) setState(() => _isSaving = false);
@@ -150,15 +165,18 @@ class _AddTransactionScreenState
     final accounts = accountsAsync.valueOrNull ?? [];
 
     // Filter categories by transaction type
-    final filteredCategories = _type == TransactionType.transfer
-        ? <CategoryEntity>[]
-        : categories
-            .where((c) =>
-                c.isEnabled &&
-                ((_type == TransactionType.expense && c.isExpense) ||
-                    (_type == TransactionType.income && c.isIncome)))
-            .toList()
-      ..sort((a, b) => a.sortOrder.compareTo(b.sortOrder));
+    final filteredCategories =
+        _type == TransactionType.transfer
+              ? <CategoryEntity>[]
+              : categories
+                    .where(
+                      (c) =>
+                          c.isEnabled &&
+                          ((_type == TransactionType.expense && c.isExpense) ||
+                              (_type == TransactionType.income && c.isIncome)),
+                    )
+                    .toList()
+          ..sort((a, b) => a.sortOrder.compareTo(b.sortOrder));
 
     return Scaffold(
       appBar: AppBar(
@@ -180,8 +198,8 @@ class _AddTransactionScreenState
                 final color = type == TransactionType.expense
                     ? AppColors.expense
                     : (type == TransactionType.income
-                        ? AppColors.income
-                        : AppColors.transfer);
+                          ? AppColors.income
+                          : AppColors.transfer);
 
                 return Expanded(
                   child: GestureDetector(
@@ -205,8 +223,7 @@ class _AddTransactionScreenState
                       ),
                       child: Column(
                         children: [
-                          Text(type.icon,
-                              style: const TextStyle(fontSize: 20)),
+                          Text(type.icon, style: const TextStyle(fontSize: 20)),
                           const SizedBox(height: 4),
                           Text(
                             type.label,
@@ -256,11 +273,13 @@ class _AddTransactionScreenState
                   ),
                   TextField(
                     controller: _amountController,
-                    keyboardType:
-                        const TextInputType.numberWithOptions(decimal: true),
+                    keyboardType: const TextInputType.numberWithOptions(
+                      decimal: true,
+                    ),
                     inputFormatters: [
                       FilteringTextInputFormatter.allow(
-                          RegExp(r'^\d+\.?\d{0,2}')),
+                        RegExp(r'^\d+\.?\d{0,2}'),
+                      ),
                     ],
                     textAlign: TextAlign.center,
                     style: const TextStyle(
@@ -293,15 +312,16 @@ class _AddTransactionScreenState
             const SizedBox(height: 12),
 
             // Account selector
-            _SectionLabel(label: _type == TransactionType.transfer
-                ? 'From Account'
-                : 'Account'),
+            _SectionLabel(
+              label: _type == TransactionType.transfer
+                  ? 'From Account'
+                  : 'Account',
+            ),
             const SizedBox(height: 8),
             _AccountGrid(
               accounts: accounts,
               selectedId: _selectedFromAccountId,
-              onSelect: (id) =>
-                  setState(() => _selectedFromAccountId = id),
+              onSelect: (id) => setState(() => _selectedFromAccountId = id),
             ),
 
             // To account (transfer only)
@@ -314,8 +334,7 @@ class _AddTransactionScreenState
                     .where((a) => a.id != _selectedFromAccountId)
                     .toList(),
                 selectedId: _selectedToAccountId,
-                onSelect: (id) =>
-                    setState(() => _selectedToAccountId = id),
+                onSelect: (id) => setState(() => _selectedToAccountId = id),
               ),
             ],
 
@@ -323,14 +342,14 @@ class _AddTransactionScreenState
             if (_type != TransactionType.transfer) ...[
               const SizedBox(height: 16),
               _SectionLabel(
-                  label:
-                      '${_type == TransactionType.expense ? 'Expense' : 'Income'} Category'),
+                label:
+                    '${_type == TransactionType.expense ? 'Expense' : 'Income'} Category',
+              ),
               const SizedBox(height: 8),
               _CategoryGrid(
                 categories: filteredCategories,
                 selectedId: _selectedCategoryId,
-                onSelect: (id) =>
-                    setState(() => _selectedCategoryId = id),
+                onSelect: (id) => setState(() => _selectedCategoryId = id),
               ),
             ],
 
@@ -442,13 +461,21 @@ class _SectionTile extends StatelessWidget {
           children: [
             Icon(icon, size: 20, color: AppColors.primary),
             const SizedBox(width: 12),
-            Text(label,
-                style: TextStyle(color: AppColors.textSecondary, fontSize: 14)),
+            Text(
+              label,
+              style: TextStyle(color: AppColors.textSecondary, fontSize: 14),
+            ),
             const Spacer(),
-            Text(value,
-                style: const TextStyle(fontWeight: FontWeight.w500, fontSize: 14)),
+            Text(
+              value,
+              style: const TextStyle(fontWeight: FontWeight.w500, fontSize: 14),
+            ),
             const SizedBox(width: 4),
-            const Icon(Icons.chevron_right, size: 18, color: AppColors.textHint),
+            const Icon(
+              Icons.chevron_right,
+              size: 18,
+              color: AppColors.textHint,
+            ),
           ],
         ),
       ),

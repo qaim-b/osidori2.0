@@ -1,11 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'package:go_router/go_router.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../providers/auth_provider.dart';
 import '../../widgets/common/animated_mascot.dart';
 
-/// After signup, user picks: are you Stitch (boy) or Angel (girl)?
+/// After signup, user picks Stitch, Angel, or Solo.
 /// This sets the entire app theme.
 class RoleSelectionScreen extends ConsumerStatefulWidget {
   const RoleSelectionScreen({super.key});
@@ -28,9 +29,9 @@ class _RoleSelectionScreenState extends ConsumerState<RoleSelectionScreen> {
       if (mounted) context.go('/');
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error: $e')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Error: $e')));
       }
     } finally {
       if (mounted) setState(() => _saving = false);
@@ -43,11 +44,7 @@ class _RoleSelectionScreenState extends ConsumerState<RoleSelectionScreen> {
       body: Container(
         decoration: BoxDecoration(
           gradient: LinearGradient(
-            colors: [
-              AppColors.stitchBg,
-              Colors.white,
-              AppColors.angelBg,
-            ],
+            colors: [AppColors.stitchBg, Colors.white, AppColors.angelBg],
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
           ),
@@ -74,36 +71,44 @@ class _RoleSelectionScreenState extends ConsumerState<RoleSelectionScreen> {
 
                 const Spacer(),
 
-                // Two character cards side by side
                 Row(
                   children: [
-                    // Stitch (Boy)
                     Expanded(
                       child: _CharacterCard(
-                        imagePath: 'assets/images/stitch.png',
+                        imagePath: 'assets/images/stitch.svg',
                         name: 'Stitch',
                         subtitle: 'Boy',
                         color: AppColors.stitchBlue,
                         bgColor: AppColors.stitchBg,
                         gradient: AppColors.stitchGradient,
                         isSelected: _selectedRole == 'stitch',
-                        onTap: () =>
-                            setState(() => _selectedRole = 'stitch'),
+                        onTap: () => setState(() => _selectedRole = 'stitch'),
                       ),
                     ),
-                    const SizedBox(width: 16),
-                    // Angel (Girl)
+                    const SizedBox(width: 10),
                     Expanded(
                       child: _CharacterCard(
-                        imagePath: 'assets/images/angel.png',
+                        imagePath: 'assets/images/angel.svg',
                         name: 'Angel',
                         subtitle: 'Girl',
                         color: AppColors.angelPink,
                         bgColor: AppColors.angelBg,
                         gradient: AppColors.angelGradient,
                         isSelected: _selectedRole == 'angel',
-                        onTap: () =>
-                            setState(() => _selectedRole = 'angel'),
+                        onTap: () => setState(() => _selectedRole = 'angel'),
+                      ),
+                    ),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: _CharacterCard(
+                        imagePath: 'assets/images/stitchangel.svg',
+                        name: 'Solo',
+                        subtitle: 'Chill',
+                        color: AppColors.soloMint,
+                        bgColor: AppColors.soloBg,
+                        gradient: AppColors.soloGradient,
+                        isSelected: _selectedRole == 'solo',
+                        onTap: () => setState(() => _selectedRole = 'solo'),
                       ),
                     ),
                   ],
@@ -115,15 +120,18 @@ class _RoleSelectionScreenState extends ConsumerState<RoleSelectionScreen> {
                 if (_selectedRole != null)
                   AnimatedMascot(
                     imagePath: _selectedRole == 'stitch'
-                        ? 'assets/images/stitch.png'
-                        : 'assets/images/angel.png',
+                        ? 'assets/images/stitch.svg'
+                        : (_selectedRole == 'angel'
+                              ? 'assets/images/angel.svg'
+                              : 'assets/images/stitchangel.svg'),
                     size: 80,
                     glowColor: _selectedRole == 'stitch'
                         ? AppColors.stitchBlue
-                        : AppColors.angelPink,
+                        : (_selectedRole == 'angel'
+                              ? AppColors.angelPink
+                              : AppColors.soloMint),
                   ),
-                if (_selectedRole == null)
-                  const SizedBox(height: 80),
+                if (_selectedRole == null) const SizedBox(height: 80),
 
                 const Spacer(),
 
@@ -137,11 +145,11 @@ class _RoleSelectionScreenState extends ConsumerState<RoleSelectionScreen> {
                       gradient: _selectedRole == null
                           ? null
                           : (_selectedRole == 'stitch'
-                              ? AppColors.stitchGradient
-                              : AppColors.angelGradient),
-                      color: _selectedRole == null
-                          ? AppColors.divider
-                          : null,
+                                ? AppColors.stitchGradient
+                                : (_selectedRole == 'angel'
+                                      ? AppColors.angelGradient
+                                      : AppColors.soloGradient)),
+                      color: _selectedRole == null ? AppColors.divider : null,
                       borderRadius: BorderRadius.circular(28),
                     ),
                     child: Material(
@@ -163,7 +171,7 @@ class _RoleSelectionScreenState extends ConsumerState<RoleSelectionScreen> {
                                 )
                               : Text(
                                   _selectedRole != null
-                                      ? "I'm ${_selectedRole == 'stitch' ? 'Stitch' : 'Angel'}!"
+                                      ? "I'm ${_selectedRole == 'stitch' ? 'Stitch' : (_selectedRole == 'angel' ? 'Angel' : 'Solo')}!"
                                       : 'Pick your character',
                                   style: TextStyle(
                                     color: _selectedRole != null
@@ -237,11 +245,17 @@ class _CharacterCard extends StatelessWidget {
         ),
         child: Column(
           children: [
-            Image.asset(
-              imagePath,
-              height: isSelected ? 80 : 64,
-              fit: BoxFit.contain,
-            ),
+            imagePath.endsWith('.svg')
+                ? SvgPicture.asset(
+                    imagePath,
+                    height: isSelected ? 80 : 64,
+                    fit: BoxFit.contain,
+                  )
+                : Image.asset(
+                    imagePath,
+                    height: isSelected ? 80 : 64,
+                    fit: BoxFit.contain,
+                  ),
             const SizedBox(height: 12),
             Text(
               name,

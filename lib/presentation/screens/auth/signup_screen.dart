@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'package:go_router/go_router.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/constants/app_constants.dart';
@@ -7,7 +8,6 @@ import '../../providers/auth_provider.dart';
 import '../../widgets/common/starry_background.dart';
 import '../../widgets/common/app_button.dart';
 import '../../widgets/common/app_text_field.dart';
-
 
 class SignupScreen extends ConsumerStatefulWidget {
   const SignupScreen({super.key});
@@ -37,7 +37,9 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
   void _onSignUp() {
     if (!_formKey.currentState!.validate()) return;
 
-    ref.read(authStateProvider.notifier).signUp(
+    ref
+        .read(authStateProvider.notifier)
+        .signUp(
           email: _emailController.text.trim(),
           password: _passwordController.text,
           name: _nameController.text.trim(),
@@ -70,8 +72,8 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
                     const SizedBox(height: 32),
 
                     // Stitch & Angel mascots
-                    Image.asset(
-                      'assets/images/stitchangel.png',
+                    SvgPicture.asset(
+                      'assets/images/stitchangel.svg',
                       height: 120,
                       fit: BoxFit.contain,
                     ),
@@ -85,9 +87,7 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
                           AppColors.stitchGradient.createShader(bounds),
                       child: Text(
                         'Join ${AppConstants.appName}',
-                        style: Theme.of(context)
-                            .textTheme
-                            .headlineMedium
+                        style: Theme.of(context).textTheme.headlineMedium
                             ?.copyWith(color: Colors.white),
                       ),
                     ),
@@ -135,8 +135,9 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
                               : Icons.visibility_outlined,
                           size: 20,
                         ),
-                        onPressed: () =>
-                            setState(() => _obscurePassword = !_obscurePassword),
+                        onPressed: () => setState(
+                          () => _obscurePassword = !_obscurePassword,
+                        ),
                       ),
                       validator: (v) {
                         if (v == null || v.isEmpty) return 'Enter a password';
@@ -179,14 +180,19 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
                         ),
                         child: Row(
                           children: [
-                            const Icon(Icons.error_outline,
-                                color: AppColors.error, size: 18),
+                            const Icon(
+                              Icons.error_outline,
+                              color: AppColors.error,
+                              size: 18,
+                            ),
                             const SizedBox(width: 8),
                             Expanded(
                               child: Text(
                                 authState.error.toString(),
                                 style: const TextStyle(
-                                    color: AppColors.error, fontSize: 13),
+                                  color: AppColors.error,
+                                  fontSize: 13,
+                                ),
                               ),
                             ),
                           ],

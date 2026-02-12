@@ -10,10 +10,7 @@ import '../../widgets/transaction/transaction_tile.dart';
 class CategoryTransactionsScreen extends ConsumerWidget {
   final String categoryId;
 
-  const CategoryTransactionsScreen({
-    super.key,
-    required this.categoryId,
-  });
+  const CategoryTransactionsScreen({super.key, required this.categoryId});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -31,21 +28,44 @@ class CategoryTransactionsScreen extends ConsumerWidget {
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(category == null ? 'Category' : '${category.emoji} ${category.name}'),
+        title: Text(
+          category == null ? 'Category' : '${category.emoji} ${category.name}',
+        ),
       ),
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       body: transactions.when(
         data: (txns) {
-          final filtered = txns.where((t) => t.categoryId == categoryId).toList()
-            ..sort((a, b) => b.date.compareTo(a.date));
+          final filtered =
+              txns.where((t) => t.categoryId == categoryId).toList()
+                ..sort((a, b) => b.date.compareTo(a.date));
           final total = filtered.fold<double>(0, (sum, t) => sum + t.amount);
+          final snapshotName = filtered.isNotEmpty
+              ? filtered.first.categoryNameSnapshot
+              : null;
+          final snapshotEmoji = filtered.isNotEmpty
+              ? filtered.first.categoryEmojiSnapshot
+              : null;
 
           if (filtered.isEmpty) {
-            return const Center(child: Text('No transactions for this category this month'));
+            return const Center(
+              child: Text('No transactions for this category this month'),
+            );
           }
 
           return Column(
             children: [
+              Padding(
+                padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
+                child: Align(
+                  alignment: Alignment.centerLeft,
+                  child: Text(
+                    category == null
+                        ? '${snapshotEmoji ?? '📋'} ${snapshotName ?? 'Category'}'
+                        : '${category.emoji} ${category.name}',
+                    style: Theme.of(context).textTheme.titleMedium,
+                  ),
+                ),
+              ),
               Container(
                 width: double.infinity,
                 margin: const EdgeInsets.fromLTRB(16, 12, 16, 8),
@@ -56,7 +76,10 @@ class CategoryTransactionsScreen extends ConsumerWidget {
                 ),
                 child: Text(
                   'Total: ${CurrencyFormatter.format(total)}',
-                  style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 16),
+                  style: const TextStyle(
+                    fontWeight: FontWeight.w700,
+                    fontSize: 16,
+                  ),
                 ),
               ),
               Expanded(
@@ -65,7 +88,10 @@ class CategoryTransactionsScreen extends ConsumerWidget {
                   itemCount: filtered.length,
                   itemBuilder: (context, index) {
                     return Card(
-                      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 3),
+                      margin: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 3,
+                      ),
                       child: TransactionTile(
                         transaction: filtered[index],
                         category: category,

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'package:go_router/go_router.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/constants/app_constants.dart';
@@ -35,7 +36,9 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   void _onLogin() {
     if (!_formKey.currentState!.validate()) return;
 
-    ref.read(authStateProvider.notifier).signIn(
+    ref
+        .read(authStateProvider.notifier)
+        .signIn(
           email: _emailController.text.trim(),
           password: _passwordController.text,
         );
@@ -82,8 +85,8 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                       onTap: _onMascotTap,
                       child: Column(
                         children: [
-                          Image.asset(
-                            'assets/images/stitchangel.png',
+                          SvgPicture.asset(
+                            'assets/images/stitchangel.svg',
                             height: 120,
                             fit: BoxFit.contain,
                           ),
@@ -101,9 +104,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                           AppColors.stitchGradient.createShader(bounds),
                       child: Text(
                         AppConstants.appName,
-                        style: Theme.of(context)
-                            .textTheme
-                            .headlineLarge
+                        style: Theme.of(context).textTheme.headlineLarge
                             ?.copyWith(color: Colors.white),
                       ),
                     ),
@@ -118,7 +119,9 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                       const SizedBox(height: 8),
                       Container(
                         padding: const EdgeInsets.symmetric(
-                            horizontal: 16, vertical: 8),
+                          horizontal: 16,
+                          vertical: 8,
+                        ),
                         decoration: BoxDecoration(
                           color: AppColors.starYellow.withValues(alpha: 0.3),
                           borderRadius: BorderRadius.circular(20),
@@ -160,11 +163,14 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                               : Icons.visibility_outlined,
                           size: 20,
                         ),
-                        onPressed: () =>
-                            setState(() => _obscurePassword = !_obscurePassword),
+                        onPressed: () => setState(
+                          () => _obscurePassword = !_obscurePassword,
+                        ),
                       ),
                       validator: (v) {
-                        if (v == null || v.isEmpty) return 'Enter your password';
+                        if (v == null || v.isEmpty) {
+                          return 'Enter your password';
+                        }
                         if (v.length < 6) return 'At least 6 characters';
                         return null;
                       },
@@ -181,14 +187,19 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                         ),
                         child: Row(
                           children: [
-                            const Icon(Icons.error_outline,
-                                color: AppColors.error, size: 18),
+                            const Icon(
+                              Icons.error_outline,
+                              color: AppColors.error,
+                              size: 18,
+                            ),
                             const SizedBox(width: 8),
                             Expanded(
                               child: Text(
                                 authState.error.toString(),
                                 style: const TextStyle(
-                                    color: AppColors.error, fontSize: 13),
+                                  color: AppColors.error,
+                                  fontSize: 13,
+                                ),
                               ),
                             ),
                           ],

@@ -12,23 +12,29 @@ final accountRepositoryProvider = Provider<AccountRepository>((ref) {
 });
 
 final accountsProvider =
-    StateNotifierProvider<AccountsNotifier, AsyncValue<List<AccountModel>>>(
-        (ref) {
-  final userId = ref.watch(currentUserIdProvider);
-  final groupId = ref.watch(activeGroupIdProvider);
-  final repo = ref.read(accountRepositoryProvider);
-  return AccountsNotifier(repo, userId, groupId);
-});
+    StateNotifierProvider<AccountsNotifier, AsyncValue<List<AccountModel>>>((
+      ref,
+    ) {
+      final userId = ref.watch(currentUserIdProvider);
+      final groupIds = ref.watch(groupIdsProvider);
+      final groupMemberIds = ref.watch(groupMemberIdsProvider);
+      final repo = ref.read(accountRepositoryProvider);
+      return AccountsNotifier(repo, userId, groupIds, groupMemberIds);
+    });
 
-class AccountsNotifier
-    extends StateNotifier<AsyncValue<List<AccountModel>>> {
+class AccountsNotifier extends StateNotifier<AsyncValue<List<AccountModel>>> {
   final AccountRepository _repo;
   final String? _userId;
-  final String? _groupId;
+  final List<String> _groupIds;
+  final List<String> _groupMemberIds;
   static const _uuid = Uuid();
 
-  AccountsNotifier(this._repo, this._userId, this._groupId)
-      : super(const AsyncValue.loading()) {
+  AccountsNotifier(
+    this._repo,
+    this._userId,
+    this._groupIds,
+    this._groupMemberIds,
+  ) : super(const AsyncValue.loading()) {
     if (_userId != null) load();
   }
 
@@ -36,7 +42,11 @@ class AccountsNotifier
     if (_userId == null) return;
     state = const AsyncValue.loading();
     try {
-      final accounts = await _repo.getAllVisible(_userId, _groupId);
+      final accounts = await _repo.getAllVisible(
+        _userId,
+        _groupIds,
+        _groupMemberIds,
+      );
       state = AsyncValue.data(accounts);
     } catch (e, st) {
       state = AsyncValue.error(e, st);
@@ -52,6 +62,16 @@ class AccountsNotifier
     double initialBalance = 0,
   }) async {
     if (_userId == null) return;
+    final resolvedGroupId =
+        groupId ??
+        (ownerScope == OwnerScope.shared && _groupIds.isNotEmpty
+            ? _groupIds.first
+            : null);
+    if (ownerScope == OwnerScope.shared && resolvedGroupId == null) {
+      throw Exception(
+        'No active group found. Connect your partner in Settings first.',
+      );
+    }
 
     final account = AccountModel(
       id: _uuid.v4(),
@@ -59,7 +79,7 @@ class AccountsNotifier
       type: type,
       ownerScope: ownerScope,
       ownerUserId: _userId,
-      groupId: groupId ?? (ownerScope == OwnerScope.shared ? _groupId : null),
+      groupId: resolvedGroupId,
       currency: currency,
       initialBalance: initialBalance,
       createdAt: DateTime.now(),

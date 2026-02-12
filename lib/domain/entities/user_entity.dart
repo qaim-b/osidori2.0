@@ -1,11 +1,12 @@
 /// Core user entity — decoupled from any backend specifics.
-/// role: 'stitch' (boy/blue) or 'angel' (girl/pink) or null (not chosen yet)
+/// role: 'stitch', 'angel', 'solo' or null (not chosen yet)
 class UserEntity {
   final String id;
   final String email;
   final String name;
   final String? avatarUrl;
-  final String? role; // 'stitch' or 'angel'
+  final String? role; // 'stitch' or 'angel' or 'solo'
+  final String preferredCurrency;
   final DateTime createdAt;
 
   const UserEntity({
@@ -14,11 +15,13 @@ class UserEntity {
     required this.name,
     this.avatarUrl,
     this.role,
+    this.preferredCurrency = 'JPY',
     required this.createdAt,
   });
 
   bool get isStitch => role == 'stitch';
   bool get isAngel => role == 'angel';
+  bool get isSolo => role == 'solo';
   bool get hasRole => role != null;
 
   UserEntity copyWith({
@@ -27,6 +30,7 @@ class UserEntity {
     String? name,
     String? avatarUrl,
     String? role,
+    String? preferredCurrency,
     DateTime? createdAt,
   }) {
     return UserEntity(
@@ -35,6 +39,7 @@ class UserEntity {
       name: name ?? this.name,
       avatarUrl: avatarUrl ?? this.avatarUrl,
       role: role ?? this.role,
+      preferredCurrency: preferredCurrency ?? this.preferredCurrency,
       createdAt: createdAt ?? this.createdAt,
     );
   }

@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../domain/enums/account_type.dart';
 import '../../providers/account_provider.dart';
+import '../../providers/auth_provider.dart';
 import '../../widgets/common/app_text_field.dart';
 
 class AddAccountScreen extends ConsumerStatefulWidget {
@@ -28,19 +29,23 @@ class _AddAccountScreenState extends ConsumerState<AddAccountScreen> {
 
   Future<void> _save() async {
     if (_nameController.text.trim().isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Enter an account name')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Enter an account name')));
       return;
     }
 
     setState(() => _saving = true);
+    final appCurrency = ref.read(currentCurrencyProvider);
 
     try {
-      await ref.read(accountsProvider.notifier).addAccount(
+      await ref
+          .read(accountsProvider.notifier)
+          .addAccount(
             name: _nameController.text.trim(),
             type: _type,
             // All accounts are shared by default for couple transparency.
+            currency: appCurrency,
             initialBalance: double.tryParse(_balanceController.text) ?? 0,
           );
 
@@ -50,17 +55,18 @@ class _AddAccountScreenState extends ConsumerState<AddAccountScreen> {
             content: const Text('Account created'),
             backgroundColor: AppColors.primary,
             behavior: SnackBarBehavior.floating,
-            shape:
-                RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
           ),
         );
         context.pop();
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error: $e')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Error: $e')));
       }
     } finally {
       if (mounted) setState(() => _saving = false);
@@ -93,8 +99,10 @@ class _AddAccountScreenState extends ConsumerState<AddAccountScreen> {
                   onTap: () => setState(() => _type = type),
                   child: AnimatedContainer(
                     duration: const Duration(milliseconds: 150),
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 12,
+                    ),
                     decoration: BoxDecoration(
                       color: isSelected
                           ? AppColors.primary.withValues(alpha: 0.15)
@@ -124,8 +132,9 @@ class _AddAccountScreenState extends ConsumerState<AddAccountScreen> {
               controller: _balanceController,
               hintText: 'Initial balance (optional)',
               prefixIcon: Icons.account_balance_wallet,
-              keyboardType:
-                  const TextInputType.numberWithOptions(decimal: true),
+              keyboardType: const TextInputType.numberWithOptions(
+                decimal: true,
+              ),
             ),
             const SizedBox(height: 32),
             SizedBox(
