@@ -9,7 +9,6 @@ import '../../../domain/entities/category_entity.dart';
 import '../../providers/transaction_provider.dart';
 import '../../providers/category_provider.dart';
 import '../../providers/theme_provider.dart';
-import '../../providers/auth_provider.dart';
 import '../../widgets/common/themed_backdrop.dart';
 import '../../widgets/transaction/transaction_tile.dart';
 
@@ -426,16 +425,6 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
     BuildContext context,
     TransactionModel txn,
   ) async {
-    final currentUserId = ref.read(currentUserIdProvider);
-    final isMine = currentUserId != null && currentUserId == txn.ownerUserId;
-    if (!isMine) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('You can only edit your own transactions.'),
-        ),
-      );
-      return;
-    }
     showModalBottomSheet(
       context: context,
       builder: (ctx) {

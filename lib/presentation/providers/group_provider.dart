@@ -1,6 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:uuid/uuid.dart';
 import '../../data/models/group_model.dart';
+import '../../data/models/user_model.dart';
 import '../../data/repositories/group_repository.dart';
 import 'auth_provider.dart';
 
@@ -38,6 +39,31 @@ final activeGroupIdProvider = Provider<String?>((ref) {
     return selected;
   }
   return groups.isEmpty ? null : groups.first.id;
+});
+
+final activeGroupMemberProfilesProvider = FutureProvider<List<UserModel>>((
+  ref,
+) async {
+  final groups = ref.watch(groupsProvider).valueOrNull ?? [];
+  if (groups.isEmpty) return [];
+  final activeGroupId = ref.watch(activeGroupIdProvider);
+  final currentUserId = ref.watch(currentUserIdProvider);
+  GroupModel group;
+  if (activeGroupId != null && groups.any((g) => g.id == activeGroupId)) {
+    group = groups.firstWhere((g) => g.id == activeGroupId);
+  } else {
+    group = groups.first;
+  }
+  final repo = ref.read(authRepositoryProvider);
+  final profiles = await Future.wait(
+    group.memberIds.map((id) => repo.getProfile(id)),
+  );
+  profiles.sort((a, b) {
+    if (a.id == currentUserId) return -1;
+    if (b.id == currentUserId) return 1;
+    return a.name.compareTo(b.name);
+  });
+  return profiles;
 });
 
 class GroupNotifier extends StateNotifier<AsyncValue<List<GroupModel>>> {

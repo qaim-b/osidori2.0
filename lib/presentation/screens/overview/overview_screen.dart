@@ -4,12 +4,14 @@ import 'package:flutter_svg/flutter_svg.dart';
 import 'package:go_router/go_router.dart';
 import '../../../core/extensions/datetime_ext.dart';
 import '../../../core/theme/app_colors.dart';
+import '../../../core/utils/avatar_image.dart';
 import '../../../core/utils/currency_formatter.dart';
 import '../../../domain/entities/category_entity.dart';
 import '../../providers/account_provider.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/budget_limit_provider.dart';
 import '../../providers/category_provider.dart';
+import '../../providers/group_provider.dart';
 import '../../providers/goal_provider.dart';
 import '../../providers/theme_provider.dart';
 import '../../providers/transaction_provider.dart';
@@ -43,6 +45,9 @@ class OverviewScreen extends ConsumerWidget {
     final categories = ref.watch(categoriesProvider);
     final roleColors = ref.watch(roleColorsProvider);
     final user = ref.watch(authStateProvider).valueOrNull;
+    final memberProfiles =
+        ref.watch(activeGroupMemberProfilesProvider).valueOrNull ?? [];
+    final myAvatarProvider = avatarImageProvider(user?.avatarUrl);
 
     final catMap = <String, String>{};
     final catEntityMap = <String, CategoryEntity>{};
@@ -75,10 +80,8 @@ class OverviewScreen extends ConsumerWidget {
                             backgroundColor: roleColors.primary.withValues(
                               alpha: 0.15,
                             ),
-                            backgroundImage: user?.avatarUrl != null
-                                ? NetworkImage(user!.avatarUrl!)
-                                : null,
-                            child: user?.avatarUrl == null
+                            backgroundImage: myAvatarProvider,
+                            child: myAvatarProvider == null
                                 ? roleColors.mascotImage.endsWith('.svg')
                                       ? SvgPicture.asset(
                                           roleColors.mascotImage,
@@ -174,6 +177,49 @@ class OverviewScreen extends ConsumerWidget {
                   ),
                 ),
               ),
+              if (memberProfiles.isNotEmpty)
+                SliverToBoxAdapter(
+                  child: Padding(
+                    padding: const EdgeInsets.fromLTRB(20, 0, 20, 0),
+                    child: Row(
+                      children: memberProfiles.take(2).map((profile) {
+                        final profileRole = profile.role ?? 'stitch';
+                        final fallbackAsset = profileRole == 'angel'
+                            ? 'assets/images/angel.svg'
+                            : (profileRole == 'solo'
+                                  ? 'assets/images/stitchangel.svg'
+                                  : 'assets/images/stitch.svg');
+                        final provider = avatarImageProvider(profile.avatarUrl);
+                        return Padding(
+                          padding: const EdgeInsets.only(right: 8),
+                          child: Column(
+                            children: [
+                              CircleAvatar(
+                                radius: 16,
+                                backgroundColor: roleColors.primary.withValues(
+                                  alpha: 0.12,
+                                ),
+                                backgroundImage: provider,
+                                child: provider == null
+                                    ? SvgPicture.asset(
+                                        fallbackAsset,
+                                        width: 18,
+                                        height: 18,
+                                      )
+                                    : null,
+                              ),
+                              const SizedBox(height: 2),
+                              Text(
+                                profile.id == user?.id ? 'You' : 'Partner',
+                                style: const TextStyle(fontSize: 10),
+                              ),
+                            ],
+                          ),
+                        );
+                      }).toList(),
+                    ),
+                  ),
+                ),
               SliverToBoxAdapter(
                 child: Padding(
                   padding: const EdgeInsets.all(16),

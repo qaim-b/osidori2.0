@@ -122,11 +122,20 @@ class AuthRepository {
   }
 
   /// Update avatar URL
-  Future<void> updateAvatar(String userId, String avatarUrl) async {
+  Future<UserModel> updateAvatar(String userId, String avatarUrl) async {
     await _client
         .from(AppSupabase.usersTable)
         .update({'avatar_url': avatarUrl})
         .eq('id', userId);
+    return getProfile(userId);
+  }
+
+  Future<UserModel> clearAvatar(String userId) async {
+    await _client
+        .from(AppSupabase.usersTable)
+        .update({'avatar_url': null})
+        .eq('id', userId);
+    return getProfile(userId);
   }
 
   /// Sign out

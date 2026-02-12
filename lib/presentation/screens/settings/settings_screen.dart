@@ -1,10 +1,14 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
+import 'package:image_picker/image_picker.dart';
 
 import '../../../core/constants/app_constants.dart';
 import '../../../core/theme/app_colors.dart';
+import '../../../core/utils/avatar_image.dart';
 import '../../../core/utils/csv_exporter.dart';
 import '../../../data/models/transaction_model.dart';
 import '../../providers/account_provider.dart';
@@ -36,6 +40,8 @@ class SettingsScreen extends ConsumerWidget {
         .where((t) => t.ownerUserId == currentUserId)
         .toList();
 
+    final avatarProvider = avatarImageProvider(user?.avatarUrl);
+
     return Scaffold(
       appBar: AppBar(title: const Text('Settings')),
       body: ListView(
@@ -46,24 +52,22 @@ class SettingsScreen extends ConsumerWidget {
               padding: const EdgeInsets.all(20),
               child: Row(
                 children: [
-                  Container(
-                    width: 56,
-                    height: 56,
-                    decoration: const BoxDecoration(
-                      gradient: AppColors.dreamyGradient,
-                      shape: BoxShape.circle,
-                    ),
-                    alignment: Alignment.center,
-                    child: Text(
-                      user?.name.isNotEmpty == true
-                          ? user!.name[0].toUpperCase()
-                          : '?',
-                      style: const TextStyle(
-                        fontSize: 24,
-                        fontWeight: FontWeight.w700,
-                        color: Colors.white,
-                      ),
-                    ),
+                  CircleAvatar(
+                    radius: 28,
+                    backgroundColor: AppColors.primary.withValues(alpha: 0.16),
+                    backgroundImage: avatarProvider,
+                    child: avatarProvider == null
+                        ? Text(
+                            user?.name.isNotEmpty == true
+                                ? user!.name[0].toUpperCase()
+                                : '?',
+                            style: const TextStyle(
+                              fontSize: 24,
+                              fontWeight: FontWeight.w700,
+                              color: Colors.white,
+                            ),
+                          )
+                        : null,
                   ),
                   const SizedBox(width: 16),
                   Expanded(
@@ -81,6 +85,29 @@ class SettingsScreen extends ConsumerWidget {
                         ),
                       ],
                     ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+          Card(
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: OutlinedButton.icon(
+                      onPressed: () => _pickAvatar(context, ref),
+                      icon: const Icon(Icons.photo_library_rounded),
+                      label: const Text('Set Profile Photo'),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  OutlinedButton(
+                    onPressed: () async {
+                      await ref.read(authStateProvider.notifier).clearAvatar();
+                    },
+                    child: const Text('Reset'),
                   ),
                 ],
               ),
@@ -476,6 +503,34 @@ class SettingsScreen extends ConsumerWidget {
     );
     if (selected != null) {
       await ref.read(authStateProvider.notifier).setPreferredCurrency(selected);
+    }
+  }
+
+  Future<void> _pickAvatar(BuildContext context, WidgetRef ref) async {
+    final messenger = ScaffoldMessenger.of(context);
+    try {
+      final picker = ImagePicker();
+      final picked = await picker.pickImage(
+        source: ImageSource.gallery,
+        imageQuality: 82,
+        maxWidth: 1080,
+      );
+      if (picked == null) return;
+      final bytes = await picked.readAsBytes();
+      final mime =
+          picked.mimeType ??
+          (picked.path.toLowerCase().endsWith('.png')
+              ? 'image/png'
+              : 'image/jpeg');
+      final dataUrl = 'data:$mime;base64,${base64Encode(bytes)}';
+      await ref.read(authStateProvider.notifier).setAvatar(dataUrl);
+      messenger.showSnackBar(
+        const SnackBar(content: Text('Profile photo updated')),
+      );
+    } catch (e) {
+      messenger.showSnackBar(
+        SnackBar(content: Text('Photo update failed: $e')),
+      );
     }
   }
 

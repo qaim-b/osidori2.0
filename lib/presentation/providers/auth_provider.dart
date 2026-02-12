@@ -63,7 +63,7 @@ class AuthNotifier extends StateNotifier<AsyncValue<UserModel?>> {
     }
   }
 
-  /// Set user's character role (stitch or angel)
+  /// Set user's character role (stitch / angel / solo)
   Future<void> setRole(String role) async {
     final user = state.valueOrNull;
     if (user == null) return;
@@ -83,6 +83,28 @@ class AuthNotifier extends StateNotifier<AsyncValue<UserModel?>> {
         user.id,
         currencyCode,
       );
+      state = AsyncValue.data(updated);
+    } catch (e, st) {
+      state = AsyncValue.error(_friendlyError(e), st);
+    }
+  }
+
+  Future<void> setAvatar(String avatarUrl) async {
+    final user = state.valueOrNull;
+    if (user == null) return;
+    try {
+      final updated = await _repo.updateAvatar(user.id, avatarUrl);
+      state = AsyncValue.data(updated);
+    } catch (e, st) {
+      state = AsyncValue.error(_friendlyError(e), st);
+    }
+  }
+
+  Future<void> clearAvatar() async {
+    final user = state.valueOrNull;
+    if (user == null) return;
+    try {
+      final updated = await _repo.clearAvatar(user.id);
       state = AsyncValue.data(updated);
     } catch (e, st) {
       state = AsyncValue.error(_friendlyError(e), st);
