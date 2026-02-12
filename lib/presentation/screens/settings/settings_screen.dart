@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../core/constants/app_constants.dart';
@@ -272,9 +273,28 @@ class SettingsScreen extends ConsumerWidget {
             children: [
               const Text('Share this code with your partner:'),
               const SizedBox(height: 6),
-              SelectableText(
-                userId ?? '-',
-                style: const TextStyle(fontWeight: FontWeight.w700),
+              Row(
+                children: [
+                  Expanded(
+                    child: SelectableText(
+                      userId ?? '-',
+                      style: const TextStyle(fontWeight: FontWeight.w700),
+                    ),
+                  ),
+                  IconButton(
+                    tooltip: 'Copy',
+                    onPressed: userId == null
+                        ? null
+                        : () async {
+                            await Clipboard.setData(ClipboardData(text: userId));
+                            if (!ctx.mounted) return;
+                            ScaffoldMessenger.of(ctx).showSnackBar(
+                              const SnackBar(content: Text('Code copied')),
+                            );
+                          },
+                    icon: const Icon(Icons.copy_rounded, size: 18),
+                  ),
+                ],
               ),
               const SizedBox(height: 12),
               TextField(

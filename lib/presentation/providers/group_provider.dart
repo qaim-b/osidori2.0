@@ -48,9 +48,18 @@ class GroupNotifier extends StateNotifier<AsyncValue<List<GroupModel>>> {
     required String partnerUserId,
     String? name,
   }) async {
-    if (_userId == null) return;
+    if (_userId == null) {
+      throw Exception('You must be logged in to create/connect a group');
+    }
 
-    final trimmedPartner = partnerUserId.trim();
+    // Normalize copy/paste input from chat/apps:
+    // remove spaces/newlines/quotes while keeping hyphens.
+    final trimmedPartner = partnerUserId
+        .trim()
+        .replaceAll('"', '')
+        .replaceAll("'", '')
+        .replaceAll(RegExp(r'\s+'), '');
+
     if (trimmedPartner.isEmpty || trimmedPartner == _userId) {
       return;
     }
@@ -58,7 +67,8 @@ class GroupNotifier extends StateNotifier<AsyncValue<List<GroupModel>>> {
       r'^[0-9a-fA-F]{8}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{12}$',
     );
     if (!uuidPattern.hasMatch(trimmedPartner)) {
-      throw Exception('Partner code must be a valid user ID');
+      throw Exception(
+          'Partner code is invalid. Paste the full user ID (UUID) exactly.');
     }
 
     final currentGroups = state.valueOrNull ?? [];
