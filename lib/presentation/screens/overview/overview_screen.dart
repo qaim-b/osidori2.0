@@ -6,6 +6,7 @@ import '../../../core/extensions/datetime_ext.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/utils/avatar_image.dart';
 import '../../../core/utils/currency_formatter.dart';
+import '../../../data/models/user_model.dart';
 import '../../../domain/entities/category_entity.dart';
 import '../../providers/account_provider.dart';
 import '../../providers/auth_provider.dart';
@@ -47,7 +48,13 @@ class OverviewScreen extends ConsumerWidget {
     final user = ref.watch(authStateProvider).valueOrNull;
     final memberProfiles =
         ref.watch(activeGroupMemberProfilesProvider).valueOrNull ?? [];
-    final myAvatarProvider = avatarImageProvider(user?.avatarUrl);
+    final youProfile = memberProfiles.where((p) => p.id == user?.id).isNotEmpty
+        ? memberProfiles.where((p) => p.id == user?.id).first
+        : null;
+    final partnerProfile =
+        memberProfiles.where((p) => p.id != user?.id).isNotEmpty
+        ? memberProfiles.where((p) => p.id != user?.id).first
+        : null;
 
     final catMap = <String, String>{};
     final catEntityMap = <String, CategoryEntity>{};
@@ -73,32 +80,6 @@ class OverviewScreen extends ConsumerWidget {
                     bottom: false,
                     child: Row(
                       children: [
-                        GestureDetector(
-                          onTap: () => context.push('/settings'),
-                          child: CircleAvatar(
-                            radius: 20,
-                            backgroundColor: roleColors.primary.withValues(
-                              alpha: 0.15,
-                            ),
-                            backgroundImage: myAvatarProvider,
-                            child: myAvatarProvider == null
-                                ? roleColors.mascotImage.endsWith('.svg')
-                                      ? SvgPicture.asset(
-                                          roleColors.mascotImage,
-                                          width: 28,
-                                          height: 28,
-                                          fit: BoxFit.contain,
-                                        )
-                                      : Image.asset(
-                                          roleColors.mascotImage,
-                                          width: 28,
-                                          height: 28,
-                                          fit: BoxFit.contain,
-                                        )
-                                : null,
-                          ),
-                        ),
-                        const SizedBox(width: 12),
                         Expanded(
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
@@ -118,21 +99,6 @@ class OverviewScreen extends ConsumerWidget {
                             ],
                           ),
                         ),
-                        CircleAvatar(
-                          radius: 12,
-                          backgroundColor: roleColors.primary.withValues(
-                            alpha: 0.15,
-                          ),
-                          backgroundImage: myAvatarProvider,
-                          child: myAvatarProvider == null
-                              ? SvgPicture.asset(
-                                  roleColors.mascotImage,
-                                  width: 14,
-                                  height: 14,
-                                )
-                              : null,
-                        ),
-                        const SizedBox(width: 8),
                         IconButton(
                           icon: const Icon(
                             Icons.settings_outlined,
@@ -190,49 +156,37 @@ class OverviewScreen extends ConsumerWidget {
                   ),
                 ),
               ),
-              if (memberProfiles.isNotEmpty)
-                SliverToBoxAdapter(
-                  child: Padding(
-                    padding: const EdgeInsets.fromLTRB(20, 0, 20, 0),
-                    child: Row(
-                      children: memberProfiles.take(2).map((profile) {
-                        final profileRole = profile.role ?? 'stitch';
-                        final fallbackAsset = profileRole == 'angel'
+              SliverToBoxAdapter(
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(20, 8, 20, 2),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      _MemberAvatarBubble(
+                        profile: youProfile,
+                        fallbackAsset: roleColors.mascotImage,
+                        label: 'You',
+                        backgroundColor: roleColors.primary.withValues(
+                          alpha: 0.16,
+                        ),
+                      ),
+                      const SizedBox(width: 22),
+                      _MemberAvatarBubble(
+                        profile: partnerProfile,
+                        fallbackAsset: partnerProfile?.role == 'angel'
                             ? 'assets/images/angel.svg'
-                            : (profileRole == 'solo'
+                            : (partnerProfile?.role == 'solo'
                                   ? 'assets/images/stitchangel.svg'
-                                  : 'assets/images/stitch.svg');
-                        final provider = avatarImageProvider(profile.avatarUrl);
-                        return Padding(
-                          padding: const EdgeInsets.only(right: 8),
-                          child: Column(
-                            children: [
-                              CircleAvatar(
-                                radius: 16,
-                                backgroundColor: roleColors.primary.withValues(
-                                  alpha: 0.12,
-                                ),
-                                backgroundImage: provider,
-                                child: provider == null
-                                    ? SvgPicture.asset(
-                                        fallbackAsset,
-                                        width: 18,
-                                        height: 18,
-                                      )
-                                    : null,
-                              ),
-                              const SizedBox(height: 2),
-                              Text(
-                                profile.id == user?.id ? 'You' : 'Partner',
-                                style: const TextStyle(fontSize: 10),
-                              ),
-                            ],
-                          ),
-                        );
-                      }).toList(),
-                    ),
+                                  : 'assets/images/stitch.svg'),
+                        label: 'Partner',
+                        backgroundColor: roleColors.accent.withValues(
+                          alpha: 0.16,
+                        ),
+                      ),
+                    ],
                   ),
                 ),
+              ),
               SliverToBoxAdapter(
                 child: Padding(
                   padding: const EdgeInsets.all(16),
@@ -384,6 +338,58 @@ class OverviewScreen extends ConsumerWidget {
           ),
         ),
       ),
+    );
+  }
+}
+
+class _MemberAvatarBubble extends StatelessWidget {
+  final UserModel? profile;
+  final String fallbackAsset;
+  final String label;
+  final Color backgroundColor;
+
+  const _MemberAvatarBubble({
+    required this.profile,
+    required this.fallbackAsset,
+    required this.label,
+    required this.backgroundColor,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final avatarProvider = avatarImageProvider(profile?.avatarUrl);
+    return Column(
+      children: [
+        CircleAvatar(
+          radius: 34,
+          backgroundColor: backgroundColor,
+          backgroundImage: avatarProvider,
+          child: avatarProvider == null
+              ? (fallbackAsset.endsWith('.svg')
+                    ? SvgPicture.asset(
+                        fallbackAsset,
+                        width: 42,
+                        height: 42,
+                        fit: BoxFit.contain,
+                      )
+                    : Image.asset(
+                        fallbackAsset,
+                        width: 42,
+                        height: 42,
+                        fit: BoxFit.contain,
+                      ))
+              : null,
+        ),
+        const SizedBox(height: 6),
+        Text(
+          label,
+          style: const TextStyle(
+            fontSize: 12,
+            fontWeight: FontWeight.w600,
+            color: AppColors.textSecondary,
+          ),
+        ),
+      ],
     );
   }
 }
