@@ -26,7 +26,10 @@ class GoalsCard extends ConsumerWidget {
                 children: [
                   Row(
                     children: [
-                      const Text('Shared Goals', style: TextStyle(fontWeight: FontWeight.w700)),
+                      const Icon(Icons.flag_rounded, size: 18),
+                      const SizedBox(width: 6),
+                      const Text('Shared Goals',
+                          style: TextStyle(fontWeight: FontWeight.w700)),
                       const Spacer(),
                       TextButton(
                         onPressed: () => context.push('/settings/goals'),
@@ -46,7 +49,10 @@ class GoalsCard extends ConsumerWidget {
               children: [
                 Row(
                   children: [
-                    const Text('Shared Goals', style: TextStyle(fontWeight: FontWeight.w700)),
+                    const Icon(Icons.flag_rounded, size: 18),
+                    const SizedBox(width: 6),
+                    const Text('Shared Goals',
+                        style: TextStyle(fontWeight: FontWeight.w700)),
                     const Spacer(),
                     TextButton(
                       onPressed: () => context.push('/settings/goals'),
@@ -65,7 +71,12 @@ class GoalsCard extends ConsumerWidget {
                           children: [
                             Text(goal.emoji.isEmpty ? '🎯' : goal.emoji),
                             const SizedBox(width: 8),
-                            Expanded(child: Text(goal.name, overflow: TextOverflow.ellipsis)),
+                            Expanded(
+                              child: Text(
+                                goal.name,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
                             Text('${(progress * 100).toStringAsFixed(0)}%'),
                           ],
                         ),
@@ -76,7 +87,8 @@ class GoalsCard extends ConsumerWidget {
                             minHeight: 8,
                             value: progress,
                             backgroundColor: AppColors.surfaceVariant,
-                            valueColor: AlwaysStoppedAnimation<Color>(roleColors.primary),
+                            valueColor: AlwaysStoppedAnimation<Color>(
+                                roleColors.primary),
                           ),
                         ),
                         const SizedBox(height: 4),

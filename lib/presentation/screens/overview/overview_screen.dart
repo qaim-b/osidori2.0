@@ -5,12 +5,16 @@ import '../../../core/extensions/datetime_ext.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/utils/currency_formatter.dart';
 import '../../../domain/entities/category_entity.dart';
+import '../../providers/account_provider.dart';
 import '../../providers/auth_provider.dart';
+import '../../providers/budget_limit_provider.dart';
 import '../../providers/category_provider.dart';
+import '../../providers/goal_provider.dart';
 import '../../providers/theme_provider.dart';
 import '../../providers/transaction_provider.dart';
 import '../../widgets/charts/donut_chart.dart';
 import '../../widgets/common/animated_mascot.dart';
+import '../../widgets/common/themed_backdrop.dart';
 import '../../widgets/home/accounts_summary_card.dart';
 import '../../widgets/home/goals_card.dart';
 import '../../widgets/home/memory_timeline_section.dart';
@@ -18,6 +22,16 @@ import '../../widgets/transaction/transaction_tile.dart';
 
 class OverviewScreen extends ConsumerWidget {
   const OverviewScreen({super.key});
+
+  Future<void> _refresh(WidgetRef ref) async {
+    await Future.wait([
+      ref.read(monthlyTransactionsProvider.notifier).load(),
+      ref.read(accountsProvider.notifier).load(),
+      ref.read(categoriesProvider.notifier).load(),
+      ref.read(goalsProvider.notifier).load(),
+      ref.read(budgetLimitsProvider.notifier).load(),
+    ]);
+  }
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -37,179 +51,253 @@ class OverviewScreen extends ConsumerWidget {
     }
 
     return Scaffold(
-      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-      body: CustomScrollView(
-        slivers: [
-          SliverToBoxAdapter(
-            child: Container(
-              padding: const EdgeInsets.fromLTRB(20, 12, 20, 0),
-              child: SafeArea(
-                bottom: false,
-                child: Row(
-                  children: [
-                    GestureDetector(
-                      onTap: () => context.push('/settings'),
-                      child: CircleAvatar(
-                        radius: 20,
-                        backgroundColor: roleColors.primary.withValues(alpha: 0.15),
-                        backgroundImage: user?.avatarUrl != null ? NetworkImage(user!.avatarUrl!) : null,
-                        child: user?.avatarUrl == null
-                            ? Image.asset(roleColors.mascotImage, width: 28, height: 28, fit: BoxFit.contain)
-                            : null,
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            'Hi, ${user?.name ?? 'there'}!',
-                            style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w600),
-                          ),
-                          Text(
-                            selectedMonth.monthYear,
-                            style: const TextStyle(fontSize: 12, color: AppColors.textSecondary),
-                          ),
-                        ],
-                      ),
-                    ),
-                    MiniMascot(imagePath: roleColors.mascotImage, size: 24),
-                    const SizedBox(width: 8),
-                    IconButton(
-                      icon: const Icon(Icons.settings_outlined, color: AppColors.textSecondary),
-                      onPressed: () => context.push('/settings'),
-                    ),
-                  ],
-                ),
-              ),
+      backgroundColor: Colors.transparent,
+      body: ThemedBackdrop(
+        child: RefreshIndicator(
+          onRefresh: () => _refresh(ref),
+          child: CustomScrollView(
+            physics: const AlwaysScrollableScrollPhysics(
+              parent: BouncingScrollPhysics(),
             ),
-          ),
-          SliverToBoxAdapter(
-            child: Padding(
-              padding: const EdgeInsets.fromLTRB(20, 12, 20, 0),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  IconButton(
-                    icon: const Icon(Icons.chevron_left, size: 28),
-                    onPressed: () {
-                      ref.read(selectedMonthProvider.notifier).state =
-                          DateTime(selectedMonth.year, selectedMonth.month - 1, 1);
-                    },
-                  ),
-                  GestureDetector(
-                    onTap: () {
-                      final now = DateTime.now();
-                      ref.read(selectedMonthProvider.notifier).state = DateTime(now.year, now.month, 1);
-                    },
-                    child: Text(selectedMonth.monthYear, style: Theme.of(context).textTheme.headlineMedium),
-                  ),
-                  IconButton(
-                    icon: const Icon(Icons.chevron_right, size: 28),
-                    onPressed: () {
-                      ref.read(selectedMonthProvider.notifier).state =
-                          DateTime(selectedMonth.year, selectedMonth.month + 1, 1);
-                    },
-                  ),
-                ],
-              ),
-            ),
-          ),
-          SliverToBoxAdapter(
-            child: Padding(
-              padding: const EdgeInsets.all(16),
-              child: _SummaryCards(
-                income: (totals['income'] ?? 0).toDouble(),
-                expense: (totals['expense'] ?? 0).toDouble(),
-                net: (totals['net'] ?? 0).toDouble(),
-              ),
-            ),
-          ),
-          const SliverToBoxAdapter(child: AccountsSummaryCard()),
-          const SliverToBoxAdapter(child: SizedBox(height: 12)),
-          const SliverToBoxAdapter(child: GoalsCard()),
-          SliverToBoxAdapter(
-            child: Card(
-              margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-              child: Padding(
-                padding: const EdgeInsets.all(20),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text('Expense Breakdown', style: Theme.of(context).textTheme.titleMedium),
-                    const SizedBox(height: 16),
-                    Builder(builder: (context) {
-                      final total =
-                          categoryTotals.values.fold<double>(0, (sum, v) => sum + v);
-                      return CategoryDonutChart(
-                        categoryTotals: categoryTotals,
-                        categoryNames: catMap,
-                        currency: 'JPY',
-                        totalAmount: total,
-                      );
-                    }),
-                  ],
-                ),
-              ),
-            ),
-          ),
-          const SliverToBoxAdapter(child: MemoryTimelineSection()),
-          SliverToBoxAdapter(
-            child: Padding(
-              padding: const EdgeInsets.fromLTRB(20, 20, 20, 8),
-              child: Text('Recent Transactions', style: Theme.of(context).textTheme.titleMedium),
-            ),
-          ),
-          transactions.when(
-            data: (txns) {
-              if (txns.isEmpty) {
-                return SliverToBoxAdapter(
-                  child: Padding(
-                    padding: const EdgeInsets.all(40),
-                    child: Column(
+            slivers: [
+              SliverToBoxAdapter(
+                child: Container(
+                  padding: const EdgeInsets.fromLTRB(20, 12, 20, 0),
+                  child: SafeArea(
+                    bottom: false,
+                    child: Row(
                       children: [
-                        AnimatedMascot(imagePath: roleColors.mascotImage, size: 60, glowColor: roleColors.primary),
-                        const SizedBox(height: 16),
-                        Text('No transactions this month', style: Theme.of(context).textTheme.bodyMedium),
-                        const SizedBox(height: 4),
-                        Text(
-                          'Tap + to add your first one!',
-                          style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: AppColors.textHint),
+                        GestureDetector(
+                          onTap: () => context.push('/settings'),
+                          child: CircleAvatar(
+                            radius: 20,
+                            backgroundColor:
+                                roleColors.primary.withValues(alpha: 0.15),
+                            backgroundImage: user?.avatarUrl != null
+                                ? NetworkImage(user!.avatarUrl!)
+                                : null,
+                            child: user?.avatarUrl == null
+                                ? Image.asset(
+                                    roleColors.mascotImage,
+                                    width: 28,
+                                    height: 28,
+                                    fit: BoxFit.contain,
+                                  )
+                                : null,
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                'Hi, ${user?.name ?? 'there'}!',
+                                style: Theme.of(context)
+                                    .textTheme
+                                    .titleMedium
+                                    ?.copyWith(fontWeight: FontWeight.w700),
+                              ),
+                              Text(
+                                selectedMonth.monthYear,
+                                style: const TextStyle(
+                                  fontSize: 12,
+                                  color: AppColors.textSecondary,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        MiniMascot(imagePath: roleColors.mascotImage, size: 24),
+                        const SizedBox(width: 8),
+                        IconButton(
+                          icon: const Icon(Icons.settings_outlined,
+                              color: AppColors.textSecondary),
+                          onPressed: () => context.push('/settings'),
                         ),
                       ],
                     ),
                   ),
-                );
-              }
-
-              final displayTxns = txns.take(20).toList();
-              return SliverList(
-                delegate: SliverChildBuilderDelegate(
-                  (context, index) {
-                    final txn = displayTxns[index];
-                    return Card(
-                      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 3),
-                      child: TransactionTile(
-                        transaction: txn,
-                        category: catEntityMap[txn.categoryId],
+                ),
+              ),
+              SliverToBoxAdapter(
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(20, 12, 20, 0),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      IconButton(
+                        icon: const Icon(Icons.chevron_left, size: 28),
+                        onPressed: () {
+                          ref.read(selectedMonthProvider.notifier).state =
+                              DateTime(selectedMonth.year,
+                                  selectedMonth.month - 1, 1);
+                        },
+                      ),
+                      GestureDetector(
+                        onTap: () {
+                          final now = DateTime.now();
+                          ref.read(selectedMonthProvider.notifier).state =
+                              DateTime(now.year, now.month, 1);
+                        },
+                        child: Text(
+                          selectedMonth.monthYear,
+                          style: Theme.of(context).textTheme.headlineMedium,
+                        ),
+                      ),
+                      IconButton(
+                        icon: const Icon(Icons.chevron_right, size: 28),
+                        onPressed: () {
+                          ref.read(selectedMonthProvider.notifier).state =
+                              DateTime(selectedMonth.year,
+                                  selectedMonth.month + 1, 1);
+                        },
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              SliverToBoxAdapter(
+                child: Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: _SummaryCards(
+                    income: (totals['income'] ?? 0).toDouble(),
+                    expense: (totals['expense'] ?? 0).toDouble(),
+                    net: (totals['net'] ?? 0).toDouble(),
+                  ),
+                ),
+              ),
+              SliverToBoxAdapter(
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: _QuickAction(
+                          icon: Icons.remove_circle_outline_rounded,
+                          label: 'Add Expense',
+                          onTap: () => context.push('/add'),
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: _QuickAction(
+                          icon: Icons.add_circle_outline_rounded,
+                          label: 'Add Income',
+                          onTap: () => context.push('/add'),
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: _QuickAction(
+                          icon: Icons.tune_rounded,
+                          label: 'Budgets',
+                          onTap: () => context.push('/summary/set-budget'),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              const SliverToBoxAdapter(child: SizedBox(height: 12)),
+              const SliverToBoxAdapter(child: AccountsSummaryCard()),
+              const SliverToBoxAdapter(child: SizedBox(height: 12)),
+              const SliverToBoxAdapter(child: GoalsCard()),
+              SliverToBoxAdapter(
+                child: Card(
+                  margin:
+                      const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                  child: Padding(
+                    padding: const EdgeInsets.all(20),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text('Expense Breakdown',
+                            style: Theme.of(context).textTheme.titleMedium),
+                        const SizedBox(height: 16),
+                        Builder(builder: (context) {
+                          final total = categoryTotals.values
+                              .fold<double>(0, (sum, v) => sum + v);
+                          return CategoryDonutChart(
+                            categoryTotals: categoryTotals,
+                            categoryNames: catMap,
+                            currency: 'JPY',
+                            totalAmount: total,
+                          );
+                        }),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+              const SliverToBoxAdapter(child: MemoryTimelineSection()),
+              SliverToBoxAdapter(
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(20, 20, 20, 8),
+                  child: Text('Recent Transactions',
+                      style: Theme.of(context).textTheme.titleMedium),
+                ),
+              ),
+              transactions.when(
+                data: (txns) {
+                  if (txns.isEmpty) {
+                    return SliverToBoxAdapter(
+                      child: Padding(
+                        padding: const EdgeInsets.all(40),
+                        child: Column(
+                          children: [
+                            AnimatedMascot(
+                              imagePath: roleColors.mascotImage,
+                              size: 60,
+                              glowColor: roleColors.primary,
+                            ),
+                            const SizedBox(height: 16),
+                            Text('No transactions this month',
+                                style: Theme.of(context).textTheme.bodyMedium),
+                            const SizedBox(height: 4),
+                            Text(
+                              'Tap + to add your first one!',
+                              style: Theme.of(context)
+                                  .textTheme
+                                  .bodyMedium
+                                  ?.copyWith(color: AppColors.textHint),
+                            ),
+                          ],
+                        ),
                       ),
                     );
-                  },
-                  childCount: displayTxns.length,
+                  }
+
+                  final displayTxns = txns.take(20).toList();
+                  return SliverList(
+                    delegate: SliverChildBuilderDelegate(
+                      (context, index) {
+                        final txn = displayTxns[index];
+                        return Card(
+                          margin: const EdgeInsets.symmetric(
+                              horizontal: 16, vertical: 3),
+                          child: TransactionTile(
+                            transaction: txn,
+                            category: catEntityMap[txn.categoryId],
+                          ),
+                        );
+                      },
+                      childCount: displayTxns.length,
+                    ),
+                  );
+                },
+                loading: () => const SliverToBoxAdapter(
+                  child: Padding(
+                    padding: EdgeInsets.all(40),
+                    child: Center(child: CircularProgressIndicator()),
+                  ),
                 ),
-              );
-            },
-            loading: () => const SliverToBoxAdapter(
-              child: Padding(
-                padding: EdgeInsets.all(40),
-                child: Center(child: CircularProgressIndicator()),
+                error: (e, _) => SliverToBoxAdapter(child: Text('Error: $e')),
               ),
-            ),
-            error: (e, _) => SliverToBoxAdapter(child: Text('Error: $e')),
+              const SliverToBoxAdapter(child: SizedBox(height: 120)),
+            ],
           ),
-          const SliverToBoxAdapter(child: SizedBox(height: 100)),
-        ],
+        ),
       ),
     );
   }
@@ -279,7 +367,7 @@ class _MiniCard extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: AppColors.surface,
+        color: Colors.white.withValues(alpha: 0.86),
         borderRadius: BorderRadius.circular(16),
         boxShadow: const [
           BoxShadow(
@@ -312,10 +400,52 @@ class _MiniCard extends StatelessWidget {
             alignment: Alignment.centerLeft,
             child: Text(
               CurrencyFormatter.format(amount),
-              style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700, color: color),
+              style: TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.w700,
+                color: color,
+              ),
             ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+class _QuickAction extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final VoidCallback onTap;
+
+  const _QuickAction({
+    required this.icon,
+    required this.label,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: Colors.white.withValues(alpha: 0.85),
+      borderRadius: BorderRadius.circular(14),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(14),
+        onTap: onTap,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 8),
+          child: Column(
+            children: [
+              Icon(icon, size: 18),
+              const SizedBox(height: 4),
+              Text(
+                label,
+                style: const TextStyle(fontSize: 11),
+                overflow: TextOverflow.ellipsis,
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }

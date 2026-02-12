@@ -27,6 +27,8 @@ class AccountsSummaryCard extends ConsumerWidget {
               children: [
                 Row(
                   children: [
+                    const Icon(Icons.account_balance_wallet_rounded, size: 18),
+                    const SizedBox(width: 6),
                     const Text('Accounts', style: TextStyle(fontWeight: FontWeight.w700)),
                     const Spacer(),
                     TextButton(
@@ -37,7 +39,7 @@ class AccountsSummaryCard extends ConsumerWidget {
                 ),
                 Text(
                   CurrencyFormatter.format(total),
-                  style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w700),
+                  style: const TextStyle(fontSize: 24, fontWeight: FontWeight.w800),
                 ),
                 const SizedBox(height: 10),
                 if (topAccounts.isEmpty)
@@ -48,7 +50,16 @@ class AccountsSummaryCard extends ConsumerWidget {
                       padding: const EdgeInsets.only(bottom: 6),
                       child: Row(
                         children: [
-                          Text(a.type.icon),
+                          Container(
+                            width: 28,
+                            height: 28,
+                            decoration: BoxDecoration(
+                              color: AppColors.surfaceVariant,
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            alignment: Alignment.center,
+                            child: Text(a.type.icon),
+                          ),
                           const SizedBox(width: 8),
                           Expanded(
                             child: Text(

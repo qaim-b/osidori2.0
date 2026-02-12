@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'dart:ui';
 import '../../core/theme/app_colors.dart';
 import '../providers/appearance_provider.dart';
 
@@ -17,23 +18,32 @@ class AppShell extends ConsumerWidget {
 
     return Scaffold(
       body: navigationShell,
-      bottomNavigationBar: Container(
-        decoration: BoxDecoration(
-          color: preset.surface,
-          boxShadow: [
-            BoxShadow(
-              color: AppColors.shadow,
-              blurRadius: 12,
-              offset: const Offset(0, -2),
+      bottomNavigationBar: ClipRRect(
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+        child: BackdropFilter(
+          filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
+          child: Container(
+            decoration: BoxDecoration(
+              color: preset.surface.withValues(alpha: 0.90),
+              border: Border(
+                top: BorderSide(
+                  color: Colors.white.withValues(alpha: 0.4),
+                ),
+              ),
+              boxShadow: [
+                BoxShadow(
+                  color: AppColors.shadow,
+                  blurRadius: 12,
+                  offset: const Offset(0, -2),
+                ),
+              ],
             ),
-          ],
-        ),
-        child: SafeArea(
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceAround,
-              children: [
+            child: SafeArea(
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceAround,
+                  children: [
                 _NavItem(
                   index: 0,
                   currentIndex: navigationShell.currentIndex,
@@ -76,7 +86,9 @@ class AppShell extends ConsumerWidget {
                   activeColor: preset.primary,
                   onTap: () => navigationShell.goBranch(3),
                 ),
-              ],
+                  ],
+                ),
+              ),
             ),
           ),
         ),

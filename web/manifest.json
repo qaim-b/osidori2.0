@@ -1,11 +1,11 @@
 {
-    "name": "couples_finance",
-    "short_name": "couples_finance",
+    "name": "Osidori 2.0",
+    "short_name": "Osidori",
     "start_url": ".",
     "display": "standalone",
-    "background_color": "#0175C2",
-    "theme_color": "#0175C2",
-    "description": "A new Flutter project.",
+    "background_color": "#F3F8FF",
+    "theme_color": "#4A90E2",
+    "description": "Couples finance and life management app.",
     "orientation": "portrait-primary",
     "prefer_related_applications": false,
     "icons": [

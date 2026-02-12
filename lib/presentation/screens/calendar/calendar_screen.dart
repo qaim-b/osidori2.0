@@ -4,9 +4,11 @@ import '../../../core/theme/app_colors.dart';
 import '../../../core/utils/currency_formatter.dart';
 import '../../../core/extensions/datetime_ext.dart';
 import '../../../data/models/transaction_model.dart';
+import '../../../domain/entities/category_entity.dart';
 import '../../providers/transaction_provider.dart';
 import '../../providers/category_provider.dart';
 import '../../providers/theme_provider.dart';
+import '../../widgets/common/themed_backdrop.dart';
 import '../../widgets/transaction/transaction_tile.dart';
 
 class CalendarScreen extends ConsumerStatefulWidget {
@@ -19,6 +21,13 @@ class CalendarScreen extends ConsumerStatefulWidget {
 class _CalendarScreenState extends ConsumerState<CalendarScreen> {
   late DateTime _displayedMonth;
   DateTime? _selectedDay;
+
+  Future<void> _refresh() async {
+    await Future.wait([
+      ref.read(monthlyTransactionsProvider.notifier).load(),
+      ref.read(categoriesProvider.notifier).load(),
+    ]);
+  }
 
   @override
   void initState() {
@@ -51,8 +60,8 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
     final categories = ref.watch(categoriesProvider);
 
     // Build category lookup map
-    final catEntityMap = <String, dynamic>{};
-    for (final cat in categories.valueOrNull ?? []) {
+    final catEntityMap = <String, CategoryEntity>{};
+    for (final cat in categories.valueOrNull ?? <CategoryEntity>[]) {
       catEntityMap[cat.id] = cat;
     }
 
@@ -88,9 +97,15 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
     final startOffset = (firstWeekday - 1) % 7;
 
     return Scaffold(
-      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-      body: CustomScrollView(
-        slivers: [
+      backgroundColor: Colors.transparent,
+      body: ThemedBackdrop(
+        child: RefreshIndicator(
+          onRefresh: _refresh,
+          child: CustomScrollView(
+            physics: const AlwaysScrollableScrollPhysics(
+              parent: BouncingScrollPhysics(),
+            ),
+            slivers: [
           // App bar with month nav
           SliverAppBar(
             pinned: true,
@@ -207,8 +222,10 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
             _buildDayTransactions(transactions, roleColors, catEntityMap),
           ],
 
-          const SliverToBoxAdapter(child: SizedBox(height: 100)),
-        ],
+          const SliverToBoxAdapter(child: SizedBox(height: 110)),
+            ],
+          ),
+        ),
       ),
     );
   }
@@ -316,7 +333,7 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
   Widget _buildDayTransactions(
       AsyncValue<List<TransactionModel>> transactions,
       RoleColors roleColors,
-      Map<String, dynamic> catEntityMap) {
+      Map<String, CategoryEntity> catEntityMap) {
     return transactions.when(
       data: (txns) {
         final dayTxns = txns.where((t) {
