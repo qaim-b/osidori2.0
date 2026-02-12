@@ -119,16 +119,24 @@ class CsvExporter {
       return t.isExpense && !t.date.isBefore(from) && t.date.isBefore(to);
     }).toList();
 
-    final categoryIds = categoryNames.keys.toList()
+    final categoryDisplayNames = <String, String>{...categoryNames};
+    for (final txn in expenseTxns) {
+      categoryDisplayNames[txn.categoryId] =
+          categoryDisplayNames[txn.categoryId] ??
+          txn.categoryNameSnapshot ??
+          txn.categoryId;
+    }
+
+    final categoryIds = categoryDisplayNames.keys.toList()
       ..sort((a, b) {
-        final an = categoryNames[a] ?? a;
-        final bn = categoryNames[b] ?? b;
+        final an = categoryDisplayNames[a] ?? a;
+        final bn = categoryDisplayNames[b] ?? b;
         return an.compareTo(bn);
       });
 
     final header = <String>[
       'Date',
-      ...categoryIds.map((id) => categoryNames[id] ?? id),
+      ...categoryIds.map((id) => categoryDisplayNames[id] ?? id),
       'Total',
     ];
 
@@ -258,9 +266,19 @@ class CsvExporter {
       return t.isExpense && !t.date.isBefore(from) && t.date.isBefore(to);
     }).toList();
 
-    final categoryIds = categoryNames.keys.toList()
+    final categoryDisplayNames = <String, String>{...categoryNames};
+    for (final txn in expenseTxns) {
+      categoryDisplayNames[txn.categoryId] =
+          categoryDisplayNames[txn.categoryId] ??
+          txn.categoryNameSnapshot ??
+          txn.categoryId;
+    }
+
+    final categoryIds = categoryDisplayNames.keys.toList()
       ..sort(
-        (a, b) => (categoryNames[a] ?? a).compareTo(categoryNames[b] ?? b),
+        (a, b) => (categoryDisplayNames[a] ?? a).compareTo(
+          categoryDisplayNames[b] ?? b,
+        ),
       );
 
     final byDate = <String, Map<String, double>>{};
@@ -275,7 +293,7 @@ class CsvExporter {
 
     sheet.appendRow([
       TextCellValue('Date'),
-      ...categoryIds.map((id) => TextCellValue(categoryNames[id] ?? id)),
+      ...categoryIds.map((id) => TextCellValue(categoryDisplayNames[id] ?? id)),
       TextCellValue('Total'),
     ]);
 
