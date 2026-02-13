@@ -34,6 +34,27 @@
 
   <title>Osidori 2.0</title>
   <link rel="manifest" href="manifest.json">
+  <style>
+    html, body {
+      margin: 0;
+      padding: 0;
+      width: 100%;
+      height: 100%;
+      overflow-x: hidden;
+      overscroll-behavior-x: none;
+      overscroll-behavior-y: contain;
+      touch-action: pan-y;
+      -webkit-overflow-scrolling: touch;
+      -webkit-text-size-adjust: 100%;
+      background: #ffffff;
+    }
+
+    flutter-view, flt-glass-pane, #flutter-view {
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+    }
+  </style>
 </head>
 <body>
   <script src="flutter_bootstrap.js" async></script>
