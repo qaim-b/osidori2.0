@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+
 import '../../../core/theme/app_colors.dart';
 import '../../providers/budget_limit_provider.dart';
 import '../../providers/category_provider.dart';
@@ -57,18 +58,30 @@ class _SetBudgetLimitScreenState extends ConsumerState<SetBudgetLimitScreen> {
                   const SizedBox(width: 8),
                   Expanded(child: Text(cat.name)),
                   SizedBox(
-                    width: 120,
-                    child: TextField(
-                      controller: _controllers[cat.id],
-                      keyboardType: const TextInputType.numberWithOptions(
-                        decimal: true,
-                      ),
-                      textAlign: TextAlign.right,
-                      decoration: const InputDecoration(
-                        hintText: '0',
-                        isDense: true,
-                        prefixText: '¥ ',
-                      ),
+                    width: 178,
+                    child: Row(
+                      children: [
+                        Expanded(
+                          child: TextField(
+                            controller: _controllers[cat.id],
+                            keyboardType: const TextInputType.numberWithOptions(
+                              decimal: true,
+                            ),
+                            textAlign: TextAlign.right,
+                            decoration: const InputDecoration(
+                              hintText: 'none',
+                              helperText: '0 = none',
+                              isDense: true,
+                              prefixText: '¥ ',
+                            ),
+                          ),
+                        ),
+                        IconButton(
+                          tooltip: 'Reset budget',
+                          onPressed: () => _controllers[cat.id]?.clear(),
+                          icon: const Icon(Icons.remove_circle_outline_rounded),
+                        ),
+                      ],
                     ),
                   ),
                 ],
@@ -87,6 +100,7 @@ class _SetBudgetLimitScreenState extends ConsumerState<SetBudgetLimitScreen> {
               final notifier = ref.read(budgetLimitsProvider.notifier);
               final existingLimits =
                   ref.read(budgetLimitsProvider).valueOrNull ?? [];
+
               for (final cat in expenseCategories) {
                 final raw = _controllers[cat.id]?.text.trim() ?? '';
                 final value = double.tryParse(raw);
@@ -101,6 +115,7 @@ class _SetBudgetLimitScreenState extends ConsumerState<SetBudgetLimitScreen> {
                   }
                 }
               }
+
               if (!mounted) return;
               messenger.showSnackBar(
                 const SnackBar(

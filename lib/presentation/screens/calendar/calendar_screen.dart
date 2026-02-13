@@ -33,9 +33,9 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
   @override
   void initState() {
     super.initState();
-    final now = DateTime.now();
-    _displayedMonth = DateTime(now.year, now.month, 1);
-    _selectedDay = DateTime(now.year, now.month, now.day);
+    final selected = ref.read(selectedMonthProvider);
+    _displayedMonth = DateTime(selected.year, selected.month, 1);
+    _selectedDay = DateTime(_displayedMonth.year, _displayedMonth.month, 1);
   }
 
   void _prevMonth() {
@@ -47,6 +47,7 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
       );
       _selectedDay = null;
     });
+    ref.read(selectedMonthProvider.notifier).state = _displayedMonth;
   }
 
   void _nextMonth() {
@@ -58,6 +59,7 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
       );
       _selectedDay = null;
     });
+    ref.read(selectedMonthProvider.notifier).state = _displayedMonth;
   }
 
   @override
@@ -83,15 +85,6 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
         } else if (txn.isIncome) {
           dailyIncome[day] = (dailyIncome[day] ?? 0) + txn.amount;
         }
-      }
-    });
-
-    // Update the selected month provider to match displayed month
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      final current = ref.read(selectedMonthProvider);
-      if (current.year != _displayedMonth.year ||
-          current.month != _displayedMonth.month) {
-        ref.read(selectedMonthProvider.notifier).state = _displayedMonth;
       }
     });
 

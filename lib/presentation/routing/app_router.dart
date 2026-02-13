@@ -20,6 +20,7 @@ import '../screens/settings/settings_screen.dart';
 import '../screens/summary/set_budget_limit_screen.dart';
 import '../screens/summary/summary_screen.dart';
 import '../screens/transaction/add_transaction_screen.dart';
+import '../screens/transaction/recent_transactions_screen.dart';
 
 final appRouterProvider = Provider<GoRouter>((ref) {
   final authState = ref.watch(authStateProvider);
@@ -142,6 +143,10 @@ final appRouterProvider = Provider<GoRouter>((ref) {
           final categoryId = state.pathParameters['categoryId']!;
           return CategoryTransactionsScreen(categoryId: categoryId);
         },
+      ),
+      GoRoute(
+        path: '/transactions/recent',
+        builder: (context, state) => const RecentTransactionsScreen(),
       ),
     ],
   );

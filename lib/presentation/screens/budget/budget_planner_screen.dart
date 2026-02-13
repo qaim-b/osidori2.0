@@ -79,18 +79,33 @@ class _BudgetPlannerScreenState extends ConsumerState<BudgetPlannerScreen> {
                         const SizedBox(width: 8),
                         Expanded(child: Text(cat.displayLabel)),
                         SizedBox(
-                          width: 120,
-                          child: TextField(
-                            controller: _controllers[cat.id],
-                            keyboardType: const TextInputType.numberWithOptions(
-                              decimal: true,
-                            ),
-                            textAlign: TextAlign.right,
-                            decoration: const InputDecoration(
-                              hintText: 'none',
-                              isDense: true,
-                              prefixText: '¥ ',
-                            ),
+                          width: 178,
+                          child: Row(
+                            children: [
+                              Expanded(
+                                child: TextField(
+                                  controller: _controllers[cat.id],
+                                  keyboardType:
+                                      const TextInputType.numberWithOptions(
+                                        decimal: true,
+                                      ),
+                                  textAlign: TextAlign.right,
+                                  decoration: const InputDecoration(
+                                    hintText: 'none',
+                                    helperText: '0 = none',
+                                    isDense: true,
+                                    prefixText: '¥ ',
+                                  ),
+                                ),
+                              ),
+                              IconButton(
+                                tooltip: 'Reset budget',
+                                onPressed: () => _controllers[cat.id]?.clear(),
+                                icon: const Icon(
+                                  Icons.remove_circle_outline_rounded,
+                                ),
+                              ),
+                            ],
                           ),
                         ),
                       ],

@@ -35,19 +35,36 @@ class BudgetScreen extends ConsumerWidget {
 
     final catEntityMap = <String, CategoryEntity>{};
     final catNameMap = <String, String>{};
+    final resolvedCategoryNameMap = <String, String>{};
+    final resolvedCategoryEmojiMap = <String, String>{};
     final catSnapshotNameMap = <String, String>{};
     final catSnapshotEmojiMap = <String, String>{};
     for (final cat in categories.valueOrNull ?? <CategoryEntity>[]) {
       catEntityMap[cat.id] = cat;
       catNameMap[cat.id] = cat.shortLabel;
+      resolvedCategoryNameMap[cat.id] = cat.name;
+      resolvedCategoryEmojiMap[cat.id] = cat.emoji;
     }
     for (final txn in txns) {
       if (txn.categoryNameSnapshot != null) {
         catSnapshotNameMap[txn.categoryId] = txn.categoryNameSnapshot!;
+        resolvedCategoryNameMap[txn.categoryId] =
+            resolvedCategoryNameMap[txn.categoryId] ??
+            txn.categoryNameSnapshot!;
       }
       if (txn.categoryEmojiSnapshot != null) {
         catSnapshotEmojiMap[txn.categoryId] = txn.categoryEmojiSnapshot!;
+        resolvedCategoryEmojiMap[txn.categoryId] =
+            resolvedCategoryEmojiMap[txn.categoryId] ??
+            txn.categoryEmojiSnapshot!;
       }
+      resolvedCategoryNameMap[txn.categoryId] =
+          resolvedCategoryNameMap[txn.categoryId] ??
+          (txn.categoryDisplayNumberSnapshot != null
+              ? 'Category #${txn.categoryDisplayNumberSnapshot}'
+              : 'Category');
+      resolvedCategoryEmojiMap[txn.categoryId] =
+          resolvedCategoryEmojiMap[txn.categoryId] ?? '🧾';
     }
 
     return Scaffold(
@@ -196,7 +213,13 @@ class BudgetScreen extends ConsumerWidget {
                             }
                             return CategoryDonutChart(
                               categoryTotals: categoryTotals,
-                              categoryNames: catNameMap,
+                              categoryNames: {
+                                for (final e in categoryTotals.entries)
+                                  e.key:
+                                      resolvedCategoryNameMap[e.key] ??
+                                      catNameMap[e.key] ??
+                                      'Category',
+                              },
                               currency: 'JPY',
                               totalAmount: total,
                             );
@@ -275,8 +298,10 @@ class BudgetScreen extends ConsumerWidget {
                                       backgroundColor: AppColors.surfaceVariant,
                                       child: Text(
                                         cat?.emoji ??
+                                            resolvedCategoryEmojiMap[entry
+                                                .key] ??
                                             catSnapshotEmojiMap[entry.key] ??
-                                            '📋',
+                                            '🧾',
                                         style: const TextStyle(fontSize: 16),
                                       ),
                                     ),
@@ -284,8 +309,10 @@ class BudgetScreen extends ConsumerWidget {
                                     Expanded(
                                       child: Text(
                                         cat?.name ??
+                                            resolvedCategoryNameMap[entry
+                                                .key] ??
                                             catSnapshotNameMap[entry.key] ??
-                                            'Unknown',
+                                            'Category',
                                         style: const TextStyle(
                                           fontWeight: FontWeight.w600,
                                         ),

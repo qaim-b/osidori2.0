@@ -276,9 +276,19 @@ class OverviewScreen extends ConsumerWidget {
               SliverToBoxAdapter(
                 child: Padding(
                   padding: const EdgeInsets.fromLTRB(20, 20, 20, 8),
-                  child: Text(
-                    'Recent Transactions',
-                    style: Theme.of(context).textTheme.titleMedium,
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: Text(
+                          'Recent Transactions',
+                          style: Theme.of(context).textTheme.titleMedium,
+                        ),
+                      ),
+                      TextButton(
+                        onPressed: () => context.push('/transactions/recent'),
+                        child: const Text('See all'),
+                      ),
+                    ],
                   ),
                 ),
               ),
@@ -312,7 +322,7 @@ class OverviewScreen extends ConsumerWidget {
                     );
                   }
 
-                  final displayTxns = txns.take(20).toList();
+                  final displayTxns = txns.take(7).toList();
                   return SliverList(
                     delegate: SliverChildBuilderDelegate((context, index) {
                       final txn = displayTxns[index];

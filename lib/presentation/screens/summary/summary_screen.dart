@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import '../../../core/extensions/datetime_ext.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/utils/csv_exporter.dart';
 import '../../../core/utils/currency_formatter.dart';
@@ -81,6 +82,44 @@ class SummaryScreen extends ConsumerWidget {
                     icon: const Icon(Icons.tune_rounded),
                   ),
                 ],
+              ),
+              SliverToBoxAdapter(
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 10, 16, 0),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      IconButton(
+                        icon: const Icon(Icons.chevron_left),
+                        onPressed: () {
+                          ref
+                              .read(selectedMonthProvider.notifier)
+                              .state = DateTime(
+                            selectedMonth.year,
+                            selectedMonth.month - 1,
+                            1,
+                          );
+                        },
+                      ),
+                      Text(
+                        selectedMonth.monthYear,
+                        style: Theme.of(context).textTheme.titleLarge,
+                      ),
+                      IconButton(
+                        icon: const Icon(Icons.chevron_right),
+                        onPressed: () {
+                          ref
+                              .read(selectedMonthProvider.notifier)
+                              .state = DateTime(
+                            selectedMonth.year,
+                            selectedMonth.month + 1,
+                            1,
+                          );
+                        },
+                      ),
+                    ],
+                  ),
+                ),
               ),
               SliverToBoxAdapter(
                 child: Padding(
