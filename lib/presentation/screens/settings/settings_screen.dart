@@ -33,6 +33,8 @@ class SettingsScreen extends ConsumerWidget {
     final currentUserId = ref.watch(currentUserIdProvider);
     final monthlyTxns =
         ref.watch(monthlyTransactionsProvider).valueOrNull ?? [];
+    final categories = ref.watch(categoriesProvider).valueOrNull ?? [];
+    final accounts = ref.watch(accountsProvider).valueOrNull ?? [];
 
     final sharedTxns = monthlyTxns.where((t) => t.isShared).toList()
       ..sort((a, b) => b.date.compareTo(a.date));
@@ -42,6 +44,10 @@ class SettingsScreen extends ConsumerWidget {
     final yourTxns = sharedTxns
         .where((t) => t.ownerUserId == currentUserId)
         .toList();
+    final categoryNameById = {for (final c in categories) c.id: c.shortLabel};
+    final accountNameById = {
+      for (final account in accounts) account.id: account.name,
+    };
 
     final avatarProvider = avatarImageProvider(user?.avatarUrl);
 
@@ -342,10 +348,6 @@ class SettingsScreen extends ConsumerWidget {
               ),
             ),
           ),
-          const SizedBox(height: 16),
-          const _SectionHeader(title: 'Shared Activity'),
-          Card(child: _SharedActivityList(sharedTxns: sharedTxns)),
-          const SizedBox(height: 16),
           const _SectionHeader(title: 'Data'),
           Card(
             child: Column(
@@ -412,6 +414,15 @@ class SettingsScreen extends ConsumerWidget {
                   onTap: () => context.push('/accounts'),
                 ),
               ],
+            ),
+          ),
+          const SizedBox(height: 16),
+          const _SectionHeader(title: 'Shared Activity'),
+          Card(
+            child: _SharedActivityList(
+              sharedTxns: sharedTxns,
+              accountNameById: accountNameById,
+              categoryNameById: categoryNameById,
             ),
           ),
           const SizedBox(height: 16),
@@ -569,14 +580,28 @@ class SettingsScreen extends ConsumerWidget {
   }
 }
 
-class _SharedActivityList extends StatelessWidget {
+class _SharedActivityList extends StatefulWidget {
   final List<TransactionModel> sharedTxns;
+  final Map<String, String> categoryNameById;
+  final Map<String, String> accountNameById;
 
-  const _SharedActivityList({required this.sharedTxns});
+  const _SharedActivityList({
+    required this.sharedTxns,
+    required this.categoryNameById,
+    required this.accountNameById,
+  });
+
+  @override
+  State<_SharedActivityList> createState() => _SharedActivityListState();
+}
+
+class _SharedActivityListState extends State<_SharedActivityList> {
+  static const int _pageSize = 3;
+  int _page = 0;
 
   @override
   Widget build(BuildContext context) {
-    if (sharedTxns.isEmpty) {
+    if (widget.sharedTxns.isEmpty) {
       return const ListTile(
         leading: Icon(Icons.timeline_rounded),
         title: Text('No shared activity yet'),
@@ -584,37 +609,151 @@ class _SharedActivityList extends StatelessWidget {
       );
     }
 
-    final preview = sharedTxns.take(10).toList();
-    return Column(
-      children: preview.map((t) {
-        final ownerShort = t.ownerUserId.length >= 6
-            ? t.ownerUserId.substring(0, 6)
-            : t.ownerUserId;
-        final sign = t.isExpense ? '-' : '+';
+    final totalPages = (widget.sharedTxns.length / _pageSize).ceil();
+    final safePage = _page.clamp(0, totalPages - 1);
+    if (safePage != _page) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) setState(() => _page = safePage);
+      });
+    }
+    final start = safePage * _pageSize;
+    final end = (start + _pageSize).clamp(0, widget.sharedTxns.length);
+    final pageItems = widget.sharedTxns.sublist(start, end);
 
-        return ListTile(
-          dense: true,
-          leading: Icon(
-            t.isExpense ? Icons.south_west_rounded : Icons.north_east_rounded,
-            size: 18,
-          ),
-          title: Text(
-            '${DateFormat('MMM d').format(t.date)}  |  by $ownerShort',
-            style: const TextStyle(fontSize: 12),
-          ),
-          subtitle: Text(
-            t.note?.isNotEmpty == true ? t.note! : 'No note',
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-          ),
-          trailing: Text(
-            '$sign${t.amount.toStringAsFixed(0)}',
-            style: TextStyle(
-              color: t.isExpense ? AppColors.expense : AppColors.income,
+    return Column(
+      children: [
+        ...pageItems.map((t) {
+          final ownerShort = t.ownerUserId.length >= 6
+              ? t.ownerUserId.substring(0, 6)
+              : t.ownerUserId;
+          final sign = t.isExpense ? '-' : '+';
+          final category = t.categoryNameSnapshot?.trim().isNotEmpty == true
+              ? t.categoryNameSnapshot!
+              : (widget.categoryNameById[t.categoryId] ?? 'Unknown category');
+          final fromAccount =
+              widget.accountNameById[t.fromAccountId] ?? 'Unknown account';
+          final toAccount = t.toAccountId == null
+              ? null
+              : (widget.accountNameById[t.toAccountId!] ?? 'Unknown account');
+          final note = t.note?.trim().isNotEmpty == true ? t.note! : 'No note';
+          final typeLabel =
+              t.type.name[0].toUpperCase() + t.type.name.substring(1);
+
+          return Padding(
+            padding: const EdgeInsets.fromLTRB(12, 8, 12, 8),
+            child: Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: AppColors.surfaceVariant,
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Icon(
+                        t.isExpense
+                            ? Icons.south_west_rounded
+                            : t.isIncome
+                            ? Icons.north_east_rounded
+                            : Icons.swap_horiz_rounded,
+                        size: 16,
+                      ),
+                      const SizedBox(width: 6),
+                      Expanded(
+                        child: Text(
+                          '${DateFormat('MMM d, HH:mm').format(t.date)}  |  $typeLabel  |  by $ownerShort',
+                          style: const TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ),
+                      Text(
+                        '$sign${t.amount.toStringAsFixed(0)} ${t.currency}',
+                        style: TextStyle(
+                          fontWeight: FontWeight.w700,
+                          color: t.isExpense
+                              ? AppColors.expense
+                              : AppColors.income,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    note,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(fontSize: 12),
+                  ),
+                  const SizedBox(height: 8),
+                  Wrap(
+                    spacing: 8,
+                    runSpacing: 6,
+                    children: [
+                      _DetailChip(label: 'Category', value: category),
+                      _DetailChip(label: 'From', value: fromAccount),
+                      if (toAccount != null)
+                        _DetailChip(label: 'To', value: toAccount),
+                    ],
+                  ),
+                ],
+              ),
             ),
+          );
+        }),
+        Padding(
+          padding: const EdgeInsets.fromLTRB(12, 4, 12, 12),
+          child: Row(
+            children: [
+              OutlinedButton.icon(
+                onPressed: safePage == 0
+                    ? null
+                    : () => setState(() => _page = safePage - 1),
+                icon: const Icon(Icons.chevron_left_rounded),
+                label: const Text('Prev'),
+              ),
+              const Spacer(),
+              Text(
+                'Page ${safePage + 1} of $totalPages',
+                style: const TextStyle(fontSize: 12),
+              ),
+              const Spacer(),
+              OutlinedButton.icon(
+                onPressed: safePage >= totalPages - 1
+                    ? null
+                    : () => setState(() => _page = safePage + 1),
+                icon: const Icon(Icons.chevron_right_rounded),
+                label: const Text('Next'),
+              ),
+            ],
           ),
-        );
-      }).toList(),
+        ),
+      ],
+    );
+  }
+}
+
+class _DetailChip extends StatelessWidget {
+  final String label;
+  final String value;
+
+  const _DetailChip({required this.label, required this.value});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+      decoration: BoxDecoration(
+        color: Colors.white.withValues(alpha: 0.8),
+        borderRadius: BorderRadius.circular(999),
+      ),
+      child: Text(
+        '$label: $value',
+        style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w500),
+      ),
     );
   }
 }
