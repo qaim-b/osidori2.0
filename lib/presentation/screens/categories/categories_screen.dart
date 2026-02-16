@@ -46,14 +46,14 @@ class _CategoriesScreenState extends ConsumerState<CategoriesScreen>
           ],
         ),
       ),
-      floatingActionButton: FloatingActionButton.extended(
+      floatingActionButton: FloatingActionButton(
+        mini: true,
         onPressed: () => _showAddCategoryDialog(
           context,
           ref,
           _tabController.index == 0 ? 'expense' : 'income',
         ),
-        icon: const Icon(Icons.add),
-        label: const Text('Add'),
+        child: const Icon(Icons.add),
       ),
       body: categoriesAsync.when(
         data: (categories) {

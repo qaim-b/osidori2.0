@@ -117,4 +117,74 @@ class CategoryRepository {
       rethrow;
     }
   }
+
+  Future<void> deleteWithTransactionReassign({
+    required String userId,
+    required CategoryModel category,
+  }) async {
+    final fallback = await _ensureArchiveCategory(
+      userId: userId,
+      type: category.type,
+      parentKey: category.parentKey,
+    );
+
+    if (fallback.id != category.id) {
+      await _client
+          .from(AppSupabase.transactionsTable)
+          .update({'category_id': fallback.id})
+          .eq('owner_user_id', userId)
+          .eq('category_id', category.id);
+    }
+
+    try {
+      await _client
+          .from(AppSupabase.categoriesTable)
+          .delete()
+          .eq('id', category.id)
+          .eq('user_id', userId);
+    } on PostgrestException catch (e) {
+      if (e.code == '23503') {
+        throw Exception(
+          'Category is still used by protected records. Disable it instead.',
+        );
+      }
+      rethrow;
+    }
+  }
+
+  Future<CategoryModel> _ensureArchiveCategory({
+    required String userId,
+    required String type,
+    required String? parentKey,
+  }) async {
+    final archiveName = type == 'income'
+        ? 'Archived Income'
+        : 'Archived Expense';
+    final existing = await _client
+        .from(AppSupabase.categoriesTable)
+        .select()
+        .eq('user_id', userId)
+        .eq('type', type)
+        .eq('name', archiveName)
+        .limit(1);
+    if (existing.isNotEmpty) {
+      return CategoryModel.fromJson(existing.first);
+    }
+
+    final fallback = CategoryModel(
+      id: _uuid.v4(),
+      displayNumber: 9999,
+      name: archiveName,
+      emoji: '🗂️',
+      type: type,
+      parentKey: parentKey,
+      isEnabled: false,
+      sortOrder: 999999,
+      createdAt: DateTime.now(),
+    );
+    final json = fallback.toJson();
+    json['user_id'] = userId;
+    await _client.from(AppSupabase.categoriesTable).insert(json);
+    return fallback;
+  }
 }
