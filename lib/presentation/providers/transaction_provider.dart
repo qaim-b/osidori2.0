@@ -252,23 +252,3 @@ final categoryTotalsProvider = Provider<Map<String, double>>((ref) {
   }
   return totals;
 });
-
-/// Wider transaction window used for cross-month credit card cycle calculations.
-final creditCycleTransactionsProvider = FutureProvider<List<TransactionModel>>((
-  ref,
-) async {
-  final userId = ref.watch(currentUserIdProvider);
-  if (userId == null) return [];
-  final groupIds = ref.watch(groupIdsProvider);
-  final repo = ref.read(transactionRepositoryProvider);
-  final now = DateTime.now();
-  final from = DateTime(now.year, now.month - 4, 1);
-  final to = DateTime(now.year, now.month + 2, 0, 23, 59, 59);
-  return repo.getForUser(
-    userId: userId,
-    groupIds: groupIds,
-    from: from,
-    to: to,
-    pageSize: 10000,
-  );
-});

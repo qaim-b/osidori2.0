@@ -12,8 +12,6 @@ class AccountEntity {
   final String? groupId;
   final String currency;
   final double initialBalance;
-  final int? creditCycleStartDay;
-  final int? creditPaymentDay;
   final DateTime createdAt;
 
   const AccountEntity({
@@ -25,8 +23,6 @@ class AccountEntity {
     this.groupId,
     required this.currency,
     this.initialBalance = 0,
-    this.creditCycleStartDay,
-    this.creditPaymentDay,
     required this.createdAt,
   });
 
@@ -39,8 +35,6 @@ class AccountEntity {
     String? groupId,
     String? currency,
     double? initialBalance,
-    int? creditCycleStartDay,
-    int? creditPaymentDay,
     DateTime? createdAt,
   }) {
     return AccountEntity(
@@ -52,8 +46,6 @@ class AccountEntity {
       groupId: groupId ?? this.groupId,
       currency: currency ?? this.currency,
       initialBalance: initialBalance ?? this.initialBalance,
-      creditCycleStartDay: creditCycleStartDay ?? this.creditCycleStartDay,
-      creditPaymentDay: creditPaymentDay ?? this.creditPaymentDay,
       createdAt: createdAt ?? this.createdAt,
     );
   }

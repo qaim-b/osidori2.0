@@ -12,8 +12,6 @@ class AccountModel extends AccountEntity {
     super.groupId,
     required super.currency,
     super.initialBalance,
-    super.creditCycleStartDay,
-    super.creditPaymentDay,
     required super.createdAt,
   });
 
@@ -27,8 +25,6 @@ class AccountModel extends AccountEntity {
       groupId: json['group_id'] as String?,
       currency: json['currency'] as String? ?? 'JPY',
       initialBalance: (json['initial_balance'] as num?)?.toDouble() ?? 0,
-      creditCycleStartDay: json['credit_cycle_start_day'] as int?,
-      creditPaymentDay: json['credit_payment_day'] as int?,
       createdAt: DateTime.parse(json['created_at'] as String),
     );
   }
@@ -43,8 +39,6 @@ class AccountModel extends AccountEntity {
       'group_id': groupId,
       'currency': currency,
       'initial_balance': initialBalance,
-      'credit_cycle_start_day': creditCycleStartDay,
-      'credit_payment_day': creditPaymentDay,
       'created_at': createdAt.toIso8601String(),
     };
   }
@@ -59,8 +53,6 @@ class AccountModel extends AccountEntity {
       groupId: entity.groupId,
       currency: entity.currency,
       initialBalance: entity.initialBalance,
-      creditCycleStartDay: entity.creditCycleStartDay,
-      creditPaymentDay: entity.creditPaymentDay,
       createdAt: entity.createdAt,
     );
   }

@@ -60,8 +60,6 @@ class AccountsNotifier extends StateNotifier<AsyncValue<List<AccountModel>>> {
     String? groupId,
     String currency = 'JPY',
     double initialBalance = 0,
-    int? creditCycleStartDay,
-    int? creditPaymentDay,
   }) async {
     if (_userId == null) return;
     final resolvedGroupId =
@@ -84,8 +82,6 @@ class AccountsNotifier extends StateNotifier<AsyncValue<List<AccountModel>>> {
       groupId: resolvedGroupId,
       currency: currency,
       initialBalance: initialBalance,
-      creditCycleStartDay: creditCycleStartDay,
-      creditPaymentDay: creditPaymentDay,
       createdAt: DateTime.now(),
     );
 

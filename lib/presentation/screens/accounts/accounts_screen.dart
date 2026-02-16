@@ -1,16 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:intl/intl.dart';
 
-import '../../../core/utils/credit_card_cycle.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/utils/currency_formatter.dart';
 import '../../../data/models/account_model.dart';
-import '../../../data/models/transaction_model.dart';
 import '../../../domain/enums/account_type.dart';
 import '../../providers/account_provider.dart';
-import '../../providers/transaction_provider.dart';
 
 class AccountsScreen extends ConsumerWidget {
   const AccountsScreen({super.key});
@@ -18,8 +14,6 @@ class AccountsScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final accountsAsync = ref.watch(accountsProvider);
-    final cycleTxns =
-        ref.watch(creditCycleTransactionsProvider).valueOrNull ?? [];
 
     return Scaffold(
       appBar: AppBar(
@@ -65,7 +59,7 @@ class AccountsScreen extends ConsumerWidget {
             itemCount: accounts.length,
             itemBuilder: (context, index) {
               final account = accounts[index];
-              return _AccountCard(account: account, cycleTxns: cycleTxns);
+              return _AccountCard(account: account);
             },
           );
         },
@@ -78,9 +72,8 @@ class AccountsScreen extends ConsumerWidget {
 
 class _AccountCard extends ConsumerWidget {
   final AccountModel account;
-  final List<TransactionModel> cycleTxns;
 
-  const _AccountCard({required this.account, required this.cycleTxns});
+  const _AccountCard({required this.account});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -91,116 +84,109 @@ class _AccountCard extends ConsumerWidget {
         onTap: () => _showEditDialog(context, ref, account),
         child: Padding(
           padding: const EdgeInsets.all(16),
-          child: Column(
+          child: Row(
             children: [
-              Row(
-                children: [
-                  Container(
-                    width: 48,
-                    height: 48,
-                    decoration: BoxDecoration(
-                      color: AppColors.primary.withValues(alpha: 0.12),
-                      borderRadius: BorderRadius.circular(14),
+              Container(
+                width: 48,
+                height: 48,
+                decoration: BoxDecoration(
+                  color: AppColors.primary.withValues(alpha: 0.12),
+                  borderRadius: BorderRadius.circular(14),
+                ),
+                alignment: Alignment.center,
+                child: Text(
+                  account.type.icon,
+                  style: const TextStyle(fontSize: 24),
+                ),
+              ),
+              const SizedBox(width: 14),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      account.name,
+                      style: Theme.of(context).textTheme.titleMedium,
                     ),
-                    alignment: Alignment.center,
-                    child: Text(
-                      account.type.icon,
-                      style: const TextStyle(fontSize: 24),
-                    ),
-                  ),
-                  const SizedBox(width: 14),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
+                    const SizedBox(height: 2),
+                    Row(
                       children: [
-                        Text(
-                          account.name,
-                          style: Theme.of(context).textTheme.titleMedium,
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 8,
+                            vertical: 2,
+                          ),
+                          decoration: BoxDecoration(
+                            color: AppColors.angelPink.withValues(alpha: 0.15),
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: const Text(
+                            'Shared',
+                            style: TextStyle(fontSize: 11),
+                          ),
                         ),
-                        const SizedBox(height: 2),
-                        Row(
-                          children: [
-                            Container(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 8,
-                                vertical: 2,
-                              ),
-                              decoration: BoxDecoration(
-                                color: AppColors.angelPink.withValues(
-                                  alpha: 0.15,
-                                ),
-                                borderRadius: BorderRadius.circular(8),
-                              ),
-                              child: const Text(
-                                'Shared',
-                                style: TextStyle(fontSize: 11),
-                              ),
-                            ),
-                            const SizedBox(width: 8),
-                            Text(
-                              account.type.label,
-                              style: Theme.of(
-                                context,
-                              ).textTheme.bodyMedium?.copyWith(fontSize: 12),
-                            ),
-                          ],
+                        const SizedBox(width: 8),
+                        Text(
+                          account.type.label,
+                          style: Theme.of(
+                            context,
+                          ).textTheme.bodyMedium?.copyWith(fontSize: 12),
                         ),
                       ],
                     ),
+                  ],
+                ),
+              ),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.end,
+                children: [
+                  Text(
+                    CurrencyFormatter.format(
+                      account.initialBalance,
+                      currency: account.currency,
+                    ),
+                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                      fontWeight: FontWeight.w700,
+                    ),
                   ),
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.end,
-                    children: [
-                      Text(
-                        CurrencyFormatter.format(
-                          account.initialBalance,
-                          currency: account.currency,
-                        ),
-                        style: Theme.of(context).textTheme.titleMedium
-                            ?.copyWith(fontWeight: FontWeight.w700),
-                      ),
-                      PopupMenuButton<String>(
-                        onSelected: (value) async {
-                          if (value == 'edit') {
-                            _showEditDialog(context, ref, account);
-                          }
-                          if (value == 'delete') {
-                            final confirmed = await showDialog<bool>(
-                              context: context,
-                              builder: (ctx) => AlertDialog(
-                                title: const Text('Delete account?'),
-                                content: const Text('This cannot be undone.'),
-                                actions: [
-                                  TextButton(
-                                    onPressed: () => Navigator.pop(ctx, false),
-                                    child: const Text('Cancel'),
-                                  ),
-                                  TextButton(
-                                    onPressed: () => Navigator.pop(ctx, true),
-                                    child: const Text('Delete'),
-                                  ),
-                                ],
+                  PopupMenuButton<String>(
+                    onSelected: (value) async {
+                      if (value == 'edit') {
+                        _showEditDialog(context, ref, account);
+                      }
+                      if (value == 'delete') {
+                        final confirmed = await showDialog<bool>(
+                          context: context,
+                          builder: (ctx) => AlertDialog(
+                            title: const Text('Delete account?'),
+                            content: const Text('This cannot be undone.'),
+                            actions: [
+                              TextButton(
+                                onPressed: () => Navigator.pop(ctx, false),
+                                child: const Text('Cancel'),
                               ),
-                            );
-                            if (confirmed == true) {
-                              await ref
-                                  .read(accountsProvider.notifier)
-                                  .deleteAccount(account.id);
-                            }
-                          }
-                        },
-                        itemBuilder: (context) => const [
-                          PopupMenuItem(value: 'edit', child: Text('Edit')),
-                          PopupMenuItem(value: 'delete', child: Text('Delete')),
-                        ],
-                        icon: const Icon(Icons.more_horiz),
-                      ),
+                              TextButton(
+                                onPressed: () => Navigator.pop(ctx, true),
+                                child: const Text('Delete'),
+                              ),
+                            ],
+                          ),
+                        );
+                        if (confirmed == true) {
+                          await ref
+                              .read(accountsProvider.notifier)
+                              .deleteAccount(account.id);
+                        }
+                      }
+                    },
+                    itemBuilder: (context) => const [
+                      PopupMenuItem(value: 'edit', child: Text('Edit')),
+                      PopupMenuItem(value: 'delete', child: Text('Delete')),
                     ],
+                    icon: const Icon(Icons.more_horiz),
                   ),
                 ],
               ),
-              if (account.type == AccountType.credit)
-                _CreditCycleGuide(account: account, txns: cycleTxns),
             ],
           ),
         ),
@@ -217,8 +203,6 @@ class _AccountCard extends ConsumerWidget {
     final balanceController = TextEditingController(
       text: current.initialBalance.toStringAsFixed(0),
     );
-    int cycleStart = current.creditCycleStartDay ?? 27;
-    int paymentDay = current.creditPaymentDay ?? 27;
     AccountType type = current.type;
 
     final save = await showDialog<bool>(
@@ -260,56 +244,6 @@ class _AccountCard extends ConsumerWidget {
                     }
                   },
                 ),
-                if (type == AccountType.credit) ...[
-                  const SizedBox(height: 8),
-                  Row(
-                    children: [
-                      Expanded(
-                        child: DropdownButtonFormField<int>(
-                          initialValue: cycleStart,
-                          decoration: const InputDecoration(
-                            labelText: 'Cycle starts',
-                          ),
-                          items: List.generate(31, (i) => i + 1)
-                              .map(
-                                (d) => DropdownMenuItem<int>(
-                                  value: d,
-                                  child: Text('$d'),
-                                ),
-                              )
-                              .toList(),
-                          onChanged: (value) {
-                            if (value != null) {
-                              setState(() => cycleStart = value);
-                            }
-                          },
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-                      Expanded(
-                        child: DropdownButtonFormField<int>(
-                          initialValue: paymentDay,
-                          decoration: const InputDecoration(
-                            labelText: 'Pay day',
-                          ),
-                          items: List.generate(31, (i) => i + 1)
-                              .map(
-                                (d) => DropdownMenuItem<int>(
-                                  value: d,
-                                  child: Text('$d'),
-                                ),
-                              )
-                              .toList(),
-                          onChanged: (value) {
-                            if (value != null) {
-                              setState(() => paymentDay = value);
-                            }
-                          },
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
               ],
             ),
             actions: [
@@ -340,70 +274,9 @@ class _AccountCard extends ConsumerWidget {
         groupId: current.groupId,
         currency: current.currency,
         initialBalance: parsedBalance,
-        creditCycleStartDay: type == AccountType.credit ? cycleStart : null,
-        creditPaymentDay: type == AccountType.credit ? paymentDay : null,
         createdAt: current.createdAt,
       );
       await ref.read(accountsProvider.notifier).updateAccount(updated);
     }
-  }
-}
-
-class _CreditCycleGuide extends StatelessWidget {
-  final AccountModel account;
-  final List<TransactionModel> txns;
-
-  const _CreditCycleGuide({required this.account, required this.txns});
-
-  @override
-  Widget build(BuildContext context) {
-    final snapshot = CreditCardCycle.buildSnapshot(
-      account: account,
-      transactions: txns,
-    );
-    if (snapshot == null) return const SizedBox.shrink();
-    final dateFmt = DateFormat('MMM d');
-
-    return Container(
-      margin: const EdgeInsets.only(top: 10),
-      width: double.infinity,
-      padding: const EdgeInsets.all(10),
-      decoration: BoxDecoration(
-        color: AppColors.surfaceVariant,
-        borderRadius: BorderRadius.circular(10),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Text(
-            'Billing Cycle Helper',
-            style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700),
-          ),
-          const SizedBox(height: 4),
-          Text(
-            'Last statement: ${dateFmt.format(snapshot.lastStatementStart)} - ${dateFmt.format(snapshot.lastStatementEnd)}',
-            style: const TextStyle(fontSize: 11),
-          ),
-          Text(
-            'Last statement amount: ${CurrencyFormatter.format(snapshot.lastStatementAmount, currency: account.currency)}',
-            style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600),
-          ),
-          const SizedBox(height: 2),
-          Text(
-            'Current cycle: ${dateFmt.format(snapshot.currentCycleStart)} - ${dateFmt.format(snapshot.currentCycleEnd)}',
-            style: const TextStyle(fontSize: 11),
-          ),
-          Text(
-            'Current cycle spend: ${CurrencyFormatter.format(snapshot.currentCycleAmount, currency: account.currency)}',
-            style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600),
-          ),
-          const SizedBox(height: 2),
-          Text(
-            'Next payment date: ${dateFmt.format(snapshot.nextPaymentDate)}',
-            style: const TextStyle(fontSize: 11),
-          ),
-        ],
-      ),
-    );
   }
 }

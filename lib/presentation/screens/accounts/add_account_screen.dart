@@ -18,8 +18,6 @@ class _AddAccountScreenState extends ConsumerState<AddAccountScreen> {
   final _nameController = TextEditingController();
   final _balanceController = TextEditingController();
   AccountType _type = AccountType.bank;
-  int _cycleStartDay = 27;
-  int _paymentDay = 27;
   bool _saving = false;
 
   @override
@@ -49,10 +47,6 @@ class _AddAccountScreenState extends ConsumerState<AddAccountScreen> {
             // All accounts are shared by default for couple transparency.
             currency: appCurrency,
             initialBalance: double.tryParse(_balanceController.text) ?? 0,
-            creditCycleStartDay: _type == AccountType.credit
-                ? _cycleStartDay
-                : null,
-            creditPaymentDay: _type == AccountType.credit ? _paymentDay : null,
           );
 
       if (mounted) {
@@ -142,60 +136,6 @@ class _AddAccountScreenState extends ConsumerState<AddAccountScreen> {
                 decimal: true,
               ),
             ),
-            if (_type == AccountType.credit) ...[
-              const SizedBox(height: 20),
-              Text(
-                'Credit Card Billing Cycle',
-                style: Theme.of(context).textTheme.titleMedium,
-              ),
-              const SizedBox(height: 8),
-              Row(
-                children: [
-                  Expanded(
-                    child: DropdownButtonFormField<int>(
-                      initialValue: _cycleStartDay,
-                      decoration: const InputDecoration(
-                        labelText: 'Cycle starts',
-                      ),
-                      items: List.generate(31, (i) => i + 1)
-                          .map(
-                            (d) => DropdownMenuItem<int>(
-                              value: d,
-                              child: Text('$d'),
-                            ),
-                          )
-                          .toList(),
-                      onChanged: (v) {
-                        if (v != null) setState(() => _cycleStartDay = v);
-                      },
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: DropdownButtonFormField<int>(
-                      initialValue: _paymentDay,
-                      decoration: const InputDecoration(labelText: 'Pay day'),
-                      items: List.generate(31, (i) => i + 1)
-                          .map(
-                            (d) => DropdownMenuItem<int>(
-                              value: d,
-                              child: Text('$d'),
-                            ),
-                          )
-                          .toList(),
-                      onChanged: (v) {
-                        if (v != null) setState(() => _paymentDay = v);
-                      },
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 8),
-              const Text(
-                'Example: Start 27 means each statement runs 27 -> 26 of next month.',
-                style: TextStyle(fontSize: 12, color: AppColors.textSecondary),
-              ),
-            ],
             const SizedBox(height: 32),
             SizedBox(
               width: double.infinity,
