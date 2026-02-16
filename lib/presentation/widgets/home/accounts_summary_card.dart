@@ -22,6 +22,7 @@ class AccountsSummaryCard extends ConsumerWidget {
             final top = [...accounts]..sort((a, b) => b.initialBalance.compareTo(a.initialBalance));
             final topAccounts = top.take(3).toList();
 
+
             return Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
