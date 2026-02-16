@@ -197,7 +197,6 @@ class OverviewScreen extends ConsumerWidget {
                   child: _SummaryCards(
                     income: (totals['income'] ?? 0).toDouble(),
                     expense: (totals['expense'] ?? 0).toDouble(),
-                    net: (totals['net'] ?? 0).toDouble(),
                   ),
                 ),
               ),
@@ -411,13 +410,8 @@ class _MemberAvatarBubble extends StatelessWidget {
 class _SummaryCards extends StatelessWidget {
   final double income;
   final double expense;
-  final double net;
 
-  const _SummaryCards({
-    required this.income,
-    required this.expense,
-    required this.net,
-  });
+  const _SummaryCards({required this.income, required this.expense});
 
   @override
   Widget build(BuildContext context) {
@@ -438,15 +432,6 @@ class _SummaryCards extends StatelessWidget {
             amount: expense,
             color: AppColors.expense,
             icon: Icons.arrow_downward_rounded,
-          ),
-        ),
-        const SizedBox(width: 8),
-        Expanded(
-          child: _MiniCard(
-            label: 'Net',
-            amount: net,
-            color: net >= 0 ? AppColors.income : AppColors.expense,
-            icon: net >= 0 ? Icons.trending_up : Icons.trending_down,
           ),
         ),
       ],

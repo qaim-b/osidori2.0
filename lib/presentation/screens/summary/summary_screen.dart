@@ -51,7 +51,6 @@ class SummaryScreen extends ConsumerWidget {
     }
     final expense = (totals['expense'] ?? 0.0).toDouble();
     final income = (totals['income'] ?? 0.0).toDouble();
-    final net = (totals['net'] ?? 0.0).toDouble();
 
     final top3 = categoryTotals.entries.toList()
       ..sort((a, b) => b.value.compareTo(a.value));
@@ -168,40 +167,6 @@ class SummaryScreen extends ConsumerWidget {
                               ),
                             ),
                           ],
-                        ),
-                        const SizedBox(height: 8),
-                        Container(
-                          width: double.infinity,
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 12,
-                            vertical: 10,
-                          ),
-                          decoration: BoxDecoration(
-                            color: Colors.white.withValues(alpha: 0.16),
-                            borderRadius: BorderRadius.circular(14),
-                          ),
-                          child: Row(
-                            children: [
-                              const Icon(
-                                Icons.auto_graph_rounded,
-                                color: Colors.white,
-                              ),
-                              const SizedBox(width: 8),
-                              const Text(
-                                'Net',
-                                style: TextStyle(color: Colors.white),
-                              ),
-                              const Spacer(),
-                              Text(
-                                CurrencyFormatter.format(net),
-                                style: const TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.w700,
-                                ),
-                              ),
-                            ],
-                          ),
                         ),
                       ],
                     ),
