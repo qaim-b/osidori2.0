@@ -32,32 +32,36 @@ class CategoryRepository {
 
     // Expense sub-categories
     for (final def in CategoryDefaults.expenseCategories) {
-      categories.add(CategoryModel(
-        id: _uuid.v4(),
-        displayNumber: def.number,
-        name: def.name,
-        emoji: def.emoji,
-        type: 'expense',
-        parentKey: def.parentKey,
-        isEnabled: true,
-        sortOrder: def.number,
-        createdAt: now,
-      ));
+      categories.add(
+        CategoryModel(
+          id: _uuid.v4(),
+          displayNumber: def.number,
+          name: def.name,
+          emoji: def.emoji,
+          type: 'expense',
+          parentKey: def.parentKey,
+          isEnabled: true,
+          sortOrder: def.number,
+          createdAt: now,
+        ),
+      );
     }
 
     // Income categories
     for (final def in CategoryDefaults.incomeCategories) {
-      categories.add(CategoryModel(
-        id: _uuid.v4(),
-        displayNumber: def.number,
-        name: def.name,
-        emoji: def.emoji,
-        type: 'income',
-        parentKey: 'income',
-        isEnabled: true,
-        sortOrder: 100 + def.number, // Income sorts after expense
-        createdAt: now,
-      ));
+      categories.add(
+        CategoryModel(
+          id: _uuid.v4(),
+          displayNumber: def.number,
+          name: def.name,
+          emoji: def.emoji,
+          type: 'income',
+          parentKey: 'income',
+          isEnabled: true,
+          sortOrder: 100 + def.number, // Income sorts after expense
+          createdAt: now,
+        ),
+      );
     }
 
     // Batch insert
@@ -75,7 +79,8 @@ class CategoryRepository {
   Future<void> toggleEnabled(String categoryId, bool enabled) async {
     await _client
         .from(AppSupabase.categoriesTable)
-        .update({'is_enabled': enabled}).eq('id', categoryId);
+        .update({'is_enabled': enabled})
+        .eq('id', categoryId);
   }
 
   /// Update category name/emoji
@@ -97,6 +102,19 @@ class CategoryRepository {
   }
 
   Future<void> delete(String categoryId) async {
-    await _client.from(AppSupabase.categoriesTable).delete().eq('id', categoryId);
+    try {
+      await _client
+          .from(AppSupabase.categoriesTable)
+          .delete()
+          .eq('id', categoryId);
+    } on PostgrestException catch (e) {
+      // FK guard: category is referenced by one or more transactions.
+      if (e.code == '23503') {
+        throw Exception(
+          'Cannot delete category because transactions still use it. Disable it instead.',
+        );
+      }
+      rethrow;
+    }
   }
 }

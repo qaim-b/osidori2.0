@@ -72,7 +72,17 @@ class AccountRepository {
   }
 
   Future<void> delete(String id) async {
-    await _client.from(AppSupabase.accountsTable).delete().eq('id', id);
+    try {
+      await _client.from(AppSupabase.accountsTable).delete().eq('id', id);
+    } on PostgrestException catch (e) {
+      // FK guard: account is referenced by one or more transactions.
+      if (e.code == '23503') {
+        throw Exception(
+          'Cannot delete account because transactions still use it.',
+        );
+      }
+      rethrow;
+    }
   }
 
   Future<AccountModel?> getById(String id) async {

@@ -173,9 +173,24 @@ class _AccountCard extends ConsumerWidget {
                           ),
                         );
                         if (confirmed == true) {
-                          await ref
-                              .read(accountsProvider.notifier)
-                              .deleteAccount(account.id);
+                          try {
+                            await ref
+                                .read(accountsProvider.notifier)
+                                .deleteAccount(account.id);
+                            if (context.mounted) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(
+                                  content: Text('Account deleted'),
+                                ),
+                              );
+                            }
+                          } catch (e) {
+                            if (context.mounted) {
+                              ScaffoldMessenger.of(
+                                context,
+                              ).showSnackBar(SnackBar(content: Text('$e')));
+                            }
+                          }
                         }
                       }
                     },

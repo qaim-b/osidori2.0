@@ -69,10 +69,7 @@ class _CategoriesScreenState extends ConsumerState<CategoriesScreen>
                 categories: expenses,
                 parentDefs: CategoryDefaults.parentCategories,
               ),
-              _CategoryList(
-                categories: incomes,
-                parentDefs: const [],
-              ),
+              _CategoryList(categories: incomes, parentDefs: const []),
             ],
           );
         },
@@ -93,10 +90,14 @@ class _CategoriesScreenState extends ConsumerState<CategoriesScreen>
         ? 0
         : existing.map((e) => e.displayNumber).reduce((a, b) => a > b ? a : b);
 
-    final emojiController = TextEditingController(text: type == 'expense' ? '🧾' : '💰');
+    final emojiController = TextEditingController(
+      text: type == 'expense' ? '🧾' : '💰',
+    );
     final nameController = TextEditingController();
     final numberController = TextEditingController(text: '${maxNumber + 1}');
-    String? parentKey = type == 'income' ? 'income' : CategoryDefaults.parentCategories.first.key;
+    String? parentKey = type == 'income'
+        ? 'income'
+        : CategoryDefaults.parentCategories.first.key;
 
     await showDialog<void>(
       context: context,
@@ -126,10 +127,12 @@ class _CategoriesScreenState extends ConsumerState<CategoriesScreen>
                 DropdownButtonFormField<String>(
                   initialValue: parentKey,
                   items: CategoryDefaults.parentCategories
-                      .map((p) => DropdownMenuItem(
-                            value: p.key,
-                            child: Text('${p.emoji} ${p.name}'),
-                          ))
+                      .map(
+                        (p) => DropdownMenuItem(
+                          value: p.key,
+                          child: Text('${p.emoji} ${p.name}'),
+                        ),
+                      )
                       .toList(),
                   onChanged: (v) => parentKey = v,
                   decoration: const InputDecoration(labelText: 'Parent'),
@@ -148,10 +151,14 @@ class _CategoriesScreenState extends ConsumerState<CategoriesScreen>
               final number = int.tryParse(numberController.text.trim());
               final name = nameController.text.trim();
               if (number == null || name.isEmpty) return;
-              await ref.read(categoriesProvider.notifier).addCategory(
+              await ref
+                  .read(categoriesProvider.notifier)
+                  .addCategory(
                     type: type,
                     name: name,
-                    emoji: emojiController.text.trim().isEmpty ? '🧾' : emojiController.text.trim(),
+                    emoji: emojiController.text.trim().isEmpty
+                        ? '🧾'
+                        : emojiController.text.trim(),
                     displayNumber: number,
                     parentKey: parentKey,
                   );
@@ -170,10 +177,7 @@ class _CategoryList extends ConsumerWidget {
   final List<CategoryModel> categories;
   final List<ParentCategoryDef> parentDefs;
 
-  const _CategoryList({
-    required this.categories,
-    required this.parentDefs,
-  });
+  const _CategoryList({required this.categories, required this.parentDefs});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -206,8 +210,10 @@ class _CategoryList extends ConsumerWidget {
                 padding: const EdgeInsets.fromLTRB(16, 14, 16, 4),
                 child: Row(
                   children: [
-                    Text(parentDef?.emoji ?? '📋',
-                        style: const TextStyle(fontSize: 18)),
+                    Text(
+                      parentDef?.emoji ?? '📋',
+                      style: const TextStyle(fontSize: 18),
+                    ),
                     const SizedBox(width: 8),
                     Text(
                       parentDef?.name ?? parentKey,
@@ -239,7 +245,9 @@ class _CategoryTile extends ConsumerWidget {
         '${category.displayNumber}. ${category.name}',
         style: TextStyle(
           fontSize: 14,
-          color: category.isEnabled ? AppColors.textPrimary : AppColors.textHint,
+          color: category.isEnabled
+              ? AppColors.textPrimary
+              : AppColors.textHint,
           decoration: category.isEnabled ? null : TextDecoration.lineThrough,
         ),
       ),
@@ -255,14 +263,20 @@ class _CategoryTile extends ConsumerWidget {
           IconButton(
             tooltip: 'Delete',
             onPressed: () => _confirmDelete(context, ref, category),
-            icon: const Icon(Icons.delete_outline, color: AppColors.expense, size: 18),
+            icon: const Icon(
+              Icons.delete_outline,
+              color: AppColors.expense,
+              size: 18,
+            ),
           ),
           Switch.adaptive(
             value: category.isEnabled,
             activeTrackColor: AppColors.primary.withValues(alpha: 0.4),
             activeThumbColor: AppColors.primary,
             onChanged: (val) {
-              ref.read(categoriesProvider.notifier).toggleEnabled(category.id, val);
+              ref
+                  .read(categoriesProvider.notifier)
+                  .toggleEnabled(category.id, val);
             },
           ),
         ],
@@ -272,11 +286,15 @@ class _CategoryTile extends ConsumerWidget {
   }
 
   Future<void> _showEditDialog(
-      BuildContext context, WidgetRef ref, CategoryModel category) async {
+    BuildContext context,
+    WidgetRef ref,
+    CategoryModel category,
+  ) async {
     final emojiController = TextEditingController(text: category.emoji);
     final nameController = TextEditingController(text: category.name);
-    final numberController =
-        TextEditingController(text: category.displayNumber.toString());
+    final numberController = TextEditingController(
+      text: category.displayNumber.toString(),
+    );
 
     await showDialog<void>(
       context: context,
@@ -325,7 +343,9 @@ class _CategoryTile extends ConsumerWidget {
                 sortOrder: number,
                 createdAt: category.createdAt,
               );
-              await ref.read(categoriesProvider.notifier).updateCategory(updated);
+              await ref
+                  .read(categoriesProvider.notifier)
+                  .updateCategory(updated);
               if (!ctx.mounted) return;
               Navigator.of(ctx).pop();
             },
@@ -337,13 +357,17 @@ class _CategoryTile extends ConsumerWidget {
   }
 
   Future<void> _confirmDelete(
-      BuildContext context, WidgetRef ref, CategoryModel category) async {
+    BuildContext context,
+    WidgetRef ref,
+    CategoryModel category,
+  ) async {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
         title: const Text('Delete Category?'),
         content: Text(
-            'Delete "${category.displayNumber}. ${category.name}"? Existing transactions keep their category id.'),
+          'Delete "${category.displayNumber}. ${category.name}"? Existing transactions keep their category id.',
+        ),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(ctx).pop(false),
@@ -357,7 +381,20 @@ class _CategoryTile extends ConsumerWidget {
       ),
     );
     if (confirmed == true) {
-      await ref.read(categoriesProvider.notifier).deleteCategory(category.id);
+      try {
+        await ref.read(categoriesProvider.notifier).deleteCategory(category.id);
+        if (context.mounted) {
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(const SnackBar(content: Text('Category deleted')));
+        }
+      } catch (e) {
+        if (context.mounted) {
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(SnackBar(content: Text('$e')));
+        }
+      }
     }
   }
 }
