@@ -44,8 +44,8 @@ class _AddTransactionScreenState extends ConsumerState<AddTransactionScreen> {
     final picked = await showDatePicker(
       context: context,
       initialDate: _date,
-      firstDate: DateTime(2020),
-      lastDate: DateTime.now().add(const Duration(days: 1)),
+      firstDate: DateTime(2000, 1, 1),
+      lastDate: DateTime(2100, 12, 31),
       builder: (context, child) {
         return Theme(
           data: Theme.of(context).copyWith(

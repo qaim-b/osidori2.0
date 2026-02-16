@@ -33,9 +33,10 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
   @override
   void initState() {
     super.initState();
-    final selected = ref.read(selectedMonthProvider);
-    _displayedMonth = DateTime(selected.year, selected.month, 1);
-    _selectedDay = DateTime(_displayedMonth.year, _displayedMonth.month, 1);
+    final now = DateTime.now();
+    _displayedMonth = DateTime(now.year, now.month, 1);
+    _selectedDay = DateTime(now.year, now.month, now.day);
+    ref.read(selectedMonthProvider.notifier).state = _displayedMonth;
   }
 
   void _prevMonth() {
@@ -45,7 +46,7 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
         _displayedMonth.month - 1,
         1,
       );
-      _selectedDay = null;
+      _selectedDay = DateTime(_displayedMonth.year, _displayedMonth.month, 1);
     });
     ref.read(selectedMonthProvider.notifier).state = _displayedMonth;
   }
@@ -57,7 +58,7 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
         _displayedMonth.month + 1,
         1,
       );
-      _selectedDay = null;
+      _selectedDay = DateTime(_displayedMonth.year, _displayedMonth.month, 1);
     });
     ref.read(selectedMonthProvider.notifier).state = _displayedMonth;
   }
@@ -563,8 +564,8 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
                       final picked = await showDatePicker(
                         context: ctx,
                         initialDate: selectedDate,
-                        firstDate: DateTime(2020),
-                        lastDate: DateTime.now().add(const Duration(days: 1)),
+                        firstDate: DateTime(2000, 1, 1),
+                        lastDate: DateTime(2100, 12, 31),
                       );
                       if (picked != null) {
                         setDialogState(() => selectedDate = picked);

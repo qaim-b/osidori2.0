@@ -708,25 +708,55 @@ class _SharedActivityListState extends State<_SharedActivityList> {
           padding: const EdgeInsets.fromLTRB(12, 4, 12, 12),
           child: Row(
             children: [
-              OutlinedButton.icon(
-                onPressed: safePage == 0
-                    ? null
-                    : () => setState(() => _page = safePage - 1),
-                icon: const Icon(Icons.chevron_left_rounded),
-                label: const Text('Prev'),
+              Expanded(
+                child: Align(
+                  alignment: Alignment.centerLeft,
+                  child: OutlinedButton.icon(
+                    onPressed: safePage == 0
+                        ? null
+                        : () => setState(() => _page = safePage - 1),
+                    style: OutlinedButton.styleFrom(
+                      visualDensity: VisualDensity.compact,
+                      tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 10,
+                        vertical: 8,
+                      ),
+                      minimumSize: const Size(72, 34),
+                    ),
+                    icon: const Icon(Icons.chevron_left_rounded, size: 18),
+                    label: const Text('Prev'),
+                  ),
+                ),
               ),
-              const Spacer(),
-              Text(
-                'Page ${safePage + 1} of $totalPages',
-                style: const TextStyle(fontSize: 12),
+              Expanded(
+                child: Center(
+                  child: Text(
+                    'Page ${safePage + 1} of $totalPages',
+                    style: const TextStyle(fontSize: 12),
+                  ),
+                ),
               ),
-              const Spacer(),
-              OutlinedButton.icon(
-                onPressed: safePage >= totalPages - 1
-                    ? null
-                    : () => setState(() => _page = safePage + 1),
-                icon: const Icon(Icons.chevron_right_rounded),
-                label: const Text('Next'),
+              Expanded(
+                child: Align(
+                  alignment: Alignment.centerRight,
+                  child: OutlinedButton.icon(
+                    onPressed: safePage >= totalPages - 1
+                        ? null
+                        : () => setState(() => _page = safePage + 1),
+                    style: OutlinedButton.styleFrom(
+                      visualDensity: VisualDensity.compact,
+                      tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 10,
+                        vertical: 8,
+                      ),
+                      minimumSize: const Size(72, 34),
+                    ),
+                    icon: const Icon(Icons.chevron_right_rounded, size: 18),
+                    label: const Text('Next'),
+                  ),
+                ),
               ),
             ],
           ),

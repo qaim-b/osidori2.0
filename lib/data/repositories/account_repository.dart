@@ -75,6 +75,16 @@ class AccountRepository {
     await _client.from(AppSupabase.accountsTable).delete().eq('id', id);
   }
 
+  Future<AccountModel?> getById(String id) async {
+    final rows = await _client
+        .from(AppSupabase.accountsTable)
+        .select()
+        .eq('id', id)
+        .limit(1);
+    if (rows.isEmpty) return null;
+    return AccountModel.fromJson(rows.first);
+  }
+
   /// Repairs legacy rows where "shared" accounts were saved with null group_id.
   Future<int> assignUngroupedSharedToGroup({
     required String userId,
