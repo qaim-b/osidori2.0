@@ -31,7 +31,10 @@ class StarryBackground extends StatelessWidget {
       child: showStars
           ? Stack(
               children: [
-                const _FloatingStars(),
+                const IgnorePointer(
+                  // Decorative layer only; never intercept taps.
+                  child: _FloatingStars(),
+                ),
                 child,
               ],
             )

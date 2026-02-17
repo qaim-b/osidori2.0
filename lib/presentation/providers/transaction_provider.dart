@@ -1,14 +1,11 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:uuid/uuid.dart';
 import '../../data/repositories/transaction_repository.dart';
-import '../../data/repositories/account_repository.dart';
 import '../../data/models/transaction_model.dart';
-import '../../data/models/account_model.dart';
 import '../../domain/enums/transaction_type.dart';
 import '../../domain/enums/visibility_type.dart';
 import '../../domain/enums/transaction_source.dart';
 import 'auth_provider.dart';
-import 'account_provider.dart';
 import 'group_provider.dart';
 
 final transactionRepositoryProvider = Provider<TransactionRepository>(
@@ -34,11 +31,8 @@ final monthlyTransactionsProvider =
       final groupIds = ref.watch(groupIdsProvider);
       final selectedMonth = ref.watch(selectedMonthProvider);
       final repo = ref.read(transactionRepositoryProvider);
-      final accountRepo = ref.read(accountRepositoryProvider);
       return TransactionsNotifier(
-        ref,
         repo,
-        accountRepo,
         userId,
         selectedMonth,
         groupIds,
@@ -47,18 +41,14 @@ final monthlyTransactionsProvider =
 
 class TransactionsNotifier
     extends StateNotifier<AsyncValue<List<TransactionModel>>> {
-  final Ref _ref;
   final TransactionRepository _repo;
-  final AccountRepository _accountRepo;
   final String? _userId;
   final DateTime _month;
   final List<String> _groupIds;
   static const _uuid = Uuid();
 
   TransactionsNotifier(
-    this._ref,
     this._repo,
-    this._accountRepo,
     this._userId,
     this._month,
     this._groupIds,
@@ -129,90 +119,17 @@ class TransactionsNotifier
     );
 
     await _repo.create(txn);
-    await _applyTransactionBalanceImpact(txn, reverse: false);
     await load();
-    await _ref.read(accountsProvider.notifier).load();
   }
 
   Future<void> updateTransaction(TransactionModel txn) async {
-    final previous = state.valueOrNull
-        ?.where((t) => t.id == txn.id)
-        .firstOrNull;
     await _repo.update(txn);
-    if (previous != null) {
-      await _applyTransactionBalanceImpact(previous, reverse: true);
-      await _applyTransactionBalanceImpact(txn, reverse: false);
-    }
     await load();
-    await _ref.read(accountsProvider.notifier).load();
   }
 
   Future<void> deleteTransaction(String id) async {
-    final previous = state.valueOrNull?.where((t) => t.id == id).firstOrNull;
     await _repo.delete(id);
-    if (previous != null) {
-      await _applyTransactionBalanceImpact(previous, reverse: true);
-    }
     await load();
-    await _ref.read(accountsProvider.notifier).load();
-  }
-
-  Future<void> _applyTransactionBalanceImpact(
-    TransactionModel txn, {
-    required bool reverse,
-  }) async {
-    final signedAmount = txn.amount * (reverse ? -1 : 1);
-    if (txn.isExpense) {
-      await _adjustAccountBalance(txn.fromAccountId, -signedAmount);
-      return;
-    }
-    if (txn.isIncome) {
-      await _adjustAccountBalance(txn.fromAccountId, signedAmount);
-      return;
-    }
-    if (txn.isTransfer) {
-      await _adjustAccountBalance(txn.fromAccountId, -signedAmount);
-      if (txn.toAccountId != null) {
-        await _adjustAccountBalance(txn.toAccountId!, signedAmount);
-      }
-    }
-  }
-
-  Future<void> _adjustAccountBalance(String accountId, double delta) async {
-    if (_userId == null || delta == 0) return;
-    try {
-      AccountModel? account = _ref
-          .read(accountsProvider)
-          .valueOrNull
-          ?.where((a) => a.id == accountId)
-          .firstOrNull;
-      account ??= await _accountRepo.getById(accountId);
-      if (account == null) return;
-
-      var nextBalance = account.initialBalance + delta;
-      if (nextBalance < 0) {
-        nextBalance = 0;
-      }
-      if ((nextBalance - account.initialBalance).abs() < 0.0001) {
-        return;
-      }
-
-      await _accountRepo.update(
-        AccountModel(
-          id: account.id,
-          name: account.name,
-          type: account.type,
-          ownerScope: account.ownerScope,
-          ownerUserId: account.ownerUserId,
-          groupId: account.groupId,
-          currency: account.currency,
-          initialBalance: nextBalance,
-          createdAt: account.createdAt,
-        ),
-      );
-    } catch (_) {
-      // Never block transaction creation/edit/deletion because of balance sync.
-    }
   }
 }
 
