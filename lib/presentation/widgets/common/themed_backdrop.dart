@@ -11,9 +11,10 @@ class ThemedBackdrop extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final bg = Theme.of(context).scaffoldBackgroundColor;
     return DecoratedBox(
-      decoration: const BoxDecoration(
-        color: AppColors.background,
+      decoration: BoxDecoration(
+        color: bg,
       ),
       child: Stack(
         children: [

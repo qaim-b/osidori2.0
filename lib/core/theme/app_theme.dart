@@ -7,14 +7,14 @@ import '../../presentation/providers/appearance_provider.dart';
 class AppTheme {
   AppTheme._();
 
-  static ThemeData light(ThemePresetData _) {
+  static ThemeData light(ThemePresetData preset) {
     const radiusMd = Radius.circular(6);
     const radiusLg = Radius.circular(8);
 
-    final colorScheme = const ColorScheme.light(
-      primary: AppColors.accent,
-      secondary: AppColors.accentSecondary,
-      surface: AppColors.card,
+    final colorScheme = ColorScheme.light(
+      primary: preset.primary,
+      secondary: preset.secondary,
+      surface: preset.surface,
       error: AppColors.error,
       onPrimary: AppColors.accentForeground,
       onSecondary: AppColors.accentForeground,
@@ -25,7 +25,7 @@ class AppTheme {
       useMaterial3: true,
       brightness: Brightness.light,
       colorScheme: colorScheme,
-      scaffoldBackgroundColor: AppColors.background,
+      scaffoldBackgroundColor: preset.background,
       dividerColor: AppColors.border,
       splashFactory: InkRipple.splashFactory,
     );
@@ -33,7 +33,7 @@ class AppTheme {
     return base.copyWith(
       textTheme: _textTheme(base.textTheme),
       appBarTheme: AppBarTheme(
-        backgroundColor: AppColors.background,
+        backgroundColor: preset.background,
         foregroundColor: AppColors.foreground,
         elevation: 0,
         centerTitle: true,
@@ -45,7 +45,7 @@ class AppTheme {
         ),
       ),
       cardTheme: CardThemeData(
-        color: AppColors.card,
+        color: preset.surface,
         elevation: 0,
         shape: RoundedRectangleBorder(
           borderRadius: const BorderRadius.all(radiusLg),
@@ -68,13 +68,13 @@ class AppTheme {
           ),
           backgroundColor: WidgetStateProperty.resolveWith((states) {
             if (states.contains(WidgetState.disabled)) {
-              return AppColors.accent.withValues(alpha: 0.45);
+              return preset.primary.withValues(alpha: 0.45);
             }
-            if (states.contains(WidgetState.pressed)) return AppColors.accent;
+            if (states.contains(WidgetState.pressed)) return preset.primary;
             if (states.contains(WidgetState.hovered)) {
-              return AppColors.accentSecondary;
+              return preset.secondary;
             }
-            return AppColors.accent;
+            return preset.primary;
           }),
           foregroundColor: const WidgetStatePropertyAll(AppColors.accentForeground),
           overlayColor: WidgetStatePropertyAll(
@@ -97,7 +97,7 @@ class AppTheme {
           ),
           side: WidgetStateProperty.resolveWith((states) {
             final color = states.contains(WidgetState.hovered)
-                ? AppColors.accent
+                ? preset.primary
                 : AppColors.foreground;
             return BorderSide(color: color);
           }),
@@ -107,7 +107,7 @@ class AppTheme {
             ),
           ),
           foregroundColor: WidgetStateProperty.resolveWith((states) {
-            if (states.contains(WidgetState.hovered)) return AppColors.accent;
+            if (states.contains(WidgetState.hovered)) return preset.primary;
             return AppColors.foreground;
           }),
           textStyle: WidgetStatePropertyAll(
@@ -132,7 +132,7 @@ class AppTheme {
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: const BorderRadius.all(radiusMd),
-          borderSide: const BorderSide(color: AppColors.accent, width: 1.5),
+          borderSide: BorderSide(color: preset.primary, width: 1.5),
         ),
         errorBorder: OutlineInputBorder(
           borderRadius: const BorderRadius.all(radiusMd),
@@ -161,9 +161,9 @@ class AppTheme {
         elevation: 0,
         shape: CircleBorder(),
       ),
-      bottomNavigationBarTheme: const BottomNavigationBarThemeData(
-        backgroundColor: AppColors.card,
-        selectedItemColor: AppColors.accent,
+      bottomNavigationBarTheme: BottomNavigationBarThemeData(
+        backgroundColor: preset.surface,
+        selectedItemColor: preset.primary,
         unselectedItemColor: AppColors.mutedForeground,
         type: BottomNavigationBarType.fixed,
         elevation: 0,
@@ -173,8 +173,8 @@ class AppTheme {
         thickness: 1,
       ),
       chipTheme: ChipThemeData(
-        backgroundColor: AppColors.muted,
-        selectedColor: AppColors.accent.withValues(alpha: 0.12),
+        backgroundColor: preset.surfaceVariant,
+        selectedColor: preset.primary.withValues(alpha: 0.12),
         labelStyle: GoogleFonts.sourceSans3(
           fontSize: 13,
           color: AppColors.foreground,
