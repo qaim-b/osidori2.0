@@ -11,44 +11,23 @@ class ThemedBackdrop extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Stack(
-      children: [
-        Container(
-          decoration: const BoxDecoration(
-            gradient: LinearGradient(
-              colors: [
-                AppColors.background,
-                Color(0xFFF8F6F2),
-              ],
-              begin: Alignment.topCenter,
-              end: Alignment.bottomCenter,
+    return DecoratedBox(
+      decoration: const BoxDecoration(
+        color: AppColors.background,
+      ),
+      child: Stack(
+        children: [
+          Positioned(
+            top: 92,
+            left: 20,
+            right: 20,
+            child: IgnorePointer(
+              child: Container(height: 1, color: AppColors.border),
             ),
           ),
-        ),
-        Positioned(
-          top: -140,
-          right: -100,
-          child: IgnorePointer(
-            child: Container(
-              width: 320,
-              height: 320,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: AppColors.accent.withValues(alpha: 0.03),
-              ),
-            ),
-          ),
-        ),
-        Positioned(
-          top: 92,
-          left: 24,
-          right: 24,
-          child: IgnorePointer(
-            child: Container(height: 1, color: AppColors.border),
-          ),
-        ),
-        child,
-      ],
+          child,
+        ],
+      ),
     );
   }
 }
