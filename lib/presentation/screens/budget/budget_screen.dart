@@ -10,6 +10,7 @@ import '../../providers/category_provider.dart';
 import '../../providers/theme_provider.dart';
 import '../../providers/transaction_provider.dart';
 import '../../widgets/charts/donut_chart.dart';
+import '../../widgets/common/editorial.dart';
 import '../../widgets/common/themed_backdrop.dart';
 
 class BudgetScreen extends ConsumerWidget {
@@ -167,15 +168,12 @@ class BudgetScreen extends ConsumerWidget {
                               ),
                             ),
                             const SizedBox(height: 4),
-                            Text(
-                              CurrencyFormatter.format(
+                            DisplayNumber(
+                              value: CurrencyFormatter.format(
                                 (totals['expense'] ?? 0.0).toDouble(),
                               ),
-                              style: const TextStyle(
-                                color: Colors.white,
-                                fontSize: 28,
-                                fontWeight: FontWeight.w700,
-                              ),
+                              size: 34,
+                              color: Colors.white,
                             ),
                           ],
                         ),
@@ -185,54 +183,53 @@ class BudgetScreen extends ConsumerWidget {
                 ),
               ),
               SliverToBoxAdapter(
-                child: Card(
+                child: EditorialCard(
                   margin: const EdgeInsets.all(16),
-                  child: Padding(
-                    padding: const EdgeInsets.all(20),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          'Expense Breakdown',
-                          style: Theme.of(context).textTheme.titleMedium,
-                        ),
-                        const SizedBox(height: 16),
-                        Builder(
-                          builder: (context) {
-                            final total = categoryTotals.values.fold<double>(
-                              0,
-                              (sum, v) => sum + v,
+                  accentTop: true,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Expense Breakdown',
+                        style: Theme.of(context).textTheme.titleMedium,
+                      ),
+                      const SizedBox(height: 16),
+                      Builder(
+                        builder: (context) {
+                          final total = categoryTotals.values.fold<double>(
+                            0,
+                            (sum, v) => sum + v,
+                          );
+                          if (total == 0) {
+                            return const Padding(
+                              padding: EdgeInsets.all(32),
+                              child: Center(
+                                child: Text('No expenses this month'),
+                              ),
                             );
-                            if (total == 0) {
-                              return const Padding(
-                                padding: EdgeInsets.all(32),
-                                child: Center(
-                                  child: Text('No expenses this month'),
-                                ),
-                              );
-                            }
-                            return CategoryDonutChart(
-                              categoryTotals: categoryTotals,
-                              categoryNames: {
-                                for (final e in categoryTotals.entries)
-                                  e.key:
-                                      resolvedCategoryNameMap[e.key] ??
-                                      catNameMap[e.key] ??
-                                      'Category',
-                              },
-                              currency: 'JPY',
-                              totalAmount: total,
-                            );
-                          },
-                        ),
-                      ],
-                    ),
+                          }
+                          return CategoryDonutChart(
+                            categoryTotals: categoryTotals,
+                            categoryNames: {
+                              for (final e in categoryTotals.entries)
+                                e.key:
+                                    resolvedCategoryNameMap[e.key] ??
+                                    catNameMap[e.key] ??
+                                    'Category',
+                            },
+                            currency: 'JPY',
+                            totalAmount: total,
+                          );
+                        },
+                      ),
+                    ],
                   ),
                 ),
               ),
+              const SliverToBoxAdapter(child: SectionLabel(text: 'By Category')),
               SliverToBoxAdapter(
                 child: Padding(
-                  padding: const EdgeInsets.fromLTRB(20, 4, 20, 8),
+                  padding: const EdgeInsets.fromLTRB(20, 0, 20, 8),
                   child: Row(
                     children: [
                       Expanded(
@@ -279,7 +276,7 @@ class BudgetScreen extends ConsumerWidget {
                           ? (entry.value / budgetLimit).clamp(0.0, 1.5)
                           : null;
 
-                      return Card(
+                      return EditorialCard(
                         margin: const EdgeInsets.symmetric(
                           horizontal: 16,
                           vertical: 4,

@@ -1,46 +1,36 @@
-import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:go_router/go_router.dart';
 import 'dart:ui';
-import '../../core/theme/app_colors.dart';
-import '../providers/appearance_provider.dart';
 
-/// Main app shell with Osidori-style 5-tab bottom nav:
+import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
+import 'package:google_fonts/google_fonts.dart';
+
+import '../../core/theme/app_colors.dart';
+
+/// Main app shell with bottom navigation:
 /// Home | Summary | + Input | Budget | Calendar
-class AppShell extends ConsumerWidget {
+class AppShell extends StatelessWidget {
   final StatefulNavigationShell navigationShell;
 
   const AppShell({super.key, required this.navigationShell});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final preset = ref.watch(activeThemePresetDataProvider);
+  Widget build(BuildContext context) {
     final bottomInset = MediaQuery.of(context).viewPadding.bottom;
-    final extraBottom = bottomInset > 0 ? bottomInset : 10.0;
 
     return Scaffold(
       body: navigationShell,
       bottomNavigationBar: Padding(
-        padding: EdgeInsets.only(bottom: extraBottom),
+        padding: EdgeInsets.only(bottom: bottomInset > 0 ? bottomInset : 8),
         child: ClipRRect(
-          borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(8)),
           child: BackdropFilter(
-            filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
-            child: Container(
+            filter: ImageFilter.blur(sigmaX: 8, sigmaY: 8),
+            child: DecoratedBox(
               decoration: BoxDecoration(
-                color: preset.surface.withValues(alpha: 0.90),
-                border: Border(
-                  top: BorderSide(
-                    color: Colors.white.withValues(alpha: 0.4),
-                  ),
+                color: AppColors.card.withValues(alpha: 0.95),
+                border: const Border(
+                  top: BorderSide(color: AppColors.border),
                 ),
-                boxShadow: [
-                  BoxShadow(
-                    color: AppColors.shadow,
-                    blurRadius: 12,
-                    offset: const Offset(0, -2),
-                  ),
-                ],
               ),
               child: SafeArea(
                 top: false,
@@ -48,49 +38,39 @@ class AppShell extends ConsumerWidget {
                 child: Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
                   child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceAround,
                     children: [
-                      _NavItem(
-                        index: 0,
-                        currentIndex: navigationShell.currentIndex,
-                        icon: Icons.home_rounded,
-                        label: 'Home',
-                        activeColor: preset.primary,
-                        onTap: () => navigationShell.goBranch(0),
-                      ),
-                      _NavItem(
-                        index: 1,
-                        currentIndex: navigationShell.currentIndex,
-                        icon: Icons.analytics_rounded,
-                        label: 'Summary',
-                        activeColor: preset.primary,
-                        onTap: () => navigationShell.goBranch(1),
-                      ),
-                      // Center add button
-                      _AddButton(
-                        gradient: LinearGradient(
-                          colors: [preset.primary, preset.secondary],
-                          begin: Alignment.topLeft,
-                          end: Alignment.bottomRight,
+                      Expanded(
+                        child: _NavItem(
+                          label: 'Home',
+                          icon: Icons.home_rounded,
+                          selected: navigationShell.currentIndex == 0,
+                          onTap: () => navigationShell.goBranch(0),
                         ),
-                        glowColor: preset.primary,
-                        onTap: () => context.push('/add'),
                       ),
-                      _NavItem(
-                        index: 2,
-                        currentIndex: navigationShell.currentIndex,
-                        icon: Icons.pie_chart_rounded,
-                        label: 'Budget',
-                        activeColor: preset.primary,
-                        onTap: () => navigationShell.goBranch(2),
+                      Expanded(
+                        child: _NavItem(
+                          label: 'Summary',
+                          icon: Icons.analytics_rounded,
+                          selected: navigationShell.currentIndex == 1,
+                          onTap: () => navigationShell.goBranch(1),
+                        ),
                       ),
-                      _NavItem(
-                        index: 3,
-                        currentIndex: navigationShell.currentIndex,
-                        icon: Icons.calendar_month_rounded,
-                        label: 'Calendar',
-                        activeColor: preset.primary,
-                        onTap: () => navigationShell.goBranch(3),
+                      _AddButton(onTap: () => context.push('/add')),
+                      Expanded(
+                        child: _NavItem(
+                          label: 'Budget',
+                          icon: Icons.pie_chart_rounded,
+                          selected: navigationShell.currentIndex == 2,
+                          onTap: () => navigationShell.goBranch(2),
+                        ),
+                      ),
+                      Expanded(
+                        child: _NavItem(
+                          label: 'Calendar',
+                          icon: Icons.calendar_month_rounded,
+                          selected: navigationShell.currentIndex == 3,
+                          onTap: () => navigationShell.goBranch(3),
+                        ),
                       ),
                     ],
                   ),
@@ -105,56 +85,50 @@ class AppShell extends ConsumerWidget {
 }
 
 class _NavItem extends StatelessWidget {
-  final int index;
-  final int currentIndex;
-  final IconData icon;
   final String label;
-  final Color activeColor;
+  final IconData icon;
+  final bool selected;
   final VoidCallback onTap;
 
   const _NavItem({
-    required this.index,
-    required this.currentIndex,
-    required this.icon,
     required this.label,
-    required this.activeColor,
+    required this.icon,
+    required this.selected,
     required this.onTap,
   });
 
   @override
   Widget build(BuildContext context) {
-    final isSelected = index == currentIndex;
-
-    return GestureDetector(
-      onTap: onTap,
-      behavior: HitTestBehavior.opaque,
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 200),
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-        decoration: BoxDecoration(
-          color: isSelected
-              ? activeColor.withValues(alpha: 0.1)
-              : Colors.transparent,
-          borderRadius: BorderRadius.circular(16),
-        ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(
-              icon,
-              size: isSelected ? 24 : 22,
-              color: isSelected ? activeColor : AppColors.textHint,
-            ),
-            const SizedBox(height: 2),
-            Text(
-              label,
-              style: TextStyle(
-                fontSize: 10,
-                fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
-                color: isSelected ? activeColor : AppColors.textHint,
+    return SizedBox(
+      height: 48,
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: onTap,
+          borderRadius: BorderRadius.circular(6),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(
+                icon,
+                size: 20,
+                color: selected ? AppColors.accent : AppColors.mutedForeground,
               ),
-            ),
-          ],
+              const SizedBox(height: 3),
+              Text(
+                label.toUpperCase(),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: GoogleFonts.ibmPlexMono(
+                  fontSize: 10,
+                  fontWeight: selected ? FontWeight.w600 : FontWeight.w500,
+                  letterSpacing: 1.1,
+                  color:
+                      selected ? AppColors.accent : AppColors.mutedForeground,
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -162,35 +136,23 @@ class _NavItem extends StatelessWidget {
 }
 
 class _AddButton extends StatelessWidget {
-  final LinearGradient gradient;
-  final Color glowColor;
   final VoidCallback onTap;
 
-  const _AddButton({
-    required this.gradient,
-    required this.glowColor,
-    required this.onTap,
-  });
+  const _AddButton({required this.onTap});
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        width: 56,
-        height: 56,
-        decoration: BoxDecoration(
-          gradient: gradient,
-          shape: BoxShape.circle,
-          boxShadow: [
-            BoxShadow(
-              color: glowColor.withValues(alpha: 0.3),
-              blurRadius: 10,
-              offset: const Offset(0, 4),
-            ),
-          ],
+    return SizedBox(
+      width: 52,
+      height: 52,
+      child: Material(
+        color: AppColors.accent,
+        shape: const CircleBorder(),
+        child: InkWell(
+          onTap: onTap,
+          customBorder: const CircleBorder(),
+          child: const Icon(Icons.add, color: AppColors.accentForeground),
         ),
-        child: const Icon(Icons.add, color: Colors.white, size: 28),
       ),
     );
   }

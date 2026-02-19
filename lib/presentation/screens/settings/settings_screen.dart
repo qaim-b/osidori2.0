@@ -19,6 +19,8 @@ import '../../providers/category_provider.dart';
 import '../../providers/group_provider.dart';
 import '../../providers/theme_provider.dart';
 import '../../providers/transaction_provider.dart';
+import '../../widgets/common/editorial.dart';
+import '../../widgets/common/themed_backdrop.dart';
 
 class SettingsScreen extends ConsumerWidget {
   const SettingsScreen({super.key});
@@ -53,10 +55,11 @@ class SettingsScreen extends ConsumerWidget {
 
     return Scaffold(
       appBar: AppBar(title: const Text('Settings')),
-      body: ListView(
-        padding: const EdgeInsets.all(16),
-        children: [
-          Card(
+      body: ThemedBackdrop(
+        child: ListView(
+          padding: const EdgeInsets.all(16),
+          children: [
+          EditorialCard(
             child: Padding(
               padding: const EdgeInsets.all(20),
               child: Row(
@@ -95,7 +98,7 @@ class SettingsScreen extends ConsumerWidget {
               ),
             ),
           ),
-          Card(
+          EditorialCard(
             child: Padding(
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
               child: Row(
@@ -119,8 +122,8 @@ class SettingsScreen extends ConsumerWidget {
             ),
           ),
           const SizedBox(height: 16),
-          const _SectionHeader(title: 'General'),
-          Card(
+          const SectionLabel(text: 'General'),
+          EditorialCard(
             child: Column(
               children: [
                 _SettingsTile(
@@ -159,8 +162,8 @@ class SettingsScreen extends ConsumerWidget {
             ),
           ),
           const SizedBox(height: 16),
-          const _SectionHeader(title: 'Appearance'),
-          Card(
+          const SectionLabel(text: 'Appearance'),
+          EditorialCard(
             child: Padding(
               padding: const EdgeInsets.all(12),
               child: Wrap(
@@ -180,8 +183,8 @@ class SettingsScreen extends ConsumerWidget {
             ),
           ),
           const SizedBox(height: 16),
-          const _SectionHeader(title: 'Group Status'),
-          Card(
+          const SectionLabel(text: 'Group Status'),
+          EditorialCard(
             child: groupsAsync.when(
               data: (groups) {
                 if (groups.isEmpty) {
@@ -243,8 +246,8 @@ class SettingsScreen extends ConsumerWidget {
             ),
           ),
           const SizedBox(height: 16),
-          const _SectionHeader(title: 'Transparency This Month'),
-          Card(
+          const SectionLabel(text: 'Transparency This Month'),
+          EditorialCard(
             child: Padding(
               padding: const EdgeInsets.all(12),
               child: Column(
@@ -295,8 +298,8 @@ class SettingsScreen extends ConsumerWidget {
             ),
           ),
           const SizedBox(height: 16),
-          const _SectionHeader(title: 'Group Repair'),
-          Card(
+          const SectionLabel(text: 'Group Repair'),
+          EditorialCard(
             child: ListTile(
               leading: const Icon(Icons.build_circle_outlined),
               title: const Text('Repair legacy shared records'),
@@ -348,8 +351,8 @@ class SettingsScreen extends ConsumerWidget {
               ),
             ),
           ),
-          const _SectionHeader(title: 'Data'),
-          Card(
+          const SectionLabel(text: 'Data'),
+          EditorialCard(
             child: Column(
               children: [
                 _SettingsTile(
@@ -417,8 +420,8 @@ class SettingsScreen extends ConsumerWidget {
             ),
           ),
           const SizedBox(height: 16),
-          const _SectionHeader(title: 'Shared Activity'),
-          Card(
+          const SectionLabel(text: 'Shared Activity'),
+          EditorialCard(
             child: _SharedActivityList(
               sharedTxns: sharedTxns,
               accountNameById: accountNameById,
@@ -426,8 +429,8 @@ class SettingsScreen extends ConsumerWidget {
             ),
           ),
           const SizedBox(height: 16),
-          const _SectionHeader(title: 'About'),
-          Card(
+          const SectionLabel(text: 'About'),
+          EditorialCard(
             child: _SettingsTile(
               label: AppConstants.appName,
               subtitle: 'v1.0.0',
@@ -475,7 +478,8 @@ class SettingsScreen extends ConsumerWidget {
             ),
           ),
           const SizedBox(height: 40),
-        ],
+          ],
+        ),
       ),
     );
   }
@@ -811,26 +815,6 @@ class _StatBox extends StatelessWidget {
           const SizedBox(height: 2),
           Text(label, style: const TextStyle(fontSize: 11)),
         ],
-      ),
-    );
-  }
-}
-
-class _SectionHeader extends StatelessWidget {
-  final String title;
-
-  const _SectionHeader({required this.title});
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.only(left: 4, bottom: 8),
-      child: Text(
-        title,
-        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-          fontWeight: FontWeight.w600,
-          fontSize: 13,
-        ),
       ),
     );
   }

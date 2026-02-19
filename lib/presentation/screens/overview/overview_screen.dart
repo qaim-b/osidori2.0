@@ -18,6 +18,7 @@ import '../../providers/theme_provider.dart';
 import '../../providers/transaction_provider.dart';
 import '../../widgets/charts/donut_chart.dart';
 import '../../widgets/common/animated_mascot.dart';
+import '../../widgets/common/editorial.dart';
 import '../../widgets/common/themed_backdrop.dart';
 import '../../widgets/home/accounts_summary_card.dart';
 import '../../widgets/home/goals_card.dart';
@@ -200,6 +201,9 @@ class OverviewScreen extends ConsumerWidget {
                   ),
                 ),
               ),
+              const SliverToBoxAdapter(
+                child: SectionLabel(text: 'Household Snapshot'),
+              ),
               SliverToBoxAdapter(
                 child: Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -237,44 +241,42 @@ class OverviewScreen extends ConsumerWidget {
               const SliverToBoxAdapter(child: SizedBox(height: 12)),
               const SliverToBoxAdapter(child: GoalsCard()),
               SliverToBoxAdapter(
-                child: Card(
-                  margin: const EdgeInsets.symmetric(
-                    horizontal: 16,
-                    vertical: 12,
-                  ),
-                  child: Padding(
-                    padding: const EdgeInsets.all(20),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          'Expense Breakdown',
-                          style: Theme.of(context).textTheme.titleMedium,
-                        ),
-                        const SizedBox(height: 16),
-                        Builder(
-                          builder: (context) {
-                            final total = categoryTotals.values.fold<double>(
-                              0,
-                              (sum, v) => sum + v,
-                            );
-                            return CategoryDonutChart(
-                              categoryTotals: categoryTotals,
-                              categoryNames: catMap,
-                              currency: 'JPY',
-                              totalAmount: total,
-                            );
-                          },
-                        ),
-                      ],
-                    ),
+                child: EditorialCard(
+                  margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                  accentTop: true,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Expense Breakdown',
+                        style: Theme.of(context).textTheme.titleMedium,
+                      ),
+                      const SizedBox(height: 16),
+                      Builder(
+                        builder: (context) {
+                          final total = categoryTotals.values.fold<double>(
+                            0,
+                            (sum, v) => sum + v,
+                          );
+                          return CategoryDonutChart(
+                            categoryTotals: categoryTotals,
+                            categoryNames: catMap,
+                            currency: 'JPY',
+                            totalAmount: total,
+                          );
+                        },
+                      ),
+                    ],
                   ),
                 ),
               ),
               const SliverToBoxAdapter(child: MemoryTimelineSection()),
+              const SliverToBoxAdapter(
+                child: SectionLabel(text: 'Recent Transactions'),
+              ),
               SliverToBoxAdapter(
                 child: Padding(
-                  padding: const EdgeInsets.fromLTRB(20, 20, 20, 8),
+                  padding: const EdgeInsets.fromLTRB(20, 0, 20, 8),
                   child: Row(
                     children: [
                       Expanded(
@@ -325,7 +327,7 @@ class OverviewScreen extends ConsumerWidget {
                   return SliverList(
                     delegate: SliverChildBuilderDelegate((context, index) {
                       final txn = displayTxns[index];
-                      return Card(
+                      return EditorialCard(
                         margin: const EdgeInsets.symmetric(
                           horizontal: 16,
                           vertical: 3,
@@ -488,13 +490,10 @@ class _MiniCard extends StatelessWidget {
           FittedBox(
             fit: BoxFit.scaleDown,
             alignment: Alignment.centerLeft,
-            child: Text(
-              CurrencyFormatter.format(amount),
-              style: TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.w700,
-                color: color,
-              ),
+            child: DisplayNumber(
+              value: CurrencyFormatter.format(amount),
+              color: color,
+              size: 22,
             ),
           ),
         ],
