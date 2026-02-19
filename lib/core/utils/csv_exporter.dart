@@ -259,6 +259,7 @@ class CsvExporter {
     required Map<String, String> categoryNames,
     required int year,
     required int month,
+    Map<String, double> budgetLimits = const {},
   }) async {
     final from = DateTime(year, month, 1);
     final to = DateTime(year, month + 1, 1);
@@ -281,52 +282,66 @@ class CsvExporter {
         ),
       );
 
-    final byDate = <String, Map<String, double>>{};
-    for (final txn in expenseTxns) {
-      final dateKey = DateFormat('yyyy-MM-dd').format(txn.date);
-      final dateMap = byDate.putIfAbsent(dateKey, () => <String, double>{});
-      dateMap[txn.categoryId] = (dateMap[txn.categoryId] ?? 0) + txn.amount;
-    }
-
     final excel = Excel.createExcel();
-    final sheet = excel['Expense Matrix'];
+    final planningSheet = excel['Planning Summary'];
+    final yen = NumberFormat.currency(locale: 'ja_JP', symbol: '¥', decimalDigits: 0);
 
-    sheet.appendRow([
-      TextCellValue('Date'),
-      ...categoryIds.map((id) => TextCellValue(categoryDisplayNames[id] ?? id)),
-      TextCellValue('Total'),
-    ]);
-
-    final categoryTotals = <String, double>{
+    final expenseTotals = <String, double>{
       for (final id in categoryIds) id: 0,
     };
-    double grandTotal = 0;
-
-    for (int i = 1; i <= DateTime(year, month + 1, 0).day; i++) {
-      final dateKey = DateFormat('yyyy-MM-dd').format(DateTime(year, month, i));
-      final values = byDate[dateKey] ?? {};
-      double rowTotal = 0;
-      final row = <CellValue>[TextCellValue(dateKey)];
-      for (final id in categoryIds) {
-        final amount = values[id] ?? 0;
-        rowTotal += amount;
-        categoryTotals[id] = (categoryTotals[id] ?? 0) + amount;
-        row.add(DoubleCellValue(amount));
-      }
-      grandTotal += rowTotal;
-      row.add(DoubleCellValue(rowTotal));
-      sheet.appendRow(row);
+    for (final txn in expenseTxns) {
+      expenseTotals[txn.categoryId] = (expenseTotals[txn.categoryId] ?? 0) + txn.amount;
     }
 
-    sheet.appendRow([
-      TextCellValue('TOTAL'),
-      ...categoryIds.map((id) => DoubleCellValue(categoryTotals[id] ?? 0)),
-      DoubleCellValue(grandTotal),
-    ]);
+    final idsWithBudgetOrExpense = <String>{
+      ...categoryIds,
+      ...budgetLimits.keys,
+      ...expenseTotals.keys,
+    }.toList()
+      ..sort((a, b) => (categoryDisplayNames[a] ?? a).compareTo(categoryDisplayNames[b] ?? b));
+
+    final headerCells = <CellValue>[
+      TextCellValue(DateFormat('yyyy-MM').format(from)),
+      ...idsWithBudgetOrExpense.map((id) {
+        final name = categoryDisplayNames[id] ?? id;
+        final total = expenseTotals[id] ?? 0;
+        return TextCellValue('$name: ${yen.format(total)}');
+      }),
+      TextCellValue('Monthly Sum'),
+    ];
+    planningSheet.appendRow(headerCells);
+
+    double expenseSum = 0;
+    final expenseRow = <CellValue>[TextCellValue('Expense')];
+    for (final id in idsWithBudgetOrExpense) {
+      final amount = expenseTotals[id] ?? 0;
+      expenseSum += amount;
+      expenseRow.add(DoubleCellValue(amount));
+    }
+    expenseRow.add(DoubleCellValue(expenseSum));
+    planningSheet.appendRow(expenseRow);
+
+    double budgetSum = 0;
+    final budgetRow = <CellValue>[TextCellValue('Budget')];
+    for (final id in idsWithBudgetOrExpense) {
+      final amount = budgetLimits[id] ?? 0;
+      budgetSum += amount;
+      budgetRow.add(DoubleCellValue(amount));
+    }
+    budgetRow.add(DoubleCellValue(budgetSum));
+    planningSheet.appendRow(budgetRow);
+
+    final diffRow = <CellValue>[TextCellValue('Exp-Bud')];
+    for (final id in idsWithBudgetOrExpense) {
+      final diff = (expenseTotals[id] ?? 0) - (budgetLimits[id] ?? 0);
+      diffRow.add(DoubleCellValue(diff));
+    }
+    diffRow.add(DoubleCellValue(expenseSum - budgetSum));
+    planningSheet.appendRow(diffRow);
 
     final bytes = Uint8List.fromList(excel.encode()!);
     final fileName =
-        '${AppConstants.csvFileName}_category_matrix_${DateFormat('yyyy-MM').format(from)}.xlsx';
+        '${AppConstants.csvFileName}_planning_summary_${DateFormat('yyyy-MM').format(from)}.xlsx';
     return _persistBytes(
       bytes: bytes,
       fileName: fileName,

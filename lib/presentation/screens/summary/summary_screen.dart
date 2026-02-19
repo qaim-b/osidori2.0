@@ -27,6 +27,7 @@ class SummaryScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final theme = Theme.of(context);
     final totals = ref.watch(monthlyTotalsProvider);
     final categoryTotals = ref.watch(categoryTotalsProvider);
     final budgetLimits = ref.watch(budgetLimitMapProvider);
@@ -237,8 +238,9 @@ class SummaryScreen extends ConsumerWidget {
                                       child: LinearProgressIndicator(
                                         minHeight: 7,
                                         value: ratio.clamp(0.0, 1.0),
-                                        backgroundColor:
-                                            AppColors.surfaceVariant,
+                                        backgroundColor: theme
+                                            .colorScheme
+                                            .surfaceContainerHighest,
                                         valueColor:
                                             AlwaysStoppedAnimation<Color>(
                                               barColor,
@@ -363,10 +365,10 @@ class SummaryScreen extends ConsumerWidget {
                           contentPadding: EdgeInsets.zero,
                           leading: const Icon(Icons.table_chart_rounded),
                           title: const Text(
-                            'Export Expense Category Matrix XLSX',
+                            'Export Planning Summary XLSX',
                           ),
                           subtitle: const Text(
-                            'Columns = expense categories, rows = dates',
+                            'Category totals + Budget + Exp-Bud for easy copy/paste',
                           ),
                           onTap: () async {
                             final catNameMap = <String, String>{
@@ -381,12 +383,13 @@ class SummaryScreen extends ConsumerWidget {
                                   categoryNames: catNameMap,
                                   year: selectedMonth.year,
                                   month: selectedMonth.month,
+                                  budgetLimits: budgetLimits,
                                 );
                             await CsvExporter.shareFile(path);
                             if (!context.mounted) return;
                             ScaffoldMessenger.of(context).showSnackBar(
                               const SnackBar(
-                                content: Text('Category matrix XLSX exported'),
+                                content: Text('Planning summary XLSX exported'),
                               ),
                             );
                           },
@@ -496,7 +499,7 @@ class _InsightChip extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
       decoration: BoxDecoration(
-        color: AppColors.surfaceVariant,
+        color: Theme.of(context).colorScheme.surfaceContainerHighest,
         borderRadius: BorderRadius.circular(999),
       ),
       child: Row(

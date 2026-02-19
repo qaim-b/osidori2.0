@@ -16,6 +16,7 @@ class AppShell extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final bottomInset = MediaQuery.of(context).viewPadding.bottom;
+    final scheme = Theme.of(context).colorScheme;
 
     return Scaffold(
       body: navigationShell,
@@ -27,9 +28,9 @@ class AppShell extends StatelessWidget {
             filter: ImageFilter.blur(sigmaX: 8, sigmaY: 8),
             child: DecoratedBox(
               decoration: BoxDecoration(
-                color: AppColors.card.withValues(alpha: 0.95),
-                border: const Border(
-                  top: BorderSide(color: AppColors.border),
+                color: scheme.surface.withValues(alpha: 0.95),
+                border: Border(
+                  top: BorderSide(color: AppColors.border.withValues(alpha: 0.9)),
                 ),
               ),
               child: SafeArea(
@@ -112,7 +113,7 @@ class _NavItem extends StatelessWidget {
               Icon(
                 icon,
                 size: 20,
-                color: selected ? AppColors.accent : AppColors.mutedForeground,
+                color: selected ? Theme.of(context).colorScheme.primary : AppColors.mutedForeground,
               ),
               const SizedBox(height: 3),
               Text(
@@ -123,8 +124,7 @@ class _NavItem extends StatelessWidget {
                   fontSize: 10,
                   fontWeight: selected ? FontWeight.w600 : FontWeight.w500,
                   letterSpacing: 1.1,
-                  color:
-                      selected ? AppColors.accent : AppColors.mutedForeground,
+                  color: selected ? Theme.of(context).colorScheme.primary : AppColors.mutedForeground,
                 ),
               ),
             ],
@@ -146,7 +146,7 @@ class _AddButton extends StatelessWidget {
       width: 52,
       height: 52,
       child: Material(
-        color: AppColors.accent,
+        color: Theme.of(context).colorScheme.primary,
         shape: const CircleBorder(),
         child: InkWell(
           onTap: onTap,

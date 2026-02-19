@@ -26,6 +26,7 @@ class BudgetScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final theme = Theme.of(context);
     final selectedMonth = ref.watch(selectedMonthProvider);
     final categoryTotals = ref.watch(categoryTotalsProvider);
     final txns = ref.watch(monthlyTransactionsProvider).valueOrNull ?? [];
@@ -338,7 +339,9 @@ class BudgetScreen extends ConsumerWidget {
                                       value: limitProgress == null
                                           ? 0
                                           : limitProgress.clamp(0.0, 1.0),
-                                      backgroundColor: AppColors.surfaceVariant,
+                                      backgroundColor: theme
+                                          .colorScheme
+                                          .surfaceContainerHighest,
                                       valueColor: AlwaysStoppedAnimation<Color>(
                                         (limitProgress ?? 0) <= 1
                                             ? AppColors.income
