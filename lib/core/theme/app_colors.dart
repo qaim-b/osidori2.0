@@ -1,53 +1,59 @@
 import 'package:flutter/material.dart';
 
-/// Stitch & Angel themed color palette.
-/// Stitch = blue (boy/Qaim), Angel = pink (girl/Mami).
+/// Centralized design tokens for the Serif style system.
 class AppColors {
   AppColors._();
 
-  // ── Stitch Blue (boy) ──
+  // Legacy role colors kept for category/owner semantics.
   static const Color stitchBlue = Color(0xFF2A52BE);
   static const Color stitchBlueLight = Color(0xFF6B8DD6);
   static const Color stitchBlueDark = Color(0xFF1A3A8A);
   static const Color stitchAccent = Color(0xFF4FC3F7);
   static const Color stitchBg = Color(0xFFEBF2FF);
 
-  // ── Angel Pink (girl) ──
   static const Color angelPink = Color(0xFFE91E8C);
   static const Color angelPinkLight = Color(0xFFF48DC2);
   static const Color angelPinkDark = Color(0xFFC2185B);
   static const Color angelAccent = Color(0xFFFF80AB);
   static const Color angelBg = Color(0xFFFDE8F0);
 
-  // Solo / chill vibe
   static const Color soloMint = Color(0xFF4F9B8E);
   static const Color soloMintLight = Color(0xFF7DBFB4);
   static const Color soloMintDark = Color(0xFF2F6F66);
   static const Color soloAccent = Color(0xFF9CCB8A);
   static const Color soloBg = Color(0xFFEFF8F5);
 
-  // ── Default / shared (Stitch blue as default) ──
-  static const Color primary = stitchBlue;
-  static const Color primaryLight = stitchBlueLight;
-  static const Color primaryDark = stitchBlueDark;
-  static const Color secondary = angelPink;
-  static const Color secondaryLight = angelPinkLight;
-  static const Color secondaryDark = angelPinkDark;
+  // Serif design system tokens.
+  static const Color background = Color(0xFFFAFAF8); // ivory
+  static const Color foreground = Color(0xFF1A1A1A); // rich black
+  static const Color muted = Color(0xFFF5F3F0);
+  static const Color mutedForeground = Color(0xFF6B6B6B);
+  static const Color accent = Color(0xFFB8860B); // burnished gold
+  static const Color accentSecondary = Color(0xFFD4A84B);
+  static const Color accentForeground = Color(0xFFFFFFFF);
+  static const Color border = Color(0xFFE8E4DF);
+  static const Color card = Color(0xFFFFFFFF);
+  static const Color ring = accent;
 
-  // Backgrounds
-  static const Color background = Color(0xFFF5F7FA);
-  static const Color surface = Color(0xFFFFFFFF);
-  static const Color surfaceVariant = Color(0xFFF0F2F8);
+  // Theme aliases used throughout the app.
+  static const Color primary = accent;
+  static const Color primaryLight = accentSecondary;
+  static const Color primaryDark = Color(0xFF8E6700);
+  static const Color secondary = Color(0xFF8A7A65);
+  static const Color secondaryLight = Color(0xFFA69884);
+  static const Color secondaryDark = Color(0xFF6F6251);
+  static const Color surface = card;
+  static const Color surfaceVariant = muted;
 
-  // Starry accents
+  // Decorative accents.
   static const Color starYellow = Color(0xFFFFE066);
   static const Color starGold = Color(0xFFFFD700);
   static const Color cloudWhite = Color(0xFFF8F8FF);
 
-  // Text
-  static const Color textPrimary = Color(0xFF1A1D2E);
-  static const Color textSecondary = Color(0xFF6B7085);
-  static const Color textHint = Color(0xFFA0A5BD);
+  // Text aliases.
+  static const Color textPrimary = foreground;
+  static const Color textSecondary = mutedForeground;
+  static const Color textHint = Color(0xFF9A938A);
 
   // Semantic
   static const Color income = Color(0xFF4CAF50);
@@ -56,46 +62,42 @@ class AppColors {
 
   // Chart palette
   static const List<Color> chartPalette = [
-    Color(0xFF2A52BE), // stitch blue
-    Color(0xFFE91E8C), // angel pink
-    Color(0xFFFFE066), // yellow
-    Color(0xFF7C4DFF), // purple
-    Color(0xFF4CAF50), // green
-    Color(0xFFFF9800), // orange
-    Color(0xFF4FC3F7), // light blue
-    Color(0xFFF48DC2), // rose
-    Color(0xFF26A69A), // teal
-    Color(0xFFAB47BC), // violet
-    Color(0xFF8BC34A), // lime
-    Color(0xFFFF7043), // deep orange
-    Color(0xFF29B6F6), // sky
-    Color(0xFFEC407A), // magenta
-    Color(0xFF66BB6A), // leaf
-    Color(0xFFFFCA28), // amber
+    Color(0xFFB8860B),
+    Color(0xFFD4A84B),
+    Color(0xFF8E6700),
+    Color(0xFF6D8FA3),
+    Color(0xFF7AA37A),
+    Color(0xFFB08A6A),
+    Color(0xFF857565),
+    Color(0xFF9A8B7A),
+    Color(0xFFA69884),
+    Color(0xFFC7B8A7),
+    Color(0xFF8C9E7A),
+    Color(0xFF9F7A5C),
   ];
 
   // Misc
-  static const Color divider = Color(0xFFE0E0E0);
+  static const Color divider = border;
   static const Color error = Color(0xFFE53935);
   static const Color success = Color(0xFF4CAF50);
   static const Color warning = Color(0xFFFF9800);
-  static const Color shadow = Color(0x1A000000);
+  static const Color shadow = Color(0x14000000);
 
   // Gradients
   static const LinearGradient stitchGradient = LinearGradient(
-    colors: [stitchBlue, stitchAccent],
+    colors: [accent, accentSecondary],
     begin: Alignment.topLeft,
     end: Alignment.bottomRight,
   );
 
   static const LinearGradient angelGradient = LinearGradient(
-    colors: [angelPink, angelAccent],
+    colors: [accentSecondary, accent],
     begin: Alignment.topLeft,
     end: Alignment.bottomRight,
   );
 
   static const LinearGradient soloGradient = LinearGradient(
-    colors: [soloMint, soloAccent],
+    colors: [Color(0xFF7AA37A), Color(0xFFA7C4A0)],
     begin: Alignment.topLeft,
     end: Alignment.bottomRight,
   );

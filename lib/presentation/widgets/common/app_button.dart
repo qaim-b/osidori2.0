@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 import '../../../core/theme/app_colors.dart';
 
-/// Reusable button with loading state and gradient option.
+/// Reusable button with loading state and style variants.
 class AppButton extends StatelessWidget {
   final String label;
   final VoidCallback? onPressed;
@@ -25,15 +26,15 @@ class AppButton extends StatelessWidget {
     if (useGradient) {
       return Container(
         width: double.infinity,
-        height: 56,
+        constraints: const BoxConstraints(minHeight: 44),
         decoration: BoxDecoration(
           gradient: AppColors.dreamyGradient,
-          borderRadius: BorderRadius.circular(28),
+          borderRadius: BorderRadius.circular(6),
           boxShadow: [
             BoxShadow(
-              color: AppColors.primary.withValues(alpha: 0.3),
-              blurRadius: 12,
-              offset: const Offset(0, 4),
+              color: AppColors.accent.withValues(alpha: 0.18),
+              blurRadius: 10,
+              offset: const Offset(0, 3),
             ),
           ],
         ),
@@ -41,8 +42,11 @@ class AppButton extends StatelessWidget {
           color: Colors.transparent,
           child: InkWell(
             onTap: isLoading ? null : onPressed,
-            borderRadius: BorderRadius.circular(28),
-            child: Center(child: _buildContent(Colors.white)),
+            borderRadius: BorderRadius.circular(6),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+              child: Center(child: _buildContent(AppColors.accentForeground)),
+            ),
           ),
         ),
       );
@@ -51,20 +55,18 @@ class AppButton extends StatelessWidget {
     if (isOutlined) {
       return SizedBox(
         width: double.infinity,
-        height: 56,
         child: OutlinedButton(
           onPressed: isLoading ? null : onPressed,
-          child: _buildContent(AppColors.primary),
+          child: _buildContent(AppColors.foreground),
         ),
       );
     }
 
     return SizedBox(
       width: double.infinity,
-      height: 56,
       child: ElevatedButton(
         onPressed: isLoading ? null : onPressed,
-        child: _buildContent(Colors.white),
+        child: _buildContent(AppColors.accentForeground),
       ),
     );
   }
@@ -72,26 +74,36 @@ class AppButton extends StatelessWidget {
   Widget _buildContent(Color color) {
     if (isLoading) {
       return SizedBox(
-        height: 24,
-        width: 24,
+        height: 20,
+        width: 20,
         child: CircularProgressIndicator(
-          strokeWidth: 2.5,
+          strokeWidth: 2.2,
           valueColor: AlwaysStoppedAnimation(color),
         ),
       );
     }
 
+    final text = Text(
+      label,
+      style: GoogleFonts.sourceSans3(
+        color: color,
+        fontSize: 16,
+        fontWeight: FontWeight.w600,
+        letterSpacing: 0.35,
+      ),
+    );
+
     if (icon != null) {
       return Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(icon, color: color, size: 20),
+          Icon(icon, color: color, size: 18),
           const SizedBox(width: 8),
-          Text(label, style: TextStyle(color: color, fontSize: 16, fontWeight: FontWeight.w600)),
+          text,
         ],
       );
     }
 
-    return Text(label, style: TextStyle(color: color, fontSize: 16, fontWeight: FontWeight.w600));
+    return text;
   }
 }

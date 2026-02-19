@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../core/theme/app_colors.dart';
 
 class ThemedBackdrop extends StatelessWidget {
   final Widget child;
@@ -10,34 +11,40 @@ class ThemedBackdrop extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
-    final bg = Theme.of(context).scaffoldBackgroundColor;
-
     return Stack(
       children: [
-        Container(color: bg),
-        Positioned(
-          top: -120,
-          right: -80,
-          child: Container(
-            width: 260,
-            height: 260,
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              color: scheme.primary.withValues(alpha: 0.12),
+        Container(
+          decoration: const BoxDecoration(
+            gradient: LinearGradient(
+              colors: [
+                AppColors.background,
+                Color(0xFFF8F6F2),
+              ],
+              begin: Alignment.topCenter,
+              end: Alignment.bottomCenter,
             ),
           ),
         ),
         Positioned(
-          bottom: -100,
-          left: -70,
-          child: Container(
-            width: 220,
-            height: 220,
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              color: scheme.secondary.withValues(alpha: 0.10),
+          top: -140,
+          right: -100,
+          child: IgnorePointer(
+            child: Container(
+              width: 320,
+              height: 320,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: AppColors.accent.withValues(alpha: 0.03),
+              ),
             ),
+          ),
+        ),
+        Positioned(
+          top: 92,
+          left: 24,
+          right: 24,
+          child: IgnorePointer(
+            child: Container(height: 1, color: AppColors.border),
           ),
         ),
         child,

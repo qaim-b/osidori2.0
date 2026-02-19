@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
+import '../../../core/theme/app_colors.dart';
 
-/// Styled text field matching the Kiki & Lala dreamy theme.
+/// Styled text field aligned with the Serif design system.
 class AppTextField extends StatelessWidget {
   final TextEditingController? controller;
   final String? hintText;
@@ -47,19 +49,25 @@ class AppTextField extends StatelessWidget {
       validator: validator,
       onChanged: onChanged,
       autofocus: autofocus,
-      style: Theme.of(
-        context,
-      ).textTheme.bodyLarge?.copyWith(fontSize: isSmallScreen ? 14 : 15),
+      style: GoogleFonts.sourceSans3(
+        fontSize: isSmallScreen ? 15 : 16,
+        height: 1.6,
+        letterSpacing: 0.12,
+        color: AppColors.foreground,
+      ),
       scrollPadding: const EdgeInsets.only(bottom: 96),
       decoration: InputDecoration(
         hintText: hintText,
-        labelText: labelText,
+        labelText: labelText?.toUpperCase(),
         isDense: true,
+        constraints: const BoxConstraints(minHeight: 44),
         contentPadding: EdgeInsets.symmetric(
           horizontal: isSmallScreen ? 14 : 16,
-          vertical: isSmallScreen ? 10 : 12,
+          vertical: isSmallScreen ? 12 : 14,
         ),
-        prefixIcon: prefixIcon != null ? Icon(prefixIcon, size: 20) : null,
+        prefixIcon: prefixIcon != null
+            ? Icon(prefixIcon, size: 18, color: AppColors.mutedForeground)
+            : null,
         suffixIcon: suffixIcon,
       ),
     );
