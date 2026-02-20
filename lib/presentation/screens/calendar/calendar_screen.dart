@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import '../../../core/theme/app_colors.dart';
+import '../../../core/theme/app_motion.dart';
 import '../../../core/utils/currency_formatter.dart';
 import '../../../core/extensions/datetime_ext.dart';
 import '../../../data/models/transaction_model.dart';
@@ -332,7 +333,7 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
                   });
                 },
                 child: AnimatedContainer(
-                  duration: const Duration(milliseconds: 150),
+                  duration: AppMotion.normal,
                   height: 64,
                   margin: const EdgeInsets.all(1),
                   decoration: BoxDecoration(
@@ -408,9 +409,9 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
 
         return SliverToBoxAdapter(
           child: AnimatedSwitcher(
-            duration: const Duration(milliseconds: 280),
-            switchInCurve: Curves.easeOutBack,
-            switchOutCurve: Curves.easeIn,
+            duration: AppMotion.reveal,
+            switchInCurve: AppMotion.pop,
+            switchOutCurve: AppMotion.dismiss,
             transitionBuilder: (child, animation) {
               return FadeTransition(
                 opacity: animation,

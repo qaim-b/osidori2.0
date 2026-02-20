@@ -6,6 +6,7 @@ import 'package:flutter_svg/flutter_svg.dart';
 import 'package:go_router/go_router.dart';
 import '../../../core/extensions/datetime_ext.dart';
 import '../../../core/theme/app_colors.dart';
+import '../../../core/theme/app_motion.dart';
 import '../../../core/utils/avatar_image.dart';
 import '../../../core/utils/currency_formatter.dart';
 import '../../../data/models/user_model.dart';
@@ -255,8 +256,8 @@ class _OverviewScreenState extends ConsumerState<OverviewScreen> {
                     padding: const EdgeInsets.fromLTRB(20, 8, 20, 2),
                     child: TweenAnimationBuilder<double>(
                       tween: Tween(begin: 0.0, end: 1.0),
-                      duration: const Duration(milliseconds: 700),
-                      curve: Curves.easeOutBack,
+                      duration: AppMotion.entrance,
+                      curve: AppMotion.pop,
                       builder: (context, t, child) {
                         return Opacity(
                           opacity: t.clamp(0.0, 1.0),
@@ -309,8 +310,8 @@ class _OverviewScreenState extends ConsumerState<OverviewScreen> {
                     padding: const EdgeInsets.all(16),
                     child: TweenAnimationBuilder<double>(
                       tween: Tween(begin: 0, end: 1),
-                      duration: const Duration(milliseconds: 700),
-                      curve: Curves.easeOutCubic,
+                      duration: AppMotion.entrance,
+                      curve: AppMotion.smooth,
                       builder: (context, t, child) {
                         return Opacity(
                           opacity: t,

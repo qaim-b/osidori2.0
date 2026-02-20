@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import '../../../core/theme/app_colors.dart';
+import '../../../core/theme/app_motion.dart';
 import '../../../domain/enums/transaction_type.dart';
 import '../../../domain/enums/visibility_type.dart';
 import '../../../domain/enums/account_type.dart';
@@ -218,7 +219,7 @@ class _AddTransactionScreenState extends ConsumerState<AddTransactionScreen> {
                       _selectedCategoryId = null;
                     }),
                     child: AnimatedContainer(
-                      duration: const Duration(milliseconds: 200),
+                      duration: AppMotion.normal,
                       margin: const EdgeInsets.symmetric(horizontal: 4),
                       padding: const EdgeInsets.symmetric(vertical: 12),
                       decoration: BoxDecoration(

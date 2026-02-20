@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../core/theme/app_colors.dart';
+import '../../../core/theme/app_motion.dart';
 import '../../../core/constants/app_constants.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/appearance_provider.dart';
@@ -75,8 +76,8 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
                     // Stitch & Angel mascots
                     TweenAnimationBuilder<double>(
                       tween: Tween(begin: 0.85, end: 1.0),
-                      duration: const Duration(milliseconds: 700),
-                      curve: Curves.easeOutBack,
+                      duration: AppMotion.entrance,
+                      curve: AppMotion.pop,
                       builder: (context, t, child) {
                         return Transform.scale(scale: t, child: child);
                       },
@@ -94,8 +95,8 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
 
                     TweenAnimationBuilder<double>(
                       tween: Tween(begin: 0, end: 1),
-                      duration: const Duration(milliseconds: 650),
-                      curve: Curves.easeOut,
+                      duration: AppMotion.entrance,
+                      curve: AppMotion.smooth,
                       builder: (context, t, child) {
                         return Opacity(
                           opacity: t,
