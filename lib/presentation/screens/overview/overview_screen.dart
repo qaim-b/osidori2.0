@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_svg/flutter_svg.dart';
@@ -25,8 +27,92 @@ import '../../widgets/home/goals_card.dart';
 import '../../widgets/home/memory_timeline_section.dart';
 import '../../widgets/transaction/transaction_tile.dart';
 
-class OverviewScreen extends ConsumerWidget {
+class OverviewScreen extends ConsumerStatefulWidget {
   const OverviewScreen({super.key});
+
+  @override
+  ConsumerState<OverviewScreen> createState() => _OverviewScreenState();
+}
+
+class _OverviewScreenState extends ConsumerState<OverviewScreen> {
+  static const _greetingPrefix = 'Hi, ';
+  String _greetingAnimated = '';
+  String _greetingTarget = 'Hi, there!';
+  int _greetingIndex = 0;
+  bool _greetingDeleting = false;
+  int _greetingPauseTicks = 0;
+  Timer? _greetingTimer;
+  final ScrollController _scrollController = ScrollController();
+  double _scrollOffset = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    _scrollController.addListener(_onScroll);
+  }
+
+  @override
+  void dispose() {
+    _greetingTimer?.cancel();
+    _scrollController.dispose();
+    super.dispose();
+  }
+
+  void _onScroll() {
+    if (!mounted) return;
+    setState(() => _scrollOffset = _scrollController.offset);
+  }
+
+  void _ensureGreetingLoop(String name) {
+    final nextTarget = '$_greetingPrefix$name!';
+    if (_greetingTarget == nextTarget && _greetingTimer != null) return;
+    _greetingTarget = nextTarget;
+    _greetingTimer?.cancel();
+    _greetingAnimated = '';
+    _greetingIndex = 0;
+    _greetingDeleting = false;
+    _greetingPauseTicks = 0;
+    _greetingTimer = Timer.periodic(const Duration(milliseconds: 85), (_) {
+      if (!mounted) return;
+      setState(() {
+        if (_greetingPauseTicks > 0) {
+          _greetingPauseTicks--;
+          return;
+        }
+        if (!_greetingDeleting) {
+          if (_greetingIndex < _greetingTarget.length) {
+            _greetingIndex++;
+            _greetingAnimated = _greetingTarget.substring(0, _greetingIndex);
+          } else {
+            _greetingPauseTicks = 12;
+            _greetingDeleting = true;
+          }
+        } else {
+          if (_greetingIndex > _greetingPrefix.length) {
+            _greetingIndex--;
+            _greetingAnimated = _greetingTarget.substring(0, _greetingIndex);
+          } else {
+            _greetingPauseTicks = 5;
+            _greetingDeleting = false;
+          }
+        }
+      });
+    });
+  }
+
+  Widget _scrollMotion({
+    required Widget child,
+    required double start,
+    double distance = 26,
+  }) {
+    final progress = ((_scrollOffset - start) / 260).clamp(0.0, 1.0);
+    final shift = distance * (1 - progress);
+    final opacity = (0.72 + (0.28 * progress)).clamp(0.0, 1.0);
+    return Opacity(
+      opacity: opacity,
+      child: Transform.translate(offset: Offset(0, shift), child: child),
+    );
+  }
 
   Future<void> _refresh(WidgetRef ref) async {
     await Future.wait([
@@ -39,7 +125,7 @@ class OverviewScreen extends ConsumerWidget {
   }
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  Widget build(BuildContext context) {
     final selectedMonth = ref.watch(selectedMonthProvider);
     final totals = ref.watch(monthlyTotalsProvider);
     final categoryTotals = ref.watch(categoryTotalsProvider);
@@ -47,6 +133,7 @@ class OverviewScreen extends ConsumerWidget {
     final categories = ref.watch(categoriesProvider);
     final roleColors = ref.watch(roleColorsProvider);
     final user = ref.watch(authStateProvider).valueOrNull;
+    _ensureGreetingLoop(user?.name ?? 'there');
     final memberProfilesAsync = ref.watch(activeGroupMemberProfilesProvider);
     final memberProfiles = memberProfilesAsync.valueOrNull ?? [];
     final profilesLoading = memberProfilesAsync.isLoading;
@@ -71,6 +158,7 @@ class OverviewScreen extends ConsumerWidget {
         child: RefreshIndicator(
           onRefresh: () => _refresh(ref),
           child: CustomScrollView(
+            controller: _scrollController,
             physics: const AlwaysScrollableScrollPhysics(
               parent: BouncingScrollPhysics(),
             ),
@@ -87,7 +175,9 @@ class OverviewScreen extends ConsumerWidget {
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Text(
-                                'Hi, ${user?.name ?? 'there'}!',
+                                _greetingAnimated.isEmpty
+                                    ? 'Hi, ${user?.name ?? 'there'}!'
+                                    : _greetingAnimated,
                                 style: Theme.of(context).textTheme.titleMedium
                                     ?.copyWith(fontWeight: FontWeight.w700),
                               ),
@@ -159,75 +249,81 @@ class OverviewScreen extends ConsumerWidget {
                 ),
               ),
               SliverToBoxAdapter(
-                child: Padding(
-                  padding: const EdgeInsets.fromLTRB(20, 8, 20, 2),
-                  child: TweenAnimationBuilder<double>(
-                    tween: Tween(begin: 0.0, end: 1.0),
-                    duration: const Duration(milliseconds: 700),
-                    curve: Curves.easeOutBack,
-                    builder: (context, t, child) {
-                      return Opacity(
-                        opacity: t.clamp(0.0, 1.0),
-                        child: Transform.scale(
-                          scale: 0.95 + (0.05 * t),
-                          child: child,
-                        ),
-                      );
-                    },
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        _MemberAvatarBubble(
-                          profile: youProfile,
-                          fallbackAsset: roleColors.mascotImage,
-                          label: youProfile?.name.isNotEmpty == true
-                              ? '${youProfile!.name} (You)'
-                              : 'You',
-                          backgroundColor: roleColors.primary.withValues(
-                            alpha: 0.16,
+                child: _scrollMotion(
+                  start: 20,
+                  child: Padding(
+                    padding: const EdgeInsets.fromLTRB(20, 8, 20, 2),
+                    child: TweenAnimationBuilder<double>(
+                      tween: Tween(begin: 0.0, end: 1.0),
+                      duration: const Duration(milliseconds: 700),
+                      curve: Curves.easeOutBack,
+                      builder: (context, t, child) {
+                        return Opacity(
+                          opacity: t.clamp(0.0, 1.0),
+                          child: Transform.scale(
+                            scale: 0.95 + (0.05 * t),
+                            child: child,
                           ),
-                          loading: profilesLoading && youProfile == null,
-                        ),
-                        const SizedBox(width: 22),
-                        _MemberAvatarBubble(
-                          profile: partnerProfile,
-                          fallbackAsset: partnerProfile?.role == 'angel'
-                              ? 'assets/images/angel.svg'
-                              : (partnerProfile?.role == 'solo'
-                                    ? 'assets/images/stitchangel.svg'
-                                    : 'assets/images/stitch.svg'),
-                          label: partnerProfile?.name.isNotEmpty == true
-                              ? partnerProfile!.name
-                              : 'Partner',
-                          backgroundColor: roleColors.accent.withValues(
-                            alpha: 0.16,
+                        );
+                      },
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          _MemberAvatarBubble(
+                            profile: youProfile,
+                            fallbackAsset: roleColors.mascotImage,
+                            label: youProfile?.name.isNotEmpty == true
+                                ? '${youProfile!.name} (You)'
+                                : 'You',
+                            backgroundColor: roleColors.primary.withValues(
+                              alpha: 0.16,
+                            ),
+                            loading: profilesLoading && youProfile == null,
                           ),
-                          loading: profilesLoading && partnerProfile == null,
-                        ),
-                      ],
+                          const SizedBox(width: 22),
+                          _MemberAvatarBubble(
+                            profile: partnerProfile,
+                            fallbackAsset: partnerProfile?.role == 'angel'
+                                ? 'assets/images/angel.svg'
+                                : (partnerProfile?.role == 'solo'
+                                      ? 'assets/images/stitchangel.svg'
+                                      : 'assets/images/stitch.svg'),
+                            label: partnerProfile?.name.isNotEmpty == true
+                                ? partnerProfile!.name
+                                : 'Partner',
+                            backgroundColor: roleColors.accent.withValues(
+                              alpha: 0.16,
+                            ),
+                            loading: profilesLoading && partnerProfile == null,
+                          ),
+                        ],
+                      ),
                     ),
                   ),
                 ),
               ),
               SliverToBoxAdapter(
-                child: Padding(
-                  padding: const EdgeInsets.all(16),
-                  child: TweenAnimationBuilder<double>(
-                    tween: Tween(begin: 0, end: 1),
-                    duration: const Duration(milliseconds: 700),
-                    curve: Curves.easeOutCubic,
-                    builder: (context, t, child) {
-                      return Opacity(
-                        opacity: t,
-                        child: Transform.translate(
-                          offset: Offset(0, 14 * (1 - t)),
-                          child: child,
-                        ),
-                      );
-                    },
-                    child: _SummaryCards(
-                      income: (totals['income'] ?? 0).toDouble(),
-                      expense: (totals['expense'] ?? 0).toDouble(),
+                child: _scrollMotion(
+                  start: 90,
+                  child: Padding(
+                    padding: const EdgeInsets.all(16),
+                    child: TweenAnimationBuilder<double>(
+                      tween: Tween(begin: 0, end: 1),
+                      duration: const Duration(milliseconds: 700),
+                      curve: Curves.easeOutCubic,
+                      builder: (context, t, child) {
+                        return Opacity(
+                          opacity: t,
+                          child: Transform.translate(
+                            offset: Offset(0, 14 * (1 - t)),
+                            child: child,
+                          ),
+                        );
+                      },
+                      child: _SummaryCards(
+                        income: (totals['income'] ?? 0).toDouble(),
+                        expense: (totals['expense'] ?? 0).toDouble(),
+                      ),
                     ),
                   ),
                 ),
@@ -236,34 +332,37 @@ class OverviewScreen extends ConsumerWidget {
                 child: SectionLabel(text: 'Household Snapshot'),
               ),
               SliverToBoxAdapter(
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 16),
-                  child: Row(
-                    children: [
-                      Expanded(
-                        child: _QuickAction(
-                          icon: Icons.remove_circle_outline_rounded,
-                          label: 'Add Expense',
-                          onTap: () => context.push('/add'),
+                child: _scrollMotion(
+                  start: 180,
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    child: Row(
+                      children: [
+                        Expanded(
+                          child: _QuickAction(
+                            icon: Icons.remove_circle_outline_rounded,
+                            label: 'Add Expense',
+                            onTap: () => context.push('/add'),
+                          ),
                         ),
-                      ),
-                      const SizedBox(width: 8),
-                      Expanded(
-                        child: _QuickAction(
-                          icon: Icons.add_circle_outline_rounded,
-                          label: 'Add Income',
-                          onTap: () => context.push('/add'),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: _QuickAction(
+                            icon: Icons.add_circle_outline_rounded,
+                            label: 'Add Income',
+                            onTap: () => context.push('/add'),
+                          ),
                         ),
-                      ),
-                      const SizedBox(width: 8),
-                      Expanded(
-                        child: _QuickAction(
-                          icon: Icons.tune_rounded,
-                          label: 'Budgets',
-                          onTap: () => context.push('/summary/set-budget'),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: _QuickAction(
+                            icon: Icons.tune_rounded,
+                            label: 'Budgets',
+                            onTap: () => context.push('/summary/set-budget'),
+                          ),
                         ),
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
                 ),
               ),

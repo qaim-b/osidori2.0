@@ -13,8 +13,46 @@ import '../../providers/appearance_provider.dart';
 import '../../providers/transaction_provider.dart';
 import '../../widgets/common/themed_backdrop.dart';
 
-class SummaryScreen extends ConsumerWidget {
+class SummaryScreen extends ConsumerStatefulWidget {
   const SummaryScreen({super.key});
+
+  @override
+  ConsumerState<SummaryScreen> createState() => _SummaryScreenState();
+}
+
+class _SummaryScreenState extends ConsumerState<SummaryScreen> {
+  final ScrollController _scrollController = ScrollController();
+  double _scrollOffset = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    _scrollController.addListener(() {
+      if (!mounted) return;
+      setState(() => _scrollOffset = _scrollController.offset);
+    });
+  }
+
+  @override
+  void dispose() {
+    _scrollController.dispose();
+    super.dispose();
+  }
+
+  Widget _scrollMotion({
+    required Widget child,
+    required double start,
+    double distance = 20,
+  }) {
+    final progress = ((_scrollOffset - start) / 240).clamp(0.0, 1.0);
+    return Opacity(
+      opacity: (0.76 + (0.24 * progress)).clamp(0.0, 1.0),
+      child: Transform.translate(
+        offset: Offset(0, distance * (1 - progress)),
+        child: child,
+      ),
+    );
+  }
 
   Future<void> _refresh(WidgetRef ref) async {
     await Future.wait([
@@ -26,7 +64,7 @@ class SummaryScreen extends ConsumerWidget {
   }
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final totals = ref.watch(monthlyTotalsProvider);
     final categoryTotals = ref.watch(categoryTotalsProvider);
@@ -67,6 +105,7 @@ class SummaryScreen extends ConsumerWidget {
         child: RefreshIndicator(
           onRefresh: () => _refresh(ref),
           child: CustomScrollView(
+            controller: _scrollController,
             physics: const AlwaysScrollableScrollPhysics(
               parent: BouncingScrollPhysics(),
             ),
@@ -125,58 +164,61 @@ class SummaryScreen extends ConsumerWidget {
                 ),
               ),
               SliverToBoxAdapter(
-                child: Padding(
-                  padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
-                  child: Container(
-                    padding: const EdgeInsets.all(18),
-                    decoration: BoxDecoration(
-                      gradient: LinearGradient(
-                        colors: [preset.primary, preset.secondary],
-                        begin: Alignment.topLeft,
-                        end: Alignment.bottomRight,
-                      ),
-                      borderRadius: BorderRadius.circular(24),
-                      boxShadow: [
-                        BoxShadow(
-                          color: preset.primary.withValues(alpha: 0.25),
-                          blurRadius: 14,
-                          offset: const Offset(0, 8),
+                child: _scrollMotion(
+                  start: 20,
+                  child: Padding(
+                    padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
+                    child: Container(
+                      padding: const EdgeInsets.all(18),
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          colors: [preset.primary, preset.secondary],
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
                         ),
-                      ],
-                    ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          'Monthly Snapshot',
-                          style: TextStyle(
-                            color: Colors.white.withValues(alpha: 0.9),
-                            fontWeight: FontWeight.w600,
+                        borderRadius: BorderRadius.circular(24),
+                        boxShadow: [
+                          BoxShadow(
+                            color: preset.primary.withValues(alpha: 0.25),
+                            blurRadius: 14,
+                            offset: const Offset(0, 8),
                           ),
-                        ),
-                        const SizedBox(height: 10),
-                        Row(
-                          children: [
-                            Expanded(
-                              child: _MetricPill(
-                                label: 'Income',
-                                value: CurrencyFormatter.format(income),
-                                icon: Icons.arrow_upward_rounded,
-                                color: preset.background,
-                              ),
+                        ],
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Monthly Snapshot',
+                            style: TextStyle(
+                              color: Colors.white.withValues(alpha: 0.9),
+                              fontWeight: FontWeight.w600,
                             ),
-                            const SizedBox(width: 8),
-                            Expanded(
-                              child: _MetricPill(
-                                label: 'Expense',
-                                value: CurrencyFormatter.format(expense),
-                                icon: Icons.arrow_downward_rounded,
-                                color: preset.background,
+                          ),
+                          const SizedBox(height: 10),
+                          Row(
+                            children: [
+                              Expanded(
+                                child: _MetricPill(
+                                  label: 'Income',
+                                  value: CurrencyFormatter.format(income),
+                                  icon: Icons.arrow_upward_rounded,
+                                  color: AppColors.income,
+                                ),
                               ),
-                            ),
-                          ],
-                        ),
-                      ],
+                              const SizedBox(width: 8),
+                              Expanded(
+                                child: _MetricPill(
+                                  label: 'Expense',
+                                  value: CurrencyFormatter.format(expense),
+                                  icon: Icons.arrow_downward_rounded,
+                                  color: AppColors.expense,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
                     ),
                   ),
                 ),
@@ -194,74 +236,85 @@ class SummaryScreen extends ConsumerWidget {
                 ),
               ),
               SliverToBoxAdapter(
-                child: Card(
-                  margin: const EdgeInsets.fromLTRB(16, 8, 16, 0),
-                  child: Padding(
-                    padding: const EdgeInsets.all(14),
-                    child: budgetLimits.isEmpty
-                        ? const Padding(
-                            padding: EdgeInsets.all(8),
-                            child: Text(
-                              'No budget limits yet. Tap the top-right sliders icon to add them.',
-                            ),
-                          )
-                        : Column(
-                            children: budgetLimits.entries.map((entry) {
-                              final cat = catMap[entry.key];
-                              final actual = categoryTotals[entry.key] ?? 0;
-                              final limit = entry.value;
-                              final ratio = limit <= 0 ? 0.0 : (actual / limit);
-                              final over = ratio > 1;
-                              final barColor = over
-                                  ? AppColors.expense
-                                  : preset.primary;
+                child: _scrollMotion(
+                  start: 110,
+                  child: Card(
+                    margin: const EdgeInsets.fromLTRB(16, 8, 16, 0),
+                    child: Padding(
+                      padding: const EdgeInsets.all(14),
+                      child: budgetLimits.isEmpty
+                          ? const Padding(
+                              padding: EdgeInsets.all(8),
+                              child: Text(
+                                'No budget limits yet. Tap the top-right sliders icon to add them.',
+                              ),
+                            )
+                          : Column(
+                              children: budgetLimits.entries.map((entry) {
+                                final cat = catMap[entry.key];
+                                final actual = categoryTotals[entry.key] ?? 0;
+                                final limit = entry.value;
+                                final ratio = limit <= 0
+                                    ? 0.0
+                                    : (actual / limit);
+                                final over = ratio > 1;
+                                final barColor = over
+                                    ? AppColors.expense
+                                    : preset.primary;
 
-                              return Padding(
-                                padding: const EdgeInsets.only(bottom: 12),
-                                child: Column(
-                                  children: [
-                                    Row(
-                                      children: [
-                                        Text(
-                                          cat?.emoji ??
-                                              catSnapshotEmojiMap[entry.key] ??
-                                              '📋',
-                                        ),
-                                        const SizedBox(width: 8),
-                                        Expanded(
-                                          child: Text(
-                                            cat?.name ??
-                                                catSnapshotNameMap[entry.key] ??
-                                                'Unknown',
-                                            overflow: TextOverflow.ellipsis,
+                                return Padding(
+                                  padding: const EdgeInsets.only(bottom: 12),
+                                  child: Column(
+                                    children: [
+                                      Row(
+                                        children: [
+                                          Text(
+                                            cat?.emoji ??
+                                                catSnapshotEmojiMap[entry
+                                                    .key] ??
+                                                '📋',
                                           ),
-                                        ),
-                                        Text(
-                                          '${CurrencyFormatter.format(actual)} / ${CurrencyFormatter.format(limit)}',
-                                          style: const TextStyle(fontSize: 12),
-                                        ),
-                                      ],
-                                    ),
-                                    const SizedBox(height: 6),
-                                    ClipRRect(
-                                      borderRadius: BorderRadius.circular(999),
-                                      child: LinearProgressIndicator(
-                                        minHeight: 7,
-                                        value: ratio.clamp(0.0, 1.0),
-                                        backgroundColor: theme
-                                            .colorScheme
-                                            .surfaceContainerHighest,
-                                        valueColor:
-                                            AlwaysStoppedAnimation<Color>(
-                                              barColor,
+                                          const SizedBox(width: 8),
+                                          Expanded(
+                                            child: Text(
+                                              cat?.name ??
+                                                  catSnapshotNameMap[entry
+                                                      .key] ??
+                                                  'Unknown',
+                                              overflow: TextOverflow.ellipsis,
                                             ),
+                                          ),
+                                          Text(
+                                            '${CurrencyFormatter.format(actual)} / ${CurrencyFormatter.format(limit)}',
+                                            style: const TextStyle(
+                                              fontSize: 12,
+                                            ),
+                                          ),
+                                        ],
                                       ),
-                                    ),
-                                  ],
-                                ),
-                              );
-                            }).toList(),
-                          ),
+                                      const SizedBox(height: 6),
+                                      ClipRRect(
+                                        borderRadius: BorderRadius.circular(
+                                          999,
+                                        ),
+                                        child: LinearProgressIndicator(
+                                          minHeight: 7,
+                                          value: ratio.clamp(0.0, 1.0),
+                                          backgroundColor: theme
+                                              .colorScheme
+                                              .surfaceContainerHighest,
+                                          valueColor:
+                                              AlwaysStoppedAnimation<Color>(
+                                                barColor,
+                                              ),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                );
+                              }).toList(),
+                            ),
+                    ),
                   ),
                 ),
               ),
@@ -278,47 +331,50 @@ class SummaryScreen extends ConsumerWidget {
                 ),
               ),
               SliverToBoxAdapter(
-                child: Card(
-                  margin: const EdgeInsets.fromLTRB(16, 8, 16, 0),
-                  child: Padding(
-                    padding: const EdgeInsets.all(14),
-                    child: top3Sliced.isEmpty
-                        ? const Text('No spending yet this month.')
-                        : Column(
-                            children: top3Sliced.map((entry) {
-                              final cat = catMap[entry.key];
-                              final pct = expense <= 0
-                                  ? 0
-                                  : (entry.value / expense * 100);
-                              return Padding(
-                                padding: const EdgeInsets.only(bottom: 10),
-                                child: Row(
-                                  children: [
-                                    Text(
-                                      cat?.emoji ??
-                                          catSnapshotEmojiMap[entry.key] ??
-                                          '📋',
-                                    ),
-                                    const SizedBox(width: 8),
-                                    Expanded(
-                                      child: Text(
-                                        cat?.name ??
-                                            catSnapshotNameMap[entry.key] ??
-                                            'Unknown',
+                child: _scrollMotion(
+                  start: 210,
+                  child: Card(
+                    margin: const EdgeInsets.fromLTRB(16, 8, 16, 0),
+                    child: Padding(
+                      padding: const EdgeInsets.all(14),
+                      child: top3Sliced.isEmpty
+                          ? const Text('No spending yet this month.')
+                          : Column(
+                              children: top3Sliced.map((entry) {
+                                final cat = catMap[entry.key];
+                                final pct = expense <= 0
+                                    ? 0
+                                    : (entry.value / expense * 100);
+                                return Padding(
+                                  padding: const EdgeInsets.only(bottom: 10),
+                                  child: Row(
+                                    children: [
+                                      Text(
+                                        cat?.emoji ??
+                                            catSnapshotEmojiMap[entry.key] ??
+                                            '📋',
                                       ),
-                                    ),
-                                    Text(
-                                      '${CurrencyFormatter.format(entry.value)} (${pct.toStringAsFixed(1)}%)',
-                                      style: const TextStyle(
-                                        fontSize: 12,
-                                        fontWeight: FontWeight.w600,
+                                      const SizedBox(width: 8),
+                                      Expanded(
+                                        child: Text(
+                                          cat?.name ??
+                                              catSnapshotNameMap[entry.key] ??
+                                              'Unknown',
+                                        ),
                                       ),
-                                    ),
-                                  ],
-                                ),
-                              );
-                            }).toList(),
-                          ),
+                                      Text(
+                                        '${CurrencyFormatter.format(entry.value)} (${pct.toStringAsFixed(1)}%)',
+                                        style: const TextStyle(
+                                          fontSize: 12,
+                                          fontWeight: FontWeight.w600,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                );
+                              }).toList(),
+                            ),
+                    ),
                   ),
                 ),
               ),
@@ -471,7 +527,7 @@ class _MetricPill extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 9),
       decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.22),
+        color: Colors.white.withValues(alpha: 0.9),
         borderRadius: BorderRadius.circular(14),
       ),
       child: Row(
@@ -484,15 +540,15 @@ class _MetricPill extends StatelessWidget {
               children: [
                 Text(
                   label,
-                  style: TextStyle(
-                    color: Colors.white.withValues(alpha: 0.9),
+                  style: const TextStyle(
+                    color: AppColors.textSecondary,
                     fontSize: 11,
                   ),
                 ),
                 Text(
                   value,
-                  style: const TextStyle(
-                    color: Colors.white,
+                  style: TextStyle(
+                    color: color,
                     fontWeight: FontWeight.w700,
                     fontSize: 13.5,
                   ),

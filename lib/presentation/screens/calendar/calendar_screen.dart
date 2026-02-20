@@ -238,7 +238,7 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
                       ),
                     ),
                   ),
-                  _buildDayTransactions(transactions, roleColors, catEntityMap),
+                  _buildDayTransactions(transactions, catEntityMap),
                 ],
 
                 const SliverToBoxAdapter(child: SizedBox(height: 110)),
@@ -395,7 +395,6 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
 
   Widget _buildDayTransactions(
     AsyncValue<List<TransactionModel>> transactions,
-    RoleColors roleColors,
     Map<String, CategoryEntity> catEntityMap,
   ) {
     return transactions.when(
@@ -407,32 +406,48 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
               t.date.day == _selectedDay!.day;
         }).toList();
 
-        if (dayTxns.isEmpty) {
-          return SliverToBoxAdapter(
-            child: Padding(
-              padding: const EdgeInsets.all(32),
-              child: Center(
-                child: Text(
-                  'No transactions on this day',
-                  style: TextStyle(color: AppColors.textHint, fontSize: 14),
-                ),
-              ),
-            ),
-          );
-        }
-
-        return SliverList(
-          delegate: SliverChildBuilderDelegate((context, index) {
-            final txn = dayTxns[index];
-            return Card(
-              margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 3),
-              child: TransactionTile(
-                transaction: txn,
-                category: catEntityMap[txn.categoryId],
-                onTap: () => _showTransactionActions(context, txn),
-              ),
-            );
-          }, childCount: dayTxns.length),
+        return SliverToBoxAdapter(
+          child: AnimatedSwitcher(
+            duration: const Duration(milliseconds: 280),
+            switchInCurve: Curves.easeOutBack,
+            switchOutCurve: Curves.easeIn,
+            transitionBuilder: (child, animation) {
+              return FadeTransition(
+                opacity: animation,
+                child: SizeTransition(sizeFactor: animation, child: child),
+              );
+            },
+            child: dayTxns.isEmpty
+                ? Padding(
+                    key: ValueKey('empty-${_selectedDay?.toIso8601String()}'),
+                    padding: const EdgeInsets.all(32),
+                    child: Center(
+                      child: Text(
+                        'No transactions on this day',
+                        style: TextStyle(
+                          color: AppColors.textHint,
+                          fontSize: 14,
+                        ),
+                      ),
+                    ),
+                  )
+                : Column(
+                    key: ValueKey('list-${_selectedDay?.toIso8601String()}'),
+                    children: dayTxns.map((txn) {
+                      return Card(
+                        margin: const EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 3,
+                        ),
+                        child: TransactionTile(
+                          transaction: txn,
+                          category: catEntityMap[txn.categoryId],
+                          onTap: () => _showTransactionActions(context, txn),
+                        ),
+                      );
+                    }).toList(),
+                  ),
+          ),
         );
       },
       loading: () => const SliverToBoxAdapter(

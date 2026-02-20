@@ -103,10 +103,17 @@ class CategoryRepository {
 
   Future<void> delete(String categoryId) async {
     try {
-      await _client
+      final deleted = await _client
           .from(AppSupabase.categoriesTable)
           .delete()
-          .eq('id', categoryId);
+          .eq('id', categoryId)
+          .select('id');
+      if (deleted.isEmpty) {
+        throw Exception(
+          'Category was not deleted. Database policy may be blocking DELETE. '
+          'Apply the categories delete policy migration.',
+        );
+      }
     } on PostgrestException catch (e) {
       // FK guard: category is referenced by one or more transactions.
       if (e.code == '23503') {
@@ -137,11 +144,18 @@ class CategoryRepository {
     }
 
     try {
-      await _client
+      final deleted = await _client
           .from(AppSupabase.categoriesTable)
           .delete()
           .eq('id', category.id)
-          .eq('user_id', userId);
+          .eq('user_id', userId)
+          .select('id');
+      if (deleted.isEmpty) {
+        throw Exception(
+          'Category was not deleted. Database policy may be blocking DELETE. '
+          'Apply the categories delete policy migration.',
+        );
+      }
     } on PostgrestException catch (e) {
       if (e.code == '23503') {
         throw Exception(

@@ -13,8 +13,46 @@ import '../../widgets/charts/donut_chart.dart';
 import '../../widgets/common/editorial.dart';
 import '../../widgets/common/themed_backdrop.dart';
 
-class BudgetScreen extends ConsumerWidget {
+class BudgetScreen extends ConsumerStatefulWidget {
   const BudgetScreen({super.key});
+
+  @override
+  ConsumerState<BudgetScreen> createState() => _BudgetScreenState();
+}
+
+class _BudgetScreenState extends ConsumerState<BudgetScreen> {
+  final ScrollController _scrollController = ScrollController();
+  double _scrollOffset = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    _scrollController.addListener(() {
+      if (!mounted) return;
+      setState(() => _scrollOffset = _scrollController.offset);
+    });
+  }
+
+  @override
+  void dispose() {
+    _scrollController.dispose();
+    super.dispose();
+  }
+
+  Widget _scrollMotion({
+    required Widget child,
+    required double start,
+    double distance = 22,
+  }) {
+    final progress = ((_scrollOffset - start) / 260).clamp(0.0, 1.0);
+    return Opacity(
+      opacity: (0.74 + (0.26 * progress)).clamp(0.0, 1.0),
+      child: Transform.translate(
+        offset: Offset(0, distance * (1 - progress)),
+        child: child,
+      ),
+    );
+  }
 
   Future<void> _refresh(WidgetRef ref) async {
     await Future.wait([
@@ -25,7 +63,7 @@ class BudgetScreen extends ConsumerWidget {
   }
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final selectedMonth = ref.watch(selectedMonthProvider);
     final categoryTotals = ref.watch(categoryTotalsProvider);
@@ -75,6 +113,7 @@ class BudgetScreen extends ConsumerWidget {
         child: RefreshIndicator(
           onRefresh: () => _refresh(ref),
           child: CustomScrollView(
+            controller: _scrollController,
             physics: const AlwaysScrollableScrollPhysics(
               parent: BouncingScrollPhysics(),
             ),
@@ -119,126 +158,132 @@ class BudgetScreen extends ConsumerWidget {
                 ),
               ),
               SliverToBoxAdapter(
-                child: Padding(
-                  padding: const EdgeInsets.fromLTRB(20, 8, 20, 4),
-                  child: Column(
-                    children: [
-                      Container(
-                        width: double.infinity,
-                        padding: const EdgeInsets.all(14),
-                        decoration: BoxDecoration(
-                          color: preset.surfaceVariant,
-                          borderRadius: BorderRadius.circular(14),
-                        ),
-                        child: Row(
-                          children: [
-                            Icon(
-                              Icons.arrow_upward_rounded,
-                              color: preset.primary,
-                            ),
-                            const SizedBox(width: 8),
-                            Text(
-                              'Income',
-                              style: TextStyle(
-                                color: theme.colorScheme.onSurface.withValues(
-                                  alpha: 0.7,
+                child: _scrollMotion(
+                  start: 24,
+                  child: Padding(
+                    padding: const EdgeInsets.fromLTRB(20, 8, 20, 4),
+                    child: Column(
+                      children: [
+                        Container(
+                          width: double.infinity,
+                          padding: const EdgeInsets.all(14),
+                          decoration: BoxDecoration(
+                            color: preset.surfaceVariant,
+                            borderRadius: BorderRadius.circular(14),
+                          ),
+                          child: Row(
+                            children: [
+                              Icon(
+                                Icons.arrow_upward_rounded,
+                                color: preset.primary,
+                              ),
+                              const SizedBox(width: 8),
+                              Text(
+                                'Income',
+                                style: TextStyle(
+                                  color: theme.colorScheme.onSurface.withValues(
+                                    alpha: 0.7,
+                                  ),
                                 ),
                               ),
-                            ),
-                            const Spacer(),
-                            Text(
-                              CurrencyFormatter.format(
-                                (totals['income'] ?? 0.0).toDouble(),
+                              const Spacer(),
+                              Text(
+                                CurrencyFormatter.format(
+                                  (totals['income'] ?? 0.0).toDouble(),
+                                ),
+                                style: TextStyle(
+                                  color: preset.primary,
+                                  fontWeight: FontWeight.w700,
+                                ),
                               ),
-                              style: TextStyle(
-                                color: preset.primary,
-                                fontWeight: FontWeight.w700,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                      const SizedBox(height: 10),
-                      Container(
-                        width: double.infinity,
-                        padding: const EdgeInsets.all(20),
-                        decoration: BoxDecoration(
-                          gradient: LinearGradient(
-                            colors: [preset.primary, preset.secondary],
-                            begin: Alignment.topLeft,
-                            end: Alignment.bottomRight,
+                            ],
                           ),
-                          borderRadius: BorderRadius.circular(20),
                         ),
-                        child: Column(
-                          children: [
-                            Text(
-                              'Total Spending',
-                              style: TextStyle(
-                                color: Colors.white.withValues(alpha: 0.8),
-                                fontSize: 13,
-                              ),
+                        const SizedBox(height: 10),
+                        Container(
+                          width: double.infinity,
+                          padding: const EdgeInsets.all(20),
+                          decoration: BoxDecoration(
+                            gradient: LinearGradient(
+                              colors: [preset.primary, preset.secondary],
+                              begin: Alignment.topLeft,
+                              end: Alignment.bottomRight,
                             ),
-                            const SizedBox(height: 4),
-                            DisplayNumber(
-                              value: CurrencyFormatter.format(
-                                (totals['expense'] ?? 0.0).toDouble(),
+                            borderRadius: BorderRadius.circular(20),
+                          ),
+                          child: Column(
+                            children: [
+                              Text(
+                                'Total Spending',
+                                style: TextStyle(
+                                  color: Colors.white.withValues(alpha: 0.8),
+                                  fontSize: 13,
+                                ),
                               ),
-                              size: 34,
-                              color: Colors.white,
-                            ),
-                          ],
+                              const SizedBox(height: 4),
+                              DisplayNumber(
+                                value: CurrencyFormatter.format(
+                                  (totals['expense'] ?? 0.0).toDouble(),
+                                ),
+                                size: 34,
+                                color: Colors.white,
+                              ),
+                            ],
+                          ),
                         ),
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
                 ),
               ),
               SliverToBoxAdapter(
-                child: EditorialCard(
-                  margin: const EdgeInsets.all(16),
-                  accentTop: true,
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'Expense Breakdown',
-                        style: Theme.of(context).textTheme.titleMedium
-                            ?.copyWith(
-                              color: theme.colorScheme.onSurface,
-                              fontWeight: FontWeight.w700,
-                            ),
-                      ),
-                      const SizedBox(height: 16),
-                      Builder(
-                        builder: (context) {
-                          final total = categoryTotals.values.fold<double>(
-                            0,
-                            (sum, v) => sum + v,
-                          );
-                          if (total == 0) {
-                            return const Padding(
-                              padding: EdgeInsets.all(32),
-                              child: Center(
-                                child: Text('No expenses this month'),
+                child: _scrollMotion(
+                  start: 120,
+                  child: EditorialCard(
+                    margin: const EdgeInsets.all(16),
+                    accentTop: true,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Expense Breakdown',
+                          style: Theme.of(context).textTheme.titleMedium
+                              ?.copyWith(
+                                color: theme.colorScheme.onSurface,
+                                fontWeight: FontWeight.w700,
                               ),
+                        ),
+                        const SizedBox(height: 16),
+                        Builder(
+                          builder: (context) {
+                            final total = categoryTotals.values.fold<double>(
+                              0,
+                              (sum, v) => sum + v,
                             );
-                          }
-                          return CategoryDonutChart(
-                            categoryTotals: categoryTotals,
-                            categoryNames: {
-                              for (final e in categoryTotals.entries)
-                                e.key:
-                                    resolvedCategoryNameMap[e.key] ??
-                                    catNameMap[e.key] ??
-                                    'Category',
-                            },
-                            currency: 'JPY',
-                            totalAmount: total,
-                          );
-                        },
-                      ),
-                    ],
+                            if (total == 0) {
+                              return const Padding(
+                                padding: EdgeInsets.all(32),
+                                child: Center(
+                                  child: Text('No expenses this month'),
+                                ),
+                              );
+                            }
+                            return CategoryDonutChart(
+                              categoryTotals: categoryTotals,
+                              categoryNames: {
+                                for (final e in categoryTotals.entries)
+                                  e.key:
+                                      resolvedCategoryNameMap[e.key] ??
+                                      catNameMap[e.key] ??
+                                      'Category',
+                              },
+                              currency: 'JPY',
+                              totalAmount: total,
+                            );
+                          },
+                        ),
+                      ],
+                    ),
                   ),
                 ),
               ),
@@ -246,26 +291,29 @@ class BudgetScreen extends ConsumerWidget {
                 child: SectionLabel(text: 'By Category'),
               ),
               SliverToBoxAdapter(
-                child: Padding(
-                  padding: const EdgeInsets.fromLTRB(20, 0, 20, 8),
-                  child: Row(
-                    children: [
-                      Expanded(
-                        child: Text(
-                          'By Category',
-                          style: Theme.of(context).textTheme.titleMedium
-                              ?.copyWith(
-                                color: theme.colorScheme.onSurface,
-                                fontWeight: FontWeight.w700,
-                              ),
+                child: _scrollMotion(
+                  start: 240,
+                  child: Padding(
+                    padding: const EdgeInsets.fromLTRB(20, 0, 20, 8),
+                    child: Row(
+                      children: [
+                        Expanded(
+                          child: Text(
+                            'By Category',
+                            style: Theme.of(context).textTheme.titleMedium
+                                ?.copyWith(
+                                  color: theme.colorScheme.onSurface,
+                                  fontWeight: FontWeight.w700,
+                                ),
+                          ),
                         ),
-                      ),
-                      TextButton.icon(
-                        onPressed: () => context.push('/budget/planner'),
-                        icon: const Icon(Icons.tune_rounded, size: 18),
-                        label: const Text('All Budgets'),
-                      ),
-                    ],
+                        TextButton.icon(
+                          onPressed: () => context.push('/budget/planner'),
+                          icon: const Icon(Icons.tune_rounded, size: 18),
+                          label: const Text('All Budgets'),
+                        ),
+                      ],
+                    ),
                   ),
                 ),
               ),

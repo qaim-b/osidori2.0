@@ -627,82 +627,109 @@ class _CategoryPicker extends StatelessWidget {
       context: context,
       showDragHandle: true,
       isScrollControlled: true,
+      backgroundColor: Colors.transparent,
       builder: (ctx) {
-        return StatefulBuilder(
-          builder: (ctx, setSheetState) {
-            final visible = q.isEmpty
-                ? items
-                : items.where((c) {
-                    return c.name.toLowerCase().contains(q) ||
-                        c.emoji.contains(q) ||
-                        c.displayNumber.toString().contains(q);
-                  }).toList();
+        final liftOffset = MediaQuery.of(ctx).size.height * 0.12;
+        return SafeArea(
+          child: Padding(
+            padding: EdgeInsets.fromLTRB(
+              12,
+              24,
+              12,
+              14 + liftOffset + MediaQuery.of(ctx).viewInsets.bottom,
+            ),
+            child: StatefulBuilder(
+              builder: (ctx, setSheetState) {
+                final visible = q.isEmpty
+                    ? items
+                    : items.where((c) {
+                        return c.name.toLowerCase().contains(q) ||
+                            c.emoji.contains(q) ||
+                            c.displayNumber.toString().contains(q);
+                      }).toList();
 
-            return SafeArea(
-              child: Padding(
-                padding: EdgeInsets.only(
-                  bottom: MediaQuery.of(ctx).viewInsets.bottom,
-                ),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    ListTile(
-                      title: Text(_groupLabel(groupKey)),
-                      subtitle: const Text('Choose category'),
+                return ClipRRect(
+                  borderRadius: BorderRadius.circular(18),
+                  child: Container(
+                    constraints: BoxConstraints(
+                      maxHeight: MediaQuery.of(ctx).size.height * 0.72,
                     ),
-                    Padding(
-                      padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
-                      child: TextField(
-                        onChanged: (value) =>
-                            setSheetState(() => q = value.trim().toLowerCase()),
-                        decoration: const InputDecoration(
-                          hintText: 'Search in this group',
-                          prefixIcon: Icon(Icons.search, size: 20),
+                    color: Theme.of(ctx).colorScheme.surface,
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Container(
+                          width: 42,
+                          height: 4,
+                          margin: const EdgeInsets.only(top: 10, bottom: 6),
+                          decoration: BoxDecoration(
+                            color: AppColors.border,
+                            borderRadius: BorderRadius.circular(99),
+                          ),
                         ),
-                      ),
-                    ),
-                    Flexible(
-                      child: ListView.builder(
-                        shrinkWrap: true,
-                        itemCount: visible.length,
-                        itemBuilder: (context, index) {
-                          final cat = visible[index];
-                          return ListTile(
-                            leading: Container(
-                              width: 28,
-                              height: 28,
-                              alignment: Alignment.center,
-                              decoration: BoxDecoration(
-                                color: cat.id == selectedId
-                                    ? AppColors.primary.withValues(alpha: 0.14)
-                                    : AppColors.surfaceVariant,
-                                borderRadius: BorderRadius.circular(8),
-                              ),
-                              child: Text(cat.emoji),
+                        ListTile(
+                          title: Text(_groupLabel(groupKey)),
+                          subtitle: const Text('Choose category'),
+                        ),
+                        Padding(
+                          padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+                          child: TextField(
+                            onChanged: (value) => setSheetState(
+                              () => q = value.trim().toLowerCase(),
                             ),
-                            title: Text(cat.displayLabel),
-                            tileColor: cat.id == selectedId
-                                ? AppColors.primary.withValues(alpha: 0.06)
-                                : Colors.transparent,
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(10),
+                            decoration: const InputDecoration(
+                              hintText: 'Search in this group',
+                              prefixIcon: Icon(Icons.search, size: 20),
                             ),
-                            trailing: cat.id == selectedId
-                                ? const Icon(
-                                    Icons.check,
-                                    color: AppColors.primary,
-                                  )
-                                : null,
-                            onTap: () => Navigator.of(ctx).pop(cat.id),
-                          );
-                        },
-                      ),
+                          ),
+                        ),
+                        Flexible(
+                          child: ListView.builder(
+                            padding: const EdgeInsets.only(bottom: 12),
+                            shrinkWrap: true,
+                            itemCount: visible.length,
+                            itemBuilder: (context, index) {
+                              final cat = visible[index];
+                              return ListTile(
+                                leading: Container(
+                                  width: 28,
+                                  height: 28,
+                                  alignment: Alignment.center,
+                                  decoration: BoxDecoration(
+                                    color: cat.id == selectedId
+                                        ? AppColors.primary.withValues(
+                                            alpha: 0.14,
+                                          )
+                                        : AppColors.surfaceVariant,
+                                    borderRadius: BorderRadius.circular(8),
+                                  ),
+                                  child: Text(cat.emoji),
+                                ),
+                                title: Text(cat.displayLabel),
+                                tileColor: cat.id == selectedId
+                                    ? AppColors.primary.withValues(alpha: 0.06)
+                                    : Colors.transparent,
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(10),
+                                ),
+                                trailing: cat.id == selectedId
+                                    ? const Icon(
+                                        Icons.check,
+                                        color: AppColors.primary,
+                                      )
+                                    : null,
+                                onTap: () => Navigator.of(ctx).pop(cat.id),
+                              );
+                            },
+                          ),
+                        ),
+                      ],
                     ),
-                  ],
-                ),
-              ),
-            );
-          },
+                  ),
+                );
+              },
+            ),
+          ),
         );
       },
     );
@@ -713,7 +740,7 @@ class _CategoryPicker extends StatelessWidget {
   }
 }
 
-class _AccountPicker extends StatelessWidget {
+class _AccountPicker extends StatefulWidget {
   final List<AccountEntity> accounts;
   final String? selectedId;
   final ValueChanged<String> onSelect;
@@ -725,8 +752,16 @@ class _AccountPicker extends StatelessWidget {
   });
 
   @override
+  State<_AccountPicker> createState() => _AccountPickerState();
+}
+
+class _AccountPickerState extends State<_AccountPicker> {
+  AccountType? _expandedType;
+  int _collapseTick = 0;
+
+  @override
   Widget build(BuildContext context) {
-    if (accounts.isEmpty) {
+    if (widget.accounts.isEmpty) {
       return Padding(
         padding: const EdgeInsets.all(16),
         child: Column(
@@ -742,10 +777,12 @@ class _AccountPicker extends StatelessWidget {
     }
 
     final grouped = <AccountType, List<AccountEntity>>{};
-    for (final acc in accounts) {
+    for (final acc in widget.accounts) {
       grouped.putIfAbsent(acc.type, () => <AccountEntity>[]).add(acc);
     }
-    final selected = accounts.where((a) => a.id == selectedId).firstOrNull;
+    final selected = widget.accounts
+        .where((a) => a.id == widget.selectedId)
+        .firstOrNull;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -775,6 +812,9 @@ class _AccountPicker extends StatelessWidget {
         ...AccountType.values.where((t) => grouped[t] != null).map((type) {
           final items = grouped[type]!;
           return Container(
+            key: ValueKey(
+              '${type.name}-${_expandedType == type}-$_collapseTick',
+            ),
             margin: const EdgeInsets.only(bottom: 8),
             decoration: BoxDecoration(
               color: AppColors.surfaceVariant,
@@ -782,6 +822,13 @@ class _AccountPicker extends StatelessWidget {
             ),
             child: ExpansionTile(
               leading: Text(type.icon, style: const TextStyle(fontSize: 18)),
+              initiallyExpanded: _expandedType == type,
+              onExpansionChanged: (expanded) {
+                setState(() {
+                  _expandedType = expanded ? type : null;
+                  _collapseTick++;
+                });
+              },
               title: Text(
                 '${type.label} (${items.length})',
                 style: const TextStyle(
@@ -790,7 +837,7 @@ class _AccountPicker extends StatelessWidget {
                 ),
               ),
               children: items.map((acc) {
-                final isSelected = acc.id == selectedId;
+                final isSelected = acc.id == widget.selectedId;
                 return ListTile(
                   dense: true,
                   leading: Container(
@@ -837,7 +884,13 @@ class _AccountPicker extends StatelessWidget {
                   trailing: isSelected
                       ? const Icon(Icons.check_circle, color: AppColors.primary)
                       : null,
-                  onTap: () => onSelect(acc.id),
+                  onTap: () {
+                    widget.onSelect(acc.id);
+                    setState(() {
+                      _expandedType = null;
+                      _collapseTick++;
+                    });
+                  },
                 );
               }).toList(),
             ),
