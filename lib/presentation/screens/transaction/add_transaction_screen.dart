@@ -6,6 +6,7 @@ import 'package:intl/intl.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../domain/enums/transaction_type.dart';
 import '../../../domain/enums/visibility_type.dart';
+import '../../../domain/enums/account_type.dart';
 import '../../../domain/entities/category_entity.dart';
 import '../../../domain/entities/account_entity.dart';
 import '../../providers/transaction_provider.dart';
@@ -27,6 +28,7 @@ class _AddTransactionScreenState extends ConsumerState<AddTransactionScreen> {
   final VisibilityType _visibility = VisibilityType.shared;
   final _amountController = TextEditingController();
   final _noteController = TextEditingController();
+  String _categoryQuery = '';
   DateTime _date = DateTime.now();
   String? _selectedCategoryId;
   String? _selectedFromAccountId;
@@ -177,6 +179,14 @@ class _AddTransactionScreenState extends ConsumerState<AddTransactionScreen> {
                     )
                     .toList()
           ..sort((a, b) => a.sortOrder.compareTo(b.sortOrder));
+    final visibleCategories = _categoryQuery.trim().isEmpty
+        ? filteredCategories
+        : filteredCategories.where((c) {
+            final q = _categoryQuery.trim().toLowerCase();
+            return c.name.toLowerCase().contains(q) ||
+                c.emoji.contains(q) ||
+                c.displayNumber.toString().contains(q);
+          }).toList();
 
     return Scaffold(
       appBar: AppBar(
@@ -318,7 +328,7 @@ class _AddTransactionScreenState extends ConsumerState<AddTransactionScreen> {
                   : 'Account',
             ),
             const SizedBox(height: 8),
-            _AccountGrid(
+            _AccountPicker(
               accounts: accounts,
               selectedId: _selectedFromAccountId,
               onSelect: (id) => setState(() => _selectedFromAccountId = id),
@@ -329,7 +339,7 @@ class _AddTransactionScreenState extends ConsumerState<AddTransactionScreen> {
               const SizedBox(height: 16),
               _SectionLabel(label: 'To Account'),
               const SizedBox(height: 8),
-              _AccountGrid(
+              _AccountPicker(
                 accounts: accounts
                     .where((a) => a.id != _selectedFromAccountId)
                     .toList(),
@@ -346,10 +356,19 @@ class _AddTransactionScreenState extends ConsumerState<AddTransactionScreen> {
                     '${_type == TransactionType.expense ? 'Expense' : 'Income'} Category',
               ),
               const SizedBox(height: 8),
-              _CategoryGrid(
-                categories: filteredCategories,
+              TextField(
+                onChanged: (value) => setState(() => _categoryQuery = value),
+                decoration: const InputDecoration(
+                  hintText: 'Search category (name / number / emoji)',
+                  prefixIcon: Icon(Icons.search, size: 20),
+                ),
+              ),
+              const SizedBox(height: 8),
+              _CategoryPicker(
+                categories: visibleCategories,
                 selectedId: _selectedCategoryId,
                 onSelect: (id) => setState(() => _selectedCategoryId = id),
+                searchQuery: _categoryQuery,
               ),
             ],
 
@@ -360,7 +379,8 @@ class _AddTransactionScreenState extends ConsumerState<AddTransactionScreen> {
               controller: _noteController,
               maxLines: 2,
               decoration: InputDecoration(
-                hintText: 'Add a note (optional) ✏️',
+                hintText:
+                    "Add a Note (Optional, let's help each other understand each item more ❤️)",
                 prefixIcon: const Icon(Icons.notes, size: 20),
               ),
             ),
@@ -483,15 +503,17 @@ class _SectionTile extends StatelessWidget {
   }
 }
 
-class _CategoryGrid extends StatelessWidget {
+class _CategoryPicker extends StatelessWidget {
   final List<CategoryEntity> categories;
   final String? selectedId;
   final ValueChanged<String> onSelect;
+  final String searchQuery;
 
-  const _CategoryGrid({
+  const _CategoryPicker({
     required this.categories,
     required this.selectedId,
     required this.onSelect,
+    required this.searchQuery,
   });
 
   @override
@@ -503,46 +525,200 @@ class _CategoryGrid extends StatelessWidget {
       );
     }
 
-    return Wrap(
-      spacing: 8,
-      runSpacing: 8,
-      children: categories.map((cat) {
-        final isSelected = cat.id == selectedId;
-        return GestureDetector(
-          onTap: () => onSelect(cat.id),
-          child: AnimatedContainer(
-            duration: const Duration(milliseconds: 150),
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+    final grouped = <String, List<CategoryEntity>>{};
+    for (final cat in categories) {
+      final key = (cat.parentKey == null || cat.parentKey!.trim().isEmpty)
+          ? 'other'
+          : cat.parentKey!;
+      grouped.putIfAbsent(key, () => <CategoryEntity>[]).add(cat);
+    }
+    final groupKeys = grouped.keys.toList()..sort();
+    final selected = categories.where((c) => c.id == selectedId).firstOrNull;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        if (selected != null)
+          Container(
+            width: double.infinity,
+            margin: const EdgeInsets.only(bottom: 8),
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
             decoration: BoxDecoration(
-              color: isSelected
-                  ? AppColors.primary.withValues(alpha: 0.15)
-                  : AppColors.surfaceVariant,
+              color: AppColors.primary.withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(12),
-              border: Border.all(
-                color: isSelected ? AppColors.primary : Colors.transparent,
-                width: 1.5,
-              ),
             ),
-            child: Text(
-              cat.displayLabel,
-              style: TextStyle(
-                fontSize: 13,
-                fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
-              ),
+            child: Row(
+              children: [
+                Text(selected.emoji, style: const TextStyle(fontSize: 16)),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    'Selected: ${selected.displayLabel}',
+                    style: const TextStyle(fontWeight: FontWeight.w600),
+                  ),
+                ),
+              ],
             ),
           ),
-        );
-      }).toList(),
+        Wrap(
+          spacing: 8,
+          runSpacing: 8,
+          children: groupKeys.map((groupKey) {
+            final groupCats = grouped[groupKey]!;
+            return GestureDetector(
+              onTap: () => _openGroupPicker(
+                context: context,
+                groupKey: groupKey,
+                items: groupCats,
+              ),
+              child: Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 10,
+                ),
+                decoration: BoxDecoration(
+                  color: AppColors.surfaceVariant,
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      _groupLabel(groupKey),
+                      style: const TextStyle(fontWeight: FontWeight.w600),
+                    ),
+                    const SizedBox(width: 6),
+                    Text(
+                      '(${groupCats.length})',
+                      style: const TextStyle(color: AppColors.textSecondary),
+                    ),
+                    const SizedBox(width: 4),
+                    const Icon(
+                      Icons.chevron_right,
+                      size: 16,
+                      color: AppColors.textHint,
+                    ),
+                  ],
+                ),
+              ),
+            );
+          }).toList(),
+        ),
+      ],
     );
+  }
+
+  String _groupLabel(String raw) {
+    if (raw == 'other') return 'Other';
+    return raw
+        .split('_')
+        .where((part) => part.isNotEmpty)
+        .map((part) => '${part[0].toUpperCase()}${part.substring(1)}')
+        .join(' ');
+  }
+
+  Future<void> _openGroupPicker({
+    required BuildContext context,
+    required String groupKey,
+    required List<CategoryEntity> items,
+  }) async {
+    String q = searchQuery.trim().toLowerCase();
+    final chosen = await showModalBottomSheet<String>(
+      context: context,
+      showDragHandle: true,
+      isScrollControlled: true,
+      builder: (ctx) {
+        return StatefulBuilder(
+          builder: (ctx, setSheetState) {
+            final visible = q.isEmpty
+                ? items
+                : items.where((c) {
+                    return c.name.toLowerCase().contains(q) ||
+                        c.emoji.contains(q) ||
+                        c.displayNumber.toString().contains(q);
+                  }).toList();
+
+            return SafeArea(
+              child: Padding(
+                padding: EdgeInsets.only(
+                  bottom: MediaQuery.of(ctx).viewInsets.bottom,
+                ),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    ListTile(
+                      title: Text(_groupLabel(groupKey)),
+                      subtitle: const Text('Choose category'),
+                    ),
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+                      child: TextField(
+                        onChanged: (value) =>
+                            setSheetState(() => q = value.trim().toLowerCase()),
+                        decoration: const InputDecoration(
+                          hintText: 'Search in this group',
+                          prefixIcon: Icon(Icons.search, size: 20),
+                        ),
+                      ),
+                    ),
+                    Flexible(
+                      child: ListView.builder(
+                        shrinkWrap: true,
+                        itemCount: visible.length,
+                        itemBuilder: (context, index) {
+                          final cat = visible[index];
+                          return ListTile(
+                            leading: Container(
+                              width: 28,
+                              height: 28,
+                              alignment: Alignment.center,
+                              decoration: BoxDecoration(
+                                color: cat.id == selectedId
+                                    ? AppColors.primary.withValues(alpha: 0.14)
+                                    : AppColors.surfaceVariant,
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              child: Text(cat.emoji),
+                            ),
+                            title: Text(cat.displayLabel),
+                            tileColor: cat.id == selectedId
+                                ? AppColors.primary.withValues(alpha: 0.06)
+                                : Colors.transparent,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                            trailing: cat.id == selectedId
+                                ? const Icon(
+                                    Icons.check,
+                                    color: AppColors.primary,
+                                  )
+                                : null,
+                            onTap: () => Navigator.of(ctx).pop(cat.id),
+                          );
+                        },
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            );
+          },
+        );
+      },
+    );
+
+    if (chosen != null) {
+      onSelect(chosen);
+    }
   }
 }
 
-class _AccountGrid extends StatelessWidget {
+class _AccountPicker extends StatelessWidget {
   final List<AccountEntity> accounts;
   final String? selectedId;
   final ValueChanged<String> onSelect;
 
-  const _AccountGrid({
+  const _AccountPicker({
     required this.accounts,
     required this.selectedId,
     required this.onSelect,
@@ -565,43 +741,109 @@ class _AccountGrid extends StatelessWidget {
       );
     }
 
-    return Wrap(
-      spacing: 8,
-      runSpacing: 8,
-      children: accounts.map((acc) {
-        final isSelected = acc.id == selectedId;
-        return GestureDetector(
-          onTap: () => onSelect(acc.id),
-          child: AnimatedContainer(
-            duration: const Duration(milliseconds: 150),
-            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+    final grouped = <AccountType, List<AccountEntity>>{};
+    for (final acc in accounts) {
+      grouped.putIfAbsent(acc.type, () => <AccountEntity>[]).add(acc);
+    }
+    final selected = accounts.where((a) => a.id == selectedId).firstOrNull;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        if (selected != null)
+          Container(
+            width: double.infinity,
+            margin: const EdgeInsets.only(bottom: 8),
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
             decoration: BoxDecoration(
-              color: isSelected
-                  ? AppColors.primary.withValues(alpha: 0.15)
-                  : AppColors.surfaceVariant,
-              borderRadius: BorderRadius.circular(14),
-              border: Border.all(
-                color: isSelected ? AppColors.primary : Colors.transparent,
-                width: 1.5,
-              ),
+              color: AppColors.primary.withValues(alpha: 0.1),
+              borderRadius: BorderRadius.circular(12),
             ),
             child: Row(
-              mainAxisSize: MainAxisSize.min,
               children: [
-                Text(acc.type.icon, style: const TextStyle(fontSize: 16)),
-                const SizedBox(width: 6),
-                Text(
-                  acc.name,
-                  style: TextStyle(
-                    fontSize: 13,
-                    fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
+                Text(selected.type.icon),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    'Selected: ${selected.name}',
+                    style: const TextStyle(fontWeight: FontWeight.w600),
                   ),
                 ),
               ],
             ),
           ),
-        );
-      }).toList(),
+        ...AccountType.values.where((t) => grouped[t] != null).map((type) {
+          final items = grouped[type]!;
+          return Container(
+            margin: const EdgeInsets.only(bottom: 8),
+            decoration: BoxDecoration(
+              color: AppColors.surfaceVariant,
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: ExpansionTile(
+              leading: Text(type.icon, style: const TextStyle(fontSize: 18)),
+              title: Text(
+                '${type.label} (${items.length})',
+                style: const TextStyle(
+                  fontWeight: FontWeight.w600,
+                  fontSize: 14,
+                ),
+              ),
+              children: items.map((acc) {
+                final isSelected = acc.id == selectedId;
+                return ListTile(
+                  dense: true,
+                  leading: Container(
+                    width: 28,
+                    height: 28,
+                    alignment: Alignment.center,
+                    decoration: BoxDecoration(
+                      color: isSelected
+                          ? AppColors.primary.withValues(alpha: 0.18)
+                          : Colors.white,
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(
+                        color: isSelected
+                            ? AppColors.primary.withValues(alpha: 0.55)
+                            : AppColors.border,
+                      ),
+                    ),
+                    child: Text(
+                      acc.type.icon,
+                      style: const TextStyle(fontSize: 14),
+                    ),
+                  ),
+                  title: Text(
+                    acc.name,
+                    style: TextStyle(
+                      fontWeight: isSelected
+                          ? FontWeight.w700
+                          : FontWeight.w500,
+                    ),
+                  ),
+                  subtitle: Text(
+                    '${acc.type.label} • ${acc.currency}',
+                    style: const TextStyle(
+                      fontSize: 11,
+                      color: AppColors.textSecondary,
+                    ),
+                  ),
+                  tileColor: isSelected
+                      ? AppColors.primary.withValues(alpha: 0.08)
+                      : Colors.transparent,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  trailing: isSelected
+                      ? const Icon(Icons.check_circle, color: AppColors.primary)
+                      : null,
+                  onTap: () => onSelect(acc.id),
+                );
+              }).toList(),
+            ),
+          );
+        }),
+      ],
     );
   }
 }
