@@ -138,7 +138,7 @@ class _BudgetScreenState extends ConsumerState<BudgetScreen> {
                     Text(
                       selectedMonth.monthYear,
                       style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                        color: theme.colorScheme.onSurface,
+                        color: theme.colorScheme.primary,
                         fontWeight: FontWeight.w700,
                       ),
                     ),
@@ -241,7 +241,7 @@ class _BudgetScreenState extends ConsumerState<BudgetScreen> {
                   start: 120,
                   child: EditorialCard(
                     margin: const EdgeInsets.all(16),
-                    accentTop: true,
+                    accentTop: false,
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
@@ -287,14 +287,11 @@ class _BudgetScreenState extends ConsumerState<BudgetScreen> {
                   ),
                 ),
               ),
-              const SliverToBoxAdapter(
-                child: SectionLabel(text: 'By Category'),
-              ),
               SliverToBoxAdapter(
                 child: _scrollMotion(
                   start: 240,
                   child: Padding(
-                    padding: const EdgeInsets.fromLTRB(20, 0, 20, 8),
+                    padding: const EdgeInsets.fromLTRB(20, 10, 20, 10),
                     child: Row(
                       children: [
                         Expanded(

@@ -124,7 +124,7 @@ class _SummaryScreenState extends ConsumerState<SummaryScreen> {
               ),
               SliverToBoxAdapter(
                 child: Padding(
-                  padding: const EdgeInsets.fromLTRB(16, 10, 16, 0),
+                  padding: const EdgeInsets.fromLTRB(16, 12, 16, 4),
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
@@ -143,7 +143,7 @@ class _SummaryScreenState extends ConsumerState<SummaryScreen> {
                       Text(
                         selectedMonth.monthYear,
                         style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                          color: theme.colorScheme.onSurface,
+                          color: theme.colorScheme.primary,
                           fontWeight: FontWeight.w700,
                         ),
                       ),
@@ -225,7 +225,7 @@ class _SummaryScreenState extends ConsumerState<SummaryScreen> {
               ),
               SliverToBoxAdapter(
                 child: Padding(
-                  padding: const EdgeInsets.fromLTRB(16, 18, 16, 0),
+                  padding: const EdgeInsets.fromLTRB(16, 24, 16, 0),
                   child: Text(
                     'Budget vs Actual',
                     style: Theme.of(context).textTheme.titleMedium?.copyWith(
@@ -239,7 +239,7 @@ class _SummaryScreenState extends ConsumerState<SummaryScreen> {
                 child: _scrollMotion(
                   start: 110,
                   child: Card(
-                    margin: const EdgeInsets.fromLTRB(16, 8, 16, 0),
+                    margin: const EdgeInsets.fromLTRB(16, 10, 16, 0),
                     child: Padding(
                       padding: const EdgeInsets.all(14),
                       child: budgetLimits.isEmpty
@@ -320,7 +320,7 @@ class _SummaryScreenState extends ConsumerState<SummaryScreen> {
               ),
               SliverToBoxAdapter(
                 child: Padding(
-                  padding: const EdgeInsets.fromLTRB(16, 18, 16, 0),
+                  padding: const EdgeInsets.fromLTRB(16, 24, 16, 0),
                   child: Text(
                     'Top Categories',
                     style: Theme.of(context).textTheme.titleMedium?.copyWith(
@@ -334,7 +334,7 @@ class _SummaryScreenState extends ConsumerState<SummaryScreen> {
                 child: _scrollMotion(
                   start: 210,
                   child: Card(
-                    margin: const EdgeInsets.fromLTRB(16, 8, 16, 0),
+                    margin: const EdgeInsets.fromLTRB(16, 10, 16, 0),
                     child: Padding(
                       padding: const EdgeInsets.all(14),
                       child: top3Sliced.isEmpty
@@ -380,7 +380,7 @@ class _SummaryScreenState extends ConsumerState<SummaryScreen> {
               ),
               SliverToBoxAdapter(
                 child: Padding(
-                  padding: const EdgeInsets.fromLTRB(16, 18, 16, 0),
+                  padding: const EdgeInsets.fromLTRB(16, 24, 16, 0),
                   child: Text(
                     'Insights',
                     style: Theme.of(context).textTheme.titleMedium?.copyWith(
@@ -392,7 +392,7 @@ class _SummaryScreenState extends ConsumerState<SummaryScreen> {
               ),
               SliverToBoxAdapter(
                 child: Card(
-                  margin: const EdgeInsets.fromLTRB(16, 8, 16, 0),
+                  margin: const EdgeInsets.fromLTRB(16, 10, 16, 0),
                   child: Padding(
                     padding: const EdgeInsets.all(14),
                     child: Wrap(
@@ -419,7 +419,7 @@ class _SummaryScreenState extends ConsumerState<SummaryScreen> {
               ),
               SliverToBoxAdapter(
                 child: Padding(
-                  padding: const EdgeInsets.fromLTRB(16, 18, 16, 0),
+                  padding: const EdgeInsets.fromLTRB(16, 24, 16, 0),
                   child: Text(
                     'Exports',
                     style: Theme.of(context).textTheme.titleMedium?.copyWith(
@@ -431,7 +431,7 @@ class _SummaryScreenState extends ConsumerState<SummaryScreen> {
               ),
               SliverToBoxAdapter(
                 child: Card(
-                  margin: const EdgeInsets.fromLTRB(16, 8, 16, 24),
+                  margin: const EdgeInsets.fromLTRB(16, 10, 16, 24),
                   child: Padding(
                     padding: const EdgeInsets.all(14),
                     child: Column(

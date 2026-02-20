@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 enum AppThemePreset {
+  defaultNeutral,
   lightBlue,
   sage,
   lightPink,
@@ -28,6 +29,14 @@ class ThemePresetData {
 }
 
 const themePresetMap = <AppThemePreset, ThemePresetData>{
+  AppThemePreset.defaultNeutral: ThemePresetData(
+    label: 'Default',
+    primary: Color(0xFF5C7C9E),
+    secondary: Color(0xFF89A4BE),
+    background: Color(0xFFF4F6F9),
+    surface: Color(0xFFFFFFFF),
+    surfaceVariant: Color(0xFFEAF0F6),
+  ),
   AppThemePreset.lightBlue: ThemePresetData(
     label: 'Light Blue',
     primary: Color(0xFF4A90E2),
@@ -71,7 +80,7 @@ const themePresetMap = <AppThemePreset, ThemePresetData>{
 };
 
 final themePresetProvider = StateProvider<AppThemePreset>(
-  (ref) => AppThemePreset.lightBlue,
+  (ref) => AppThemePreset.defaultNeutral,
 );
 
 final activeThemePresetDataProvider = Provider<ThemePresetData>((ref) {

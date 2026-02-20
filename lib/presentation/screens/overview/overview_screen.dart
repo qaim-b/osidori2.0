@@ -1,8 +1,5 @@
-import 'dart:async';
-
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:flutter_svg/flutter_svg.dart';
 import 'package:go_router/go_router.dart';
 import '../../../core/extensions/datetime_ext.dart';
 import '../../../core/theme/app_colors.dart';
@@ -36,13 +33,6 @@ class OverviewScreen extends ConsumerStatefulWidget {
 }
 
 class _OverviewScreenState extends ConsumerState<OverviewScreen> {
-  static const _greetingPrefix = 'Hi, ';
-  String _greetingAnimated = '';
-  String _greetingTarget = 'Hi, there!';
-  int _greetingIndex = 0;
-  bool _greetingDeleting = false;
-  int _greetingPauseTicks = 0;
-  Timer? _greetingTimer;
   final ScrollController _scrollController = ScrollController();
   double _scrollOffset = 0;
 
@@ -54,7 +44,6 @@ class _OverviewScreenState extends ConsumerState<OverviewScreen> {
 
   @override
   void dispose() {
-    _greetingTimer?.cancel();
     _scrollController.dispose();
     super.dispose();
   }
@@ -62,43 +51,6 @@ class _OverviewScreenState extends ConsumerState<OverviewScreen> {
   void _onScroll() {
     if (!mounted) return;
     setState(() => _scrollOffset = _scrollController.offset);
-  }
-
-  void _ensureGreetingLoop(String name) {
-    final nextTarget = '$_greetingPrefix$name!';
-    if (_greetingTarget == nextTarget && _greetingTimer != null) return;
-    _greetingTarget = nextTarget;
-    _greetingTimer?.cancel();
-    _greetingAnimated = '';
-    _greetingIndex = 0;
-    _greetingDeleting = false;
-    _greetingPauseTicks = 0;
-    _greetingTimer = Timer.periodic(const Duration(milliseconds: 85), (_) {
-      if (!mounted) return;
-      setState(() {
-        if (_greetingPauseTicks > 0) {
-          _greetingPauseTicks--;
-          return;
-        }
-        if (!_greetingDeleting) {
-          if (_greetingIndex < _greetingTarget.length) {
-            _greetingIndex++;
-            _greetingAnimated = _greetingTarget.substring(0, _greetingIndex);
-          } else {
-            _greetingPauseTicks = 12;
-            _greetingDeleting = true;
-          }
-        } else {
-          if (_greetingIndex > _greetingPrefix.length) {
-            _greetingIndex--;
-            _greetingAnimated = _greetingTarget.substring(0, _greetingIndex);
-          } else {
-            _greetingPauseTicks = 5;
-            _greetingDeleting = false;
-          }
-        }
-      });
-    });
   }
 
   Widget _scrollMotion({
@@ -134,7 +86,6 @@ class _OverviewScreenState extends ConsumerState<OverviewScreen> {
     final categories = ref.watch(categoriesProvider);
     final roleColors = ref.watch(roleColorsProvider);
     final user = ref.watch(authStateProvider).valueOrNull;
-    _ensureGreetingLoop(user?.name ?? 'there');
     final memberProfilesAsync = ref.watch(activeGroupMemberProfilesProvider);
     final memberProfiles = memberProfilesAsync.valueOrNull ?? [];
     final profilesLoading = memberProfilesAsync.isLoading;
@@ -176,9 +127,7 @@ class _OverviewScreenState extends ConsumerState<OverviewScreen> {
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Text(
-                                _greetingAnimated.isEmpty
-                                    ? 'Hi, ${user?.name ?? 'there'}!'
-                                    : _greetingAnimated,
+                                'Hi, ${user?.name ?? 'there'}!',
                                 style: Theme.of(context).textTheme.titleMedium
                                     ?.copyWith(fontWeight: FontWeight.w700),
                               ),
@@ -257,7 +206,6 @@ class _OverviewScreenState extends ConsumerState<OverviewScreen> {
                     children: [
                       _MemberAvatarBubble(
                         profile: youProfile,
-                        fallbackAsset: roleColors.mascotImage,
                         label: youProfile?.name.isNotEmpty == true
                             ? '${youProfile!.name} (You)'
                             : 'You',
@@ -269,11 +217,6 @@ class _OverviewScreenState extends ConsumerState<OverviewScreen> {
                       const SizedBox(width: 22),
                       _MemberAvatarBubble(
                         profile: partnerProfile,
-                        fallbackAsset: partnerProfile?.role == 'angel'
-                            ? 'assets/images/angel.svg'
-                            : (partnerProfile?.role == 'solo'
-                                  ? 'assets/images/stitchangel.svg'
-                                  : 'assets/images/stitch.svg'),
                         label: partnerProfile?.name.isNotEmpty == true
                             ? partnerProfile!.name
                             : 'Partner',
@@ -388,9 +331,6 @@ class _OverviewScreenState extends ConsumerState<OverviewScreen> {
                 ),
               ),
               const SliverToBoxAdapter(child: MemoryTimelineSection()),
-              const SliverToBoxAdapter(
-                child: SectionLabel(text: 'Recent Transactions'),
-              ),
               SliverToBoxAdapter(
                 child: Padding(
                   padding: const EdgeInsets.fromLTRB(20, 0, 20, 8),
@@ -474,75 +414,41 @@ class _OverviewScreenState extends ConsumerState<OverviewScreen> {
   }
 }
 
-class _MemberAvatarBubble extends StatefulWidget {
+class _MemberAvatarBubble extends StatelessWidget {
   final UserModel? profile;
-  final String fallbackAsset;
   final String label;
   final Color backgroundColor;
   final bool loading;
 
   const _MemberAvatarBubble({
     required this.profile,
-    required this.fallbackAsset,
     required this.label,
     required this.backgroundColor,
     this.loading = false,
   });
 
   @override
-  State<_MemberAvatarBubble> createState() => _MemberAvatarBubbleState();
-}
-
-class _MemberAvatarBubbleState extends State<_MemberAvatarBubble> {
-  @override
-  void didChangeDependencies() {
-    super.didChangeDependencies();
-    final avatarProvider = avatarImageProvider(widget.profile?.avatarUrl);
-    if (avatarProvider != null) {
-      // Preload to reduce avatar flicker when entering home screen.
-      precacheImage(avatarProvider, context);
-    }
-  }
-
-  @override
   Widget build(BuildContext context) {
-    final avatarUrl = widget.profile?.avatarUrl;
+    final avatarUrl = profile?.avatarUrl;
     final avatarProvider = avatarImageProvider(avatarUrl);
     final expectsAvatar = avatarUrl != null && avatarUrl.trim().isNotEmpty;
-    final showLoadingOnly =
-        widget.loading || (expectsAvatar && avatarProvider == null);
+    final showLoadingOnly = loading || (expectsAvatar && avatarProvider == null);
 
     return Column(
       children: [
         CircleAvatar(
           radius: 34,
-          backgroundColor: widget.backgroundColor,
+          backgroundColor: backgroundColor,
           backgroundImage: avatarProvider,
           child: avatarProvider != null
               ? null
               : showLoadingOnly
-              ? const SizedBox(
-                  width: 22,
-                  height: 22,
-                  child: CircularProgressIndicator(strokeWidth: 2),
-                )
-              : (widget.fallbackAsset.endsWith('.svg')
-                    ? SvgPicture.asset(
-                        widget.fallbackAsset,
-                        width: 42,
-                        height: 42,
-                        fit: BoxFit.contain,
-                      )
-                    : Image.asset(
-                        widget.fallbackAsset,
-                        width: 42,
-                        height: 42,
-                        fit: BoxFit.contain,
-                      )),
+              ? const Icon(Icons.person_rounded, size: 28, color: Colors.white)
+              : const Icon(Icons.person_rounded, size: 28, color: Colors.white),
         ),
         const SizedBox(height: 6),
         Text(
-          widget.label,
+          label,
           style: const TextStyle(
             fontSize: 12,
             fontWeight: FontWeight.w600,
