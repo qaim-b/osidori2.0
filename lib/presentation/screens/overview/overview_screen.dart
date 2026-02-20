@@ -3,7 +3,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../core/extensions/datetime_ext.dart';
 import '../../../core/theme/app_colors.dart';
-import '../../../core/theme/app_motion.dart';
 import '../../../core/utils/avatar_image.dart';
 import '../../../core/utils/currency_formatter.dart';
 import '../../../data/models/user_model.dart';
@@ -34,7 +33,8 @@ class OverviewScreen extends ConsumerStatefulWidget {
 
 class _OverviewScreenState extends ConsumerState<OverviewScreen> {
   final ScrollController _scrollController = ScrollController();
-  double _scrollOffset = 0;
+  UserModel? _cachedYouProfile;
+  UserModel? _cachedPartnerProfile;
 
   @override
   void initState() {
@@ -49,22 +49,7 @@ class _OverviewScreenState extends ConsumerState<OverviewScreen> {
   }
 
   void _onScroll() {
-    if (!mounted) return;
-    setState(() => _scrollOffset = _scrollController.offset);
-  }
-
-  Widget _scrollMotion({
-    required Widget child,
-    required double start,
-    double distance = 26,
-  }) {
-    final progress = ((_scrollOffset - start) / 260).clamp(0.0, 1.0);
-    final shift = distance * (1 - progress);
-    final opacity = (0.72 + (0.28 * progress)).clamp(0.0, 1.0);
-    return Opacity(
-      opacity: opacity,
-      child: Transform.translate(offset: Offset(0, shift), child: child),
-    );
+    // Keep listener for pull-to-refresh glow behavior without rebuilding on scroll.
   }
 
   Future<void> _refresh(WidgetRef ref) async {
@@ -88,14 +73,18 @@ class _OverviewScreenState extends ConsumerState<OverviewScreen> {
     final user = ref.watch(authStateProvider).valueOrNull;
     final memberProfilesAsync = ref.watch(activeGroupMemberProfilesProvider);
     final memberProfiles = memberProfilesAsync.valueOrNull ?? [];
-    final profilesLoading = memberProfilesAsync.isLoading;
-    final youProfile = memberProfiles.where((p) => p.id == user?.id).isNotEmpty
+    final liveYouProfile =
+        memberProfiles.where((p) => p.id == user?.id).isNotEmpty
         ? memberProfiles.where((p) => p.id == user?.id).first
         : null;
-    final partnerProfile =
+    final livePartnerProfile =
         memberProfiles.where((p) => p.id != user?.id).isNotEmpty
         ? memberProfiles.where((p) => p.id != user?.id).first
         : null;
+    final youProfile = liveYouProfile ?? _cachedYouProfile;
+    final partnerProfile = livePartnerProfile ?? _cachedPartnerProfile;
+    if (liveYouProfile != null) _cachedYouProfile = liveYouProfile;
+    if (livePartnerProfile != null) _cachedPartnerProfile = livePartnerProfile;
 
     final catMap = <String, String>{};
     final catEntityMap = <String, CategoryEntity>{};
@@ -212,7 +201,6 @@ class _OverviewScreenState extends ConsumerState<OverviewScreen> {
                         backgroundColor: roleColors.primary.withValues(
                           alpha: 0.16,
                         ),
-                        loading: profilesLoading && youProfile == null,
                       ),
                       const SizedBox(width: 22),
                       _MemberAvatarBubble(
@@ -223,73 +211,62 @@ class _OverviewScreenState extends ConsumerState<OverviewScreen> {
                         backgroundColor: roleColors.accent.withValues(
                           alpha: 0.16,
                         ),
-                        loading: profilesLoading && partnerProfile == null,
                       ),
                     ],
                   ),
                 ),
               ),
               SliverToBoxAdapter(
-                child: _scrollMotion(
-                  start: 90,
-                  child: Padding(
-                    padding: const EdgeInsets.all(16),
-                    child: TweenAnimationBuilder<double>(
-                      tween: Tween(begin: 0, end: 1),
-                      duration: AppMotion.entrance,
-                      curve: AppMotion.smooth,
-                      builder: (context, t, child) {
-                        return Opacity(
-                          opacity: t,
-                          child: Transform.translate(
-                            offset: Offset(0, 14 * (1 - t)),
-                            child: child,
-                          ),
-                        );
-                      },
-                      child: _SummaryCards(
-                        income: (totals['income'] ?? 0).toDouble(),
-                        expense: (totals['expense'] ?? 0).toDouble(),
-                      ),
+                child: Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: _SummaryCards(
+                    income: (totals['income'] ?? 0).toDouble(),
+                    expense: (totals['expense'] ?? 0).toDouble(),
+                  ),
+                ),
+              ),
+              SliverToBoxAdapter(
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(20, 6, 20, 10),
+                  child: Text(
+                    'Household Snapshot',
+                    style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                      color: Theme.of(context).colorScheme.primary,
+                      fontWeight: FontWeight.w700,
+                      letterSpacing: 1.0,
                     ),
                   ),
                 ),
               ),
-              const SliverToBoxAdapter(
-                child: SectionLabel(text: 'Household Snapshot'),
-              ),
               SliverToBoxAdapter(
-                child: _scrollMotion(
-                  start: 180,
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 16),
-                    child: Row(
-                      children: [
-                        Expanded(
-                          child: _QuickAction(
-                            icon: Icons.remove_circle_outline_rounded,
-                            label: 'Add Expense',
-                            onTap: () => context.push('/add'),
-                          ),
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 0, 16, 4),
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: _QuickAction(
+                          icon: Icons.remove_circle_outline_rounded,
+                          label: 'Add Expense',
+                          onTap: () => context.push('/add'),
                         ),
-                        const SizedBox(width: 8),
-                        Expanded(
-                          child: _QuickAction(
-                            icon: Icons.add_circle_outline_rounded,
-                            label: 'Add Income',
-                            onTap: () => context.push('/add'),
-                          ),
+                      ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: _QuickAction(
+                          icon: Icons.add_circle_outline_rounded,
+                          label: 'Add Income',
+                          onTap: () => context.push('/add'),
                         ),
-                        const SizedBox(width: 8),
-                        Expanded(
-                          child: _QuickAction(
-                            icon: Icons.tune_rounded,
-                            label: 'Budgets',
-                            onTap: () => context.push('/summary/set-budget'),
-                          ),
+                      ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: _QuickAction(
+                          icon: Icons.tune_rounded,
+                          label: 'Budgets',
+                          onTap: () => context.push('/summary/set-budget'),
                         ),
-                      ],
-                    ),
+                      ),
+                    ],
                   ),
                 ),
               ),
@@ -418,21 +395,17 @@ class _MemberAvatarBubble extends StatelessWidget {
   final UserModel? profile;
   final String label;
   final Color backgroundColor;
-  final bool loading;
 
   const _MemberAvatarBubble({
     required this.profile,
     required this.label,
     required this.backgroundColor,
-    this.loading = false,
   });
 
   @override
   Widget build(BuildContext context) {
     final avatarUrl = profile?.avatarUrl;
     final avatarProvider = avatarImageProvider(avatarUrl);
-    final expectsAvatar = avatarUrl != null && avatarUrl.trim().isNotEmpty;
-    final showLoadingOnly = loading || (expectsAvatar && avatarProvider == null);
 
     return Column(
       children: [
@@ -442,8 +415,6 @@ class _MemberAvatarBubble extends StatelessWidget {
           backgroundImage: avatarProvider,
           child: avatarProvider != null
               ? null
-              : showLoadingOnly
-              ? const Icon(Icons.person_rounded, size: 28, color: Colors.white)
               : const Icon(Icons.person_rounded, size: 28, color: Colors.white),
         ),
         const SizedBox(height: 6),
