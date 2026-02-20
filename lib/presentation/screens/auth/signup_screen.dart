@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:flutter_svg/flutter_svg.dart';
 import 'package:go_router/go_router.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/constants/app_constants.dart';
 import '../../providers/auth_provider.dart';
+import '../../providers/appearance_provider.dart';
 import '../../widgets/common/starry_background.dart';
 import '../../widgets/common/app_button.dart';
 import '../../widgets/common/app_text_field.dart';
@@ -49,6 +49,7 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
   @override
   Widget build(BuildContext context) {
     final authState = ref.watch(authStateProvider);
+    final preset = ref.watch(activeThemePresetDataProvider);
     final isLoading = authState.isLoading;
 
     ref.listen(authStateProvider, (prev, next) {
@@ -72,23 +73,49 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
                     const SizedBox(height: 32),
 
                     // Stitch & Angel mascots
-                    SvgPicture.asset(
-                      'assets/images/stitchangel.svg',
-                      height: 120,
-                      fit: BoxFit.contain,
+                    TweenAnimationBuilder<double>(
+                      tween: Tween(begin: 0.85, end: 1.0),
+                      duration: const Duration(milliseconds: 700),
+                      curve: Curves.easeOutBack,
+                      builder: (context, t, child) {
+                        return Transform.scale(scale: t, child: child);
+                      },
+                      child: Image.asset(
+                        'assets/images/stitchangel_clean.png',
+                        height: 270,
+                        isAntiAlias: true,
+                        filterQuality: FilterQuality.high,
+                        fit: BoxFit.contain,
+                      ),
                     ),
 
                     const SizedBox(height: 12),
-                    const CloudDecoration(),
                     const SizedBox(height: 16),
 
-                    ShaderMask(
-                      shaderCallback: (bounds) =>
-                          AppColors.stitchGradient.createShader(bounds),
-                      child: Text(
-                        'Join ${AppConstants.appName}',
-                        style: Theme.of(context).textTheme.headlineMedium
-                            ?.copyWith(color: Colors.white),
+                    TweenAnimationBuilder<double>(
+                      tween: Tween(begin: 0, end: 1),
+                      duration: const Duration(milliseconds: 650),
+                      curve: Curves.easeOut,
+                      builder: (context, t, child) {
+                        return Opacity(
+                          opacity: t,
+                          child: Transform.translate(
+                            offset: Offset(0, 10 * (1 - t)),
+                            child: child,
+                          ),
+                        );
+                      },
+                      child: ShaderMask(
+                        shaderCallback: (bounds) => LinearGradient(
+                          colors: [preset.primary, preset.secondary],
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                        ).createShader(bounds),
+                        child: Text(
+                          'Join ${AppConstants.appName}',
+                          style: Theme.of(context).textTheme.headlineMedium
+                              ?.copyWith(color: Colors.white),
+                        ),
                       ),
                     ),
                     const SizedBox(height: 4),
@@ -223,7 +250,7 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
                           child: Text(
                             'Sign In',
                             style: TextStyle(
-                              color: AppColors.stitchBlue,
+                              color: preset.primary,
                               fontWeight: FontWeight.w600,
                               fontSize: 14,
                             ),

@@ -47,8 +47,9 @@ class OverviewScreen extends ConsumerWidget {
     final categories = ref.watch(categoriesProvider);
     final roleColors = ref.watch(roleColorsProvider);
     final user = ref.watch(authStateProvider).valueOrNull;
-    final memberProfiles =
-        ref.watch(activeGroupMemberProfilesProvider).valueOrNull ?? [];
+    final memberProfilesAsync = ref.watch(activeGroupMemberProfilesProvider);
+    final memberProfiles = memberProfilesAsync.valueOrNull ?? [];
+    final profilesLoading = memberProfilesAsync.isLoading;
     final youProfile = memberProfiles.where((p) => p.id == user?.id).isNotEmpty
         ? memberProfiles.where((p) => p.id == user?.id).first
         : null;
@@ -160,44 +161,74 @@ class OverviewScreen extends ConsumerWidget {
               SliverToBoxAdapter(
                 child: Padding(
                   padding: const EdgeInsets.fromLTRB(20, 8, 20, 2),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      _MemberAvatarBubble(
-                        profile: youProfile,
-                        fallbackAsset: roleColors.mascotImage,
-                        label: youProfile?.name.isNotEmpty == true
-                            ? '${youProfile!.name} (You)'
-                            : 'You',
-                        backgroundColor: roleColors.primary.withValues(
-                          alpha: 0.16,
+                  child: TweenAnimationBuilder<double>(
+                    tween: Tween(begin: 0.0, end: 1.0),
+                    duration: const Duration(milliseconds: 700),
+                    curve: Curves.easeOutBack,
+                    builder: (context, t, child) {
+                      return Opacity(
+                        opacity: t.clamp(0.0, 1.0),
+                        child: Transform.scale(
+                          scale: 0.95 + (0.05 * t),
+                          child: child,
                         ),
-                      ),
-                      const SizedBox(width: 22),
-                      _MemberAvatarBubble(
-                        profile: partnerProfile,
-                        fallbackAsset: partnerProfile?.role == 'angel'
-                            ? 'assets/images/angel.svg'
-                            : (partnerProfile?.role == 'solo'
-                                  ? 'assets/images/stitchangel.svg'
-                                  : 'assets/images/stitch.svg'),
-                        label: partnerProfile?.name.isNotEmpty == true
-                            ? partnerProfile!.name
-                            : 'Partner',
-                        backgroundColor: roleColors.accent.withValues(
-                          alpha: 0.16,
+                      );
+                    },
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        _MemberAvatarBubble(
+                          profile: youProfile,
+                          fallbackAsset: roleColors.mascotImage,
+                          label: youProfile?.name.isNotEmpty == true
+                              ? '${youProfile!.name} (You)'
+                              : 'You',
+                          backgroundColor: roleColors.primary.withValues(
+                            alpha: 0.16,
+                          ),
+                          loading: profilesLoading && youProfile == null,
                         ),
-                      ),
-                    ],
+                        const SizedBox(width: 22),
+                        _MemberAvatarBubble(
+                          profile: partnerProfile,
+                          fallbackAsset: partnerProfile?.role == 'angel'
+                              ? 'assets/images/angel.svg'
+                              : (partnerProfile?.role == 'solo'
+                                    ? 'assets/images/stitchangel.svg'
+                                    : 'assets/images/stitch.svg'),
+                          label: partnerProfile?.name.isNotEmpty == true
+                              ? partnerProfile!.name
+                              : 'Partner',
+                          backgroundColor: roleColors.accent.withValues(
+                            alpha: 0.16,
+                          ),
+                          loading: profilesLoading && partnerProfile == null,
+                        ),
+                      ],
+                    ),
                   ),
                 ),
               ),
               SliverToBoxAdapter(
                 child: Padding(
                   padding: const EdgeInsets.all(16),
-                  child: _SummaryCards(
-                    income: (totals['income'] ?? 0).toDouble(),
-                    expense: (totals['expense'] ?? 0).toDouble(),
+                  child: TweenAnimationBuilder<double>(
+                    tween: Tween(begin: 0, end: 1),
+                    duration: const Duration(milliseconds: 700),
+                    curve: Curves.easeOutCubic,
+                    builder: (context, t, child) {
+                      return Opacity(
+                        opacity: t,
+                        child: Transform.translate(
+                          offset: Offset(0, 14 * (1 - t)),
+                          child: child,
+                        ),
+                      );
+                    },
+                    child: _SummaryCards(
+                      income: (totals['income'] ?? 0).toDouble(),
+                      expense: (totals['expense'] ?? 0).toDouble(),
+                    ),
                   ),
                 ),
               ),
@@ -242,7 +273,10 @@ class OverviewScreen extends ConsumerWidget {
               const SliverToBoxAdapter(child: GoalsCard()),
               SliverToBoxAdapter(
                 child: EditorialCard(
-                  margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                  margin: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 12,
+                  ),
                   accentTop: true,
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -357,47 +391,75 @@ class OverviewScreen extends ConsumerWidget {
   }
 }
 
-class _MemberAvatarBubble extends StatelessWidget {
+class _MemberAvatarBubble extends StatefulWidget {
   final UserModel? profile;
   final String fallbackAsset;
   final String label;
   final Color backgroundColor;
+  final bool loading;
 
   const _MemberAvatarBubble({
     required this.profile,
     required this.fallbackAsset,
     required this.label,
     required this.backgroundColor,
+    this.loading = false,
   });
 
   @override
+  State<_MemberAvatarBubble> createState() => _MemberAvatarBubbleState();
+}
+
+class _MemberAvatarBubbleState extends State<_MemberAvatarBubble> {
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final avatarProvider = avatarImageProvider(widget.profile?.avatarUrl);
+    if (avatarProvider != null) {
+      // Preload to reduce avatar flicker when entering home screen.
+      precacheImage(avatarProvider, context);
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
-    final avatarProvider = avatarImageProvider(profile?.avatarUrl);
+    final avatarUrl = widget.profile?.avatarUrl;
+    final avatarProvider = avatarImageProvider(avatarUrl);
+    final expectsAvatar = avatarUrl != null && avatarUrl.trim().isNotEmpty;
+    final showLoadingOnly =
+        widget.loading || (expectsAvatar && avatarProvider == null);
+
     return Column(
       children: [
         CircleAvatar(
           radius: 34,
-          backgroundColor: backgroundColor,
+          backgroundColor: widget.backgroundColor,
           backgroundImage: avatarProvider,
-          child: avatarProvider == null
-              ? (fallbackAsset.endsWith('.svg')
+          child: avatarProvider != null
+              ? null
+              : showLoadingOnly
+              ? const SizedBox(
+                  width: 22,
+                  height: 22,
+                  child: CircularProgressIndicator(strokeWidth: 2),
+                )
+              : (widget.fallbackAsset.endsWith('.svg')
                     ? SvgPicture.asset(
-                        fallbackAsset,
+                        widget.fallbackAsset,
                         width: 42,
                         height: 42,
                         fit: BoxFit.contain,
                       )
                     : Image.asset(
-                        fallbackAsset,
+                        widget.fallbackAsset,
                         width: 42,
                         height: 42,
                         fit: BoxFit.contain,
-                      ))
-              : null,
+                      )),
         ),
         const SizedBox(height: 6),
         Text(
-          label,
+          widget.label,
           style: const TextStyle(
             fontSize: 12,
             fontWeight: FontWeight.w600,

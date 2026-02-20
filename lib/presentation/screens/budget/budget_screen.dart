@@ -7,7 +7,7 @@ import '../../../core/utils/currency_formatter.dart';
 import '../../../domain/entities/category_entity.dart';
 import '../../providers/budget_limit_provider.dart';
 import '../../providers/category_provider.dart';
-import '../../providers/theme_provider.dart';
+import '../../providers/appearance_provider.dart';
 import '../../providers/transaction_provider.dart';
 import '../../widgets/charts/donut_chart.dart';
 import '../../widgets/common/editorial.dart';
@@ -32,7 +32,7 @@ class BudgetScreen extends ConsumerWidget {
     final txns = ref.watch(monthlyTransactionsProvider).valueOrNull ?? [];
     final categories = ref.watch(categoriesProvider);
     final totals = ref.watch(monthlyTotalsProvider);
-    final roleColors = ref.watch(roleColorsProvider);
+    final preset = ref.watch(activeThemePresetDataProvider);
     final budgetLimitMap = ref.watch(budgetLimitMapProvider);
 
     final catEntityMap = <String, CategoryEntity>{};
@@ -98,7 +98,10 @@ class BudgetScreen extends ConsumerWidget {
                     ),
                     Text(
                       selectedMonth.monthYear,
-                      style: Theme.of(context).textTheme.titleLarge,
+                      style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                        color: theme.colorScheme.onSurface,
+                        fontWeight: FontWeight.w700,
+                      ),
                     ),
                     IconButton(
                       icon: const Icon(Icons.chevron_right),
@@ -124,27 +127,31 @@ class BudgetScreen extends ConsumerWidget {
                         width: double.infinity,
                         padding: const EdgeInsets.all(14),
                         decoration: BoxDecoration(
-                          color: AppColors.income.withValues(alpha: 0.1),
+                          color: preset.surfaceVariant,
                           borderRadius: BorderRadius.circular(14),
                         ),
                         child: Row(
                           children: [
-                            const Icon(
+                            Icon(
                               Icons.arrow_upward_rounded,
-                              color: AppColors.income,
+                              color: preset.primary,
                             ),
                             const SizedBox(width: 8),
                             Text(
                               'Income',
-                              style: TextStyle(color: AppColors.textSecondary),
+                              style: TextStyle(
+                                color: theme.colorScheme.onSurface.withValues(
+                                  alpha: 0.7,
+                                ),
+                              ),
                             ),
                             const Spacer(),
                             Text(
                               CurrencyFormatter.format(
                                 (totals['income'] ?? 0.0).toDouble(),
                               ),
-                              style: const TextStyle(
-                                color: AppColors.income,
+                              style: TextStyle(
+                                color: preset.primary,
                                 fontWeight: FontWeight.w700,
                               ),
                             ),
@@ -156,7 +163,11 @@ class BudgetScreen extends ConsumerWidget {
                         width: double.infinity,
                         padding: const EdgeInsets.all(20),
                         decoration: BoxDecoration(
-                          gradient: roleColors.gradient,
+                          gradient: LinearGradient(
+                            colors: [preset.primary, preset.secondary],
+                            begin: Alignment.topLeft,
+                            end: Alignment.bottomRight,
+                          ),
                           borderRadius: BorderRadius.circular(20),
                         ),
                         child: Column(
@@ -192,7 +203,11 @@ class BudgetScreen extends ConsumerWidget {
                     children: [
                       Text(
                         'Expense Breakdown',
-                        style: Theme.of(context).textTheme.titleMedium,
+                        style: Theme.of(context).textTheme.titleMedium
+                            ?.copyWith(
+                              color: theme.colorScheme.onSurface,
+                              fontWeight: FontWeight.w700,
+                            ),
                       ),
                       const SizedBox(height: 16),
                       Builder(
@@ -227,7 +242,9 @@ class BudgetScreen extends ConsumerWidget {
                   ),
                 ),
               ),
-              const SliverToBoxAdapter(child: SectionLabel(text: 'By Category')),
+              const SliverToBoxAdapter(
+                child: SectionLabel(text: 'By Category'),
+              ),
               SliverToBoxAdapter(
                 child: Padding(
                   padding: const EdgeInsets.fromLTRB(20, 0, 20, 8),
@@ -236,7 +253,11 @@ class BudgetScreen extends ConsumerWidget {
                       Expanded(
                         child: Text(
                           'By Category',
-                          style: Theme.of(context).textTheme.titleMedium,
+                          style: Theme.of(context).textTheme.titleMedium
+                              ?.copyWith(
+                                color: theme.colorScheme.onSurface,
+                                fontWeight: FontWeight.w700,
+                              ),
                         ),
                       ),
                       TextButton.icon(
@@ -293,7 +314,7 @@ class BudgetScreen extends ConsumerWidget {
                                 Row(
                                   children: [
                                     CircleAvatar(
-                                      backgroundColor: AppColors.surfaceVariant,
+                                      backgroundColor: preset.surfaceVariant,
                                       child: Text(
                                         cat?.emoji ??
                                             resolvedCategoryEmojiMap[entry
@@ -319,14 +340,14 @@ class BudgetScreen extends ConsumerWidget {
                                     Text(
                                       '${CurrencyFormatter.format(entry.value)}  ${pct.toStringAsFixed(1)}%',
                                       style: const TextStyle(
-                                        fontSize: 12,
+                                        fontSize: 12.5,
                                         fontWeight: FontWeight.w600,
                                       ),
                                     ),
                                     const SizedBox(width: 4),
-                                    const Icon(
+                                    Icon(
                                       Icons.chevron_right,
-                                      color: AppColors.textHint,
+                                      color: preset.secondary,
                                     ),
                                   ],
                                 ),
@@ -344,7 +365,7 @@ class BudgetScreen extends ConsumerWidget {
                                           .surfaceContainerHighest,
                                       valueColor: AlwaysStoppedAnimation<Color>(
                                         (limitProgress ?? 0) <= 1
-                                            ? AppColors.income
+                                            ? preset.primary
                                             : AppColors.expense,
                                       ),
                                     ),
@@ -356,7 +377,7 @@ class BudgetScreen extends ConsumerWidget {
                                       'Budget ${CurrencyFormatter.format(budgetLimit)}',
                                       style: const TextStyle(
                                         fontSize: 11,
-                                        color: AppColors.textSecondary,
+                                        fontWeight: FontWeight.w600,
                                       ),
                                     ),
                                   ),

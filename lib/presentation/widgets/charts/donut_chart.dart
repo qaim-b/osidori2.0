@@ -36,9 +36,9 @@ class CategoryDonutChart extends StatelessWidget {
               Text(
                 'Add your first transaction!',
                 style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                      color: AppColors.textHint,
-                      fontSize: 12,
-                    ),
+                  color: AppColors.textHint,
+                  fontSize: 12,
+                ),
               ),
             ],
           ),
@@ -54,20 +54,21 @@ class CategoryDonutChart extends StatelessWidget {
     for (var i = 0; i < sorted.length; i++) {
       final entry = sorted[i];
       final percentage = (entry.value / totalAmount) * 100;
-      final color =
-          AppColors.chartPalette[i % AppColors.chartPalette.length];
+      final color = AppColors.chartPalette[i % AppColors.chartPalette.length];
 
-      sections.add(PieChartSectionData(
-        color: color,
-        value: entry.value,
-        title: percentage >= 5 ? '${percentage.toStringAsFixed(0)}%' : '',
-        radius: 32,
-        titleStyle: const TextStyle(
-          fontSize: 11,
-          fontWeight: FontWeight.w600,
-          color: Colors.white,
+      sections.add(
+        PieChartSectionData(
+          color: color,
+          value: entry.value,
+          title: percentage >= 5 ? '${percentage.toStringAsFixed(0)}%' : '',
+          radius: 32,
+          titleStyle: const TextStyle(
+            fontSize: 11,
+            fontWeight: FontWeight.w600,
+            color: Colors.white,
+          ),
         ),
-      ));
+      );
     }
 
     return Column(
@@ -96,9 +97,9 @@ class CategoryDonutChart extends StatelessWidget {
                   ),
                   Text(
                     'Total',
-                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                          fontSize: 12,
-                        ),
+                    style: Theme.of(
+                      context,
+                    ).textTheme.bodyMedium?.copyWith(fontSize: 12),
                   ),
                 ],
               ),
@@ -127,10 +128,7 @@ class CategoryDonutChart extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(width: 4),
-                Text(
-                  name,
-                  style: const TextStyle(fontSize: 11),
-                ),
+                Text(name, style: const TextStyle(fontSize: 11)),
               ],
             );
           }),

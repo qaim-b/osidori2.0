@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import '../../../core/theme/app_colors.dart';
 
 /// Clean editorial background for auth/onboarding surfaces.
 class StarryBackground extends StatelessWidget {
@@ -16,9 +15,7 @@ class StarryBackground extends StatelessWidget {
   Widget build(BuildContext context) {
     final bg = Theme.of(context).scaffoldBackgroundColor;
     return DecoratedBox(
-      decoration: BoxDecoration(
-        color: bg,
-      ),
+      decoration: BoxDecoration(color: bg),
       child: child,
     );
   }
@@ -32,23 +29,23 @@ class CloudDecoration extends StatelessWidget {
     return Row(
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
-        _cloud(60),
+        _cloud(context, 60),
         const SizedBox(width: 8),
-        _cloud(40),
+        _cloud(context, 40),
         const SizedBox(width: 12),
-        _cloud(50),
+        _cloud(context, 50),
       ],
     );
   }
 
-  Widget _cloud(double width) {
+  Widget _cloud(BuildContext context, double width) {
+    final colorScheme = Theme.of(context).colorScheme;
     return Container(
       width: width,
       height: width * 0.5,
       decoration: BoxDecoration(
-        color: AppColors.card.withValues(alpha: 0.75),
+        color: colorScheme.surfaceContainerHighest.withValues(alpha: 0.55),
         borderRadius: BorderRadius.circular(width),
-        border: Border.all(color: AppColors.border),
       ),
     );
   }

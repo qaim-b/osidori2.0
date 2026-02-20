@@ -23,16 +23,22 @@ class AppButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+
     if (useGradient) {
       return Container(
         width: double.infinity,
         constraints: const BoxConstraints(minHeight: 44),
         decoration: BoxDecoration(
-          gradient: AppColors.dreamyGradient,
+          gradient: LinearGradient(
+            colors: [colorScheme.primary, colorScheme.secondary],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ),
           borderRadius: BorderRadius.circular(6),
           boxShadow: [
             BoxShadow(
-              color: AppColors.accent.withValues(alpha: 0.18),
+              color: colorScheme.primary.withValues(alpha: 0.18),
               blurRadius: 10,
               offset: const Offset(0, 3),
             ),

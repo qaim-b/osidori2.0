@@ -9,7 +9,7 @@ import '../../../domain/entities/category_entity.dart';
 import '../../providers/budget_limit_provider.dart';
 import '../../providers/category_provider.dart';
 import '../../providers/goal_provider.dart';
-import '../../providers/theme_provider.dart';
+import '../../providers/appearance_provider.dart';
 import '../../providers/transaction_provider.dart';
 import '../../widgets/common/themed_backdrop.dart';
 
@@ -35,7 +35,7 @@ class SummaryScreen extends ConsumerWidget {
         ref.watch(categoriesProvider).valueOrNull ?? <CategoryEntity>[];
     final txns = ref.watch(monthlyTransactionsProvider).valueOrNull ?? [];
     final selectedMonth = ref.watch(selectedMonthProvider);
-    final roleColors = ref.watch(roleColorsProvider);
+    final preset = ref.watch(activeThemePresetDataProvider);
 
     final catMap = <String, CategoryEntity>{
       for (final c in categories) c.id: c,
@@ -103,7 +103,10 @@ class SummaryScreen extends ConsumerWidget {
                       ),
                       Text(
                         selectedMonth.monthYear,
-                        style: Theme.of(context).textTheme.titleLarge,
+                        style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                          color: theme.colorScheme.onSurface,
+                          fontWeight: FontWeight.w700,
+                        ),
                       ),
                       IconButton(
                         icon: const Icon(Icons.chevron_right),
@@ -127,11 +130,15 @@ class SummaryScreen extends ConsumerWidget {
                   child: Container(
                     padding: const EdgeInsets.all(18),
                     decoration: BoxDecoration(
-                      gradient: roleColors.gradient,
+                      gradient: LinearGradient(
+                        colors: [preset.primary, preset.secondary],
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                      ),
                       borderRadius: BorderRadius.circular(24),
                       boxShadow: [
                         BoxShadow(
-                          color: roleColors.primary.withValues(alpha: 0.25),
+                          color: preset.primary.withValues(alpha: 0.25),
                           blurRadius: 14,
                           offset: const Offset(0, 8),
                         ),
@@ -155,7 +162,7 @@ class SummaryScreen extends ConsumerWidget {
                                 label: 'Income',
                                 value: CurrencyFormatter.format(income),
                                 icon: Icons.arrow_upward_rounded,
-                                color: AppColors.income,
+                                color: preset.background,
                               ),
                             ),
                             const SizedBox(width: 8),
@@ -164,7 +171,7 @@ class SummaryScreen extends ConsumerWidget {
                                 label: 'Expense',
                                 value: CurrencyFormatter.format(expense),
                                 icon: Icons.arrow_downward_rounded,
-                                color: AppColors.expense,
+                                color: preset.background,
                               ),
                             ),
                           ],
@@ -179,7 +186,10 @@ class SummaryScreen extends ConsumerWidget {
                   padding: const EdgeInsets.fromLTRB(16, 18, 16, 0),
                   child: Text(
                     'Budget vs Actual',
-                    style: Theme.of(context).textTheme.titleMedium,
+                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                      color: theme.colorScheme.onSurface,
+                      fontWeight: FontWeight.w700,
+                    ),
                   ),
                 ),
               ),
@@ -204,7 +214,7 @@ class SummaryScreen extends ConsumerWidget {
                               final over = ratio > 1;
                               final barColor = over
                                   ? AppColors.expense
-                                  : AppColors.income;
+                                  : preset.primary;
 
                               return Padding(
                                 padding: const EdgeInsets.only(bottom: 12),
@@ -260,7 +270,10 @@ class SummaryScreen extends ConsumerWidget {
                   padding: const EdgeInsets.fromLTRB(16, 18, 16, 0),
                   child: Text(
                     'Top Categories',
-                    style: Theme.of(context).textTheme.titleMedium,
+                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                      color: theme.colorScheme.onSurface,
+                      fontWeight: FontWeight.w700,
+                    ),
                   ),
                 ),
               ),
@@ -314,7 +327,10 @@ class SummaryScreen extends ConsumerWidget {
                   padding: const EdgeInsets.fromLTRB(16, 18, 16, 0),
                   child: Text(
                     'Insights',
-                    style: Theme.of(context).textTheme.titleMedium,
+                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                      color: theme.colorScheme.onSurface,
+                      fontWeight: FontWeight.w700,
+                    ),
                   ),
                 ),
               ),
@@ -350,7 +366,10 @@ class SummaryScreen extends ConsumerWidget {
                   padding: const EdgeInsets.fromLTRB(16, 18, 16, 0),
                   child: Text(
                     'Exports',
-                    style: Theme.of(context).textTheme.titleMedium,
+                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                      color: theme.colorScheme.onSurface,
+                      fontWeight: FontWeight.w700,
+                    ),
                   ),
                 ),
               ),
@@ -364,9 +383,7 @@ class SummaryScreen extends ConsumerWidget {
                         ListTile(
                           contentPadding: EdgeInsets.zero,
                           leading: const Icon(Icons.table_chart_rounded),
-                          title: const Text(
-                            'Export Planning Summary XLSX',
-                          ),
+                          title: const Text('Export Planning Summary XLSX'),
                           subtitle: const Text(
                             'Category totals + Budget + Exp-Bud for easy copy/paste',
                           ),
@@ -454,7 +471,7 @@ class _MetricPill extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 9),
       decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.18),
+        color: Colors.white.withValues(alpha: 0.22),
         borderRadius: BorderRadius.circular(14),
       ),
       child: Row(
@@ -477,6 +494,7 @@ class _MetricPill extends StatelessWidget {
                   style: const TextStyle(
                     color: Colors.white,
                     fontWeight: FontWeight.w700,
+                    fontSize: 13.5,
                   ),
                 ),
               ],
@@ -505,7 +523,7 @@ class _InsightChip extends StatelessWidget {
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(icon, size: 14, color: AppColors.textSecondary),
+          Icon(icon, size: 14, color: Theme.of(context).colorScheme.primary),
           const SizedBox(width: 6),
           Text(text, style: const TextStyle(fontSize: 12)),
         ],

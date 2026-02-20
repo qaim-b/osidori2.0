@@ -62,18 +62,18 @@ class AppColors {
 
   // Chart palette
   static const List<Color> chartPalette = [
-    Color(0xFFB8860B),
-    Color(0xFFD4A84B),
-    Color(0xFF8E6700),
-    Color(0xFF6D8FA3),
-    Color(0xFF7AA37A),
-    Color(0xFFB08A6A),
-    Color(0xFF857565),
-    Color(0xFF9A8B7A),
-    Color(0xFFA69884),
-    Color(0xFFC7B8A7),
-    Color(0xFF8C9E7A),
-    Color(0xFF9F7A5C),
+    Color(0xFF5E60CE),
+    Color(0xFF4361EE),
+    Color(0xFF3A86FF),
+    Color(0xFF00B4D8),
+    Color(0xFF2A9D8F),
+    Color(0xFF52B788),
+    Color(0xFF80ED99),
+    Color(0xFFF4A261),
+    Color(0xFFE76F51),
+    Color(0xFFEF476F),
+    Color(0xFFFF006E),
+    Color(0xFFB5179E),
   ];
 
   // Misc

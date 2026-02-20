@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import '../../../core/theme/app_colors.dart';
 
 class SectionLabel extends StatelessWidget {
   final String text;
@@ -14,11 +13,17 @@ class SectionLabel extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     return Padding(
       padding: padding,
       child: Row(
         children: [
-          const Expanded(child: Divider(color: AppColors.border, thickness: 1)),
+          Expanded(
+            child: Divider(
+              color: theme.colorScheme.outlineVariant,
+              thickness: 1,
+            ),
+          ),
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 12),
             child: Text(
@@ -27,11 +32,16 @@ class SectionLabel extends StatelessWidget {
                 fontSize: 12,
                 fontWeight: FontWeight.w500,
                 letterSpacing: 1.6,
-                color: AppColors.accent,
+                color: theme.colorScheme.primary,
               ),
             ),
           ),
-          const Expanded(child: Divider(color: AppColors.border, thickness: 1)),
+          Expanded(
+            child: Divider(
+              color: theme.colorScheme.outlineVariant,
+              thickness: 1,
+            ),
+          ),
         ],
       ),
     );
@@ -54,17 +64,18 @@ class EditorialCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     return Container(
       margin: margin ?? const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
       decoration: BoxDecoration(
-        color: AppColors.card,
+        color: theme.colorScheme.surface,
         borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: AppColors.border),
-        boxShadow: const [
+        border: Border.all(color: theme.colorScheme.outlineVariant),
+        boxShadow: [
           BoxShadow(
-            color: AppColors.shadow,
+            color: Colors.black.withValues(alpha: 0.08),
             blurRadius: 8,
-            offset: Offset(0, 2),
+            offset: const Offset(0, 2),
           ),
         ],
       ),
@@ -74,15 +85,12 @@ class EditorialCard extends StatelessWidget {
           if (accentTop)
             Container(
               height: 2,
-              decoration: const BoxDecoration(
-                color: AppColors.accent,
+              decoration: BoxDecoration(
+                color: theme.colorScheme.primary,
                 borderRadius: BorderRadius.vertical(top: Radius.circular(8)),
               ),
             ),
-          Padding(
-            padding: padding ?? const EdgeInsets.all(16),
-            child: child,
-          ),
+          Padding(padding: padding ?? const EdgeInsets.all(16), child: child),
         ],
       ),
     );
@@ -110,7 +118,7 @@ class DisplayNumber extends StatelessWidget {
         height: 1.12,
         fontWeight: FontWeight.w600,
         letterSpacing: -0.5,
-        color: color ?? AppColors.foreground,
+        color: color ?? Theme.of(context).colorScheme.onSurface,
       ),
     );
   }

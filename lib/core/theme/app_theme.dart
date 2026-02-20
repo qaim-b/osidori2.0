@@ -29,18 +29,19 @@ class AppTheme {
       dividerColor: AppColors.border,
       splashFactory: InkRipple.splashFactory,
     );
+    final textTheme = _textTheme(base.textTheme, preset);
 
     return base.copyWith(
-      textTheme: _textTheme(base.textTheme),
+      textTheme: textTheme,
       appBarTheme: AppBarTheme(
         backgroundColor: preset.background,
-        foregroundColor: AppColors.foreground,
+        foregroundColor: preset.primary,
         elevation: 0,
         centerTitle: true,
         titleTextStyle: GoogleFonts.playfairDisplay(
           fontSize: 24,
           fontWeight: FontWeight.w500,
-          color: AppColors.foreground,
+          color: preset.primary,
           letterSpacing: -0.2,
         ),
       ),
@@ -62,9 +63,7 @@ class AppTheme {
           ),
           elevation: const WidgetStatePropertyAll(0),
           shape: const WidgetStatePropertyAll(
-            RoundedRectangleBorder(
-              borderRadius: BorderRadius.all(radiusMd),
-            ),
+            RoundedRectangleBorder(borderRadius: BorderRadius.all(radiusMd)),
           ),
           backgroundColor: WidgetStateProperty.resolveWith((states) {
             if (states.contains(WidgetState.disabled)) {
@@ -76,7 +75,9 @@ class AppTheme {
             }
             return preset.primary;
           }),
-          foregroundColor: const WidgetStatePropertyAll(AppColors.accentForeground),
+          foregroundColor: const WidgetStatePropertyAll(
+            AppColors.accentForeground,
+          ),
           overlayColor: WidgetStatePropertyAll(
             AppColors.accentForeground.withValues(alpha: 0.08),
           ),
@@ -102,9 +103,7 @@ class AppTheme {
             return BorderSide(color: color);
           }),
           shape: const WidgetStatePropertyAll(
-            RoundedRectangleBorder(
-              borderRadius: BorderRadius.all(radiusMd),
-            ),
+            RoundedRectangleBorder(borderRadius: BorderRadius.all(radiusMd)),
           ),
           foregroundColor: WidgetStateProperty.resolveWith((states) {
             if (states.contains(WidgetState.hovered)) return preset.primary;
@@ -142,7 +141,10 @@ class AppTheme {
           borderRadius: const BorderRadius.all(radiusMd),
           borderSide: const BorderSide(color: AppColors.error, width: 1.5),
         ),
-        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+        contentPadding: const EdgeInsets.symmetric(
+          horizontal: 16,
+          vertical: 14,
+        ),
         hintStyle: GoogleFonts.sourceSans3(
           color: AppColors.mutedForeground.withValues(alpha: 0.7),
           fontSize: 16,
@@ -188,48 +190,48 @@ class AppTheme {
     );
   }
 
-  static TextTheme _textTheme(TextTheme base) {
+  static TextTheme _textTheme(TextTheme base, ThemePresetData preset) {
     return base.copyWith(
       displayLarge: GoogleFonts.playfairDisplay(
         fontSize: 46,
         height: 1.1,
         fontWeight: FontWeight.w500,
         letterSpacing: -0.9,
-        color: AppColors.foreground,
+        color: preset.primary,
       ),
       displayMedium: GoogleFonts.playfairDisplay(
         fontSize: 38,
         height: 1.15,
         fontWeight: FontWeight.w500,
         letterSpacing: -0.5,
-        color: AppColors.foreground,
+        color: preset.primary,
       ),
       headlineLarge: GoogleFonts.playfairDisplay(
         fontSize: 32,
         height: 1.2,
         fontWeight: FontWeight.w500,
         letterSpacing: -0.35,
-        color: AppColors.foreground,
+        color: preset.primary,
       ),
       headlineMedium: GoogleFonts.playfairDisplay(
         fontSize: 28,
         height: 1.2,
         fontWeight: FontWeight.w500,
         letterSpacing: -0.25,
-        color: AppColors.foreground,
+        color: preset.primary,
       ),
       titleLarge: GoogleFonts.playfairDisplay(
         fontSize: 22,
         height: 1.3,
         fontWeight: FontWeight.w600,
-        color: AppColors.foreground,
+        color: preset.primary,
       ),
       titleMedium: GoogleFonts.sourceSans3(
         fontSize: 16,
         height: 1.5,
         fontWeight: FontWeight.w600,
         letterSpacing: 0.35,
-        color: AppColors.foreground,
+        color: preset.primary,
       ),
       bodyLarge: GoogleFonts.sourceSans3(
         fontSize: 17,

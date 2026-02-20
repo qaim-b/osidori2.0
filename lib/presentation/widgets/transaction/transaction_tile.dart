@@ -38,9 +38,12 @@ class TransactionTile extends ConsumerWidget {
     final currentUserId = ref.watch(currentUserIdProvider);
     final isMine =
         currentUserId != null && transaction.ownerUserId == currentUserId;
+    final ownerPreview = transaction.ownerUserId.length >= 6
+        ? transaction.ownerUserId.substring(0, 6)
+        : transaction.ownerUserId;
     final ownerLabel = isMine
         ? 'You'
-        : 'Partner ${transaction.ownerUserId.substring(0, 6)}';
+        : (ownerPreview.isEmpty ? 'Partner' : 'Partner $ownerPreview');
 
     return InkWell(
       onTap: onTap,

@@ -36,7 +36,10 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
     final now = DateTime.now();
     _displayedMonth = DateTime(now.year, now.month, 1);
     _selectedDay = DateTime(now.year, now.month, now.day);
-    ref.read(selectedMonthProvider.notifier).state = _displayedMonth;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      ref.read(selectedMonthProvider.notifier).state = _displayedMonth;
+    });
   }
 
   void _prevMonth() {
@@ -65,20 +68,21 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final roleColors = ref.watch(roleColorsProvider);
-    final transactions = ref.watch(monthlyTransactionsProvider);
-    final categories = ref.watch(categoriesProvider);
+    try {
+      final roleColors = ref.watch(roleColorsProvider);
+      final transactions = ref.watch(monthlyTransactionsProvider);
+      final categories = ref.watch(categoriesProvider);
 
-    // Build category lookup map
-    final catEntityMap = <String, CategoryEntity>{};
-    for (final cat in categories.valueOrNull ?? <CategoryEntity>[]) {
-      catEntityMap[cat.id] = cat;
-    }
+      // Build category lookup map
+      final catEntityMap = <String, CategoryEntity>{};
+      for (final cat in categories.valueOrNull ?? <CategoryEntity>[]) {
+        catEntityMap[cat.id] = cat;
+      }
 
-    // Compute daily totals from transactions
-    final Map<int, double> dailyExpense = {};
-    final Map<int, double> dailyIncome = {};
-    transactions.whenData((txns) {
+      // Compute daily totals from transactions (safe even when async is loading/error)
+      final txns = transactions.valueOrNull ?? <TransactionModel>[];
+      final Map<int, double> dailyExpense = {};
+      final Map<int, double> dailyIncome = {};
       for (final txn in txns) {
         final day = txn.date.day;
         if (txn.isExpense) {
@@ -87,162 +91,198 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
           dailyIncome[day] = (dailyIncome[day] ?? 0) + txn.amount;
         }
       }
-    });
 
-    // Calendar grid info
-    final daysInMonth = DateUtils.getDaysInMonth(
-      _displayedMonth.year,
-      _displayedMonth.month,
-    );
-    final firstWeekday = DateTime(
-      _displayedMonth.year,
-      _displayedMonth.month,
-      1,
-    ).weekday;
-    // Adjust to Monday=0 start
-    final startOffset = (firstWeekday - 1) % 7;
+      // Calendar grid info
+      final daysInMonth = DateUtils.getDaysInMonth(
+        _displayedMonth.year,
+        _displayedMonth.month,
+      );
+      final firstWeekday = DateTime(
+        _displayedMonth.year,
+        _displayedMonth.month,
+        1,
+      ).weekday;
+      // Adjust to Monday=0 start
+      final startOffset = (firstWeekday - 1) % 7;
 
-    return Scaffold(
-      backgroundColor: Colors.transparent,
-      body: ThemedBackdrop(
-        child: RefreshIndicator(
-          onRefresh: _refresh,
-          child: CustomScrollView(
-            physics: const AlwaysScrollableScrollPhysics(
-              parent: BouncingScrollPhysics(),
-            ),
-            slivers: [
-              // App bar with month nav
-              SliverAppBar(
-                pinned: true,
-                title: Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    IconButton(
-                      icon: const Icon(Icons.chevron_left),
-                      onPressed: _prevMonth,
-                    ),
-                    Text(
-                      _displayedMonth.monthYear,
-                      style: Theme.of(context).textTheme.titleLarge,
-                    ),
-                    IconButton(
-                      icon: const Icon(Icons.chevron_right),
-                      onPressed: _nextMonth,
-                    ),
-                  ],
-                ),
+      return Scaffold(
+        backgroundColor: Colors.transparent,
+        body: ThemedBackdrop(
+          child: RefreshIndicator(
+            onRefresh: _refresh,
+            child: CustomScrollView(
+              physics: const AlwaysScrollableScrollPhysics(
+                parent: BouncingScrollPhysics(),
               ),
-
-              // Monthly summary bar
-              SliverToBoxAdapter(
-                child: Padding(
-                  padding: const EdgeInsets.fromLTRB(16, 8, 16, 4),
-                  child: Row(
+              slivers: [
+                // App bar with month nav
+                SliverAppBar(
+                  pinned: true,
+                  title: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      _SummaryPill(
-                        label: 'Income',
-                        amount: dailyIncome.values.fold<double>(
-                          0,
-                          (s, v) => s + v,
-                        ),
-                        color: AppColors.income,
+                      IconButton(
+                        icon: const Icon(Icons.chevron_left),
+                        onPressed: _prevMonth,
                       ),
-                      const SizedBox(width: 8),
-                      _SummaryPill(
-                        label: 'Expense',
-                        amount: dailyExpense.values.fold<double>(
-                          0,
-                          (s, v) => s + v,
-                        ),
-                        color: AppColors.expense,
+                      Text(
+                        _displayedMonth.monthYear,
+                        style: Theme.of(context).textTheme.titleLarge,
+                      ),
+                      IconButton(
+                        icon: const Icon(Icons.chevron_right),
+                        onPressed: _nextMonth,
                       ),
                     ],
                   ),
                 ),
-              ),
 
-              // Weekday headers
-              SliverToBoxAdapter(
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 12,
-                    vertical: 8,
-                  ),
-                  child: Row(
-                    children: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
-                        .map(
-                          (d) => Expanded(
-                            child: Center(
-                              child: Text(
-                                d,
-                                style: TextStyle(
-                                  fontSize: 11,
-                                  fontWeight: FontWeight.w600,
-                                  color: d == 'Sun'
-                                      ? AppColors.expense
-                                      : (d == 'Sat'
-                                            ? roleColors.primary
-                                            : AppColors.textSecondary),
-                                ),
-                              ),
-                            ),
-                          ),
-                        )
-                        .toList(),
-                  ),
-                ),
-              ),
-
-              // Calendar grid
-              SliverToBoxAdapter(
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 12),
-                  child: Column(
-                    children: _buildCalendarRows(
-                      daysInMonth: daysInMonth,
-                      startOffset: startOffset,
-                      dailyExpense: dailyExpense,
-                      dailyIncome: dailyIncome,
-                      roleColors: roleColors,
-                    ),
-                  ),
-                ),
-              ),
-
-              // Selected day detail
-              if (_selectedDay != null) ...[
+                // Monthly summary bar
                 SliverToBoxAdapter(
                   child: Padding(
-                    padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+                    padding: const EdgeInsets.fromLTRB(16, 8, 16, 4),
                     child: Row(
                       children: [
-                        Container(
-                          width: 4,
-                          height: 20,
-                          decoration: BoxDecoration(
-                            color: roleColors.primary,
-                            borderRadius: BorderRadius.circular(2),
+                        _SummaryPill(
+                          label: 'Income',
+                          amount: dailyIncome.values.fold<double>(
+                            0,
+                            (s, v) => s + v,
                           ),
+                          color: AppColors.income,
                         ),
                         const SizedBox(width: 8),
-                        Text(
-                          '${DateFormat('d MMMM').format(_selectedDay!)} Details',
-                          style: Theme.of(context).textTheme.titleMedium,
+                        _SummaryPill(
+                          label: 'Expense',
+                          amount: dailyExpense.values.fold<double>(
+                            0,
+                            (s, v) => s + v,
+                          ),
+                          color: AppColors.expense,
                         ),
                       ],
                     ),
                   ),
                 ),
-                _buildDayTransactions(transactions, roleColors, catEntityMap),
-              ],
 
-              const SliverToBoxAdapter(child: SizedBox(height: 110)),
-            ],
+                // Weekday headers
+                SliverToBoxAdapter(
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 8,
+                    ),
+                    child: Row(
+                      children:
+                          ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
+                              .map(
+                                (d) => Expanded(
+                                  child: Center(
+                                    child: Text(
+                                      d,
+                                      style: TextStyle(
+                                        fontSize: 11,
+                                        fontWeight: FontWeight.w600,
+                                        color: d == 'Sun'
+                                            ? AppColors.expense
+                                            : (d == 'Sat'
+                                                  ? roleColors.primary
+                                                  : AppColors.textSecondary),
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              )
+                              .toList(),
+                    ),
+                  ),
+                ),
+
+                // Calendar grid
+                SliverToBoxAdapter(
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 12),
+                    child: Column(
+                      children: _buildCalendarRows(
+                        daysInMonth: daysInMonth,
+                        startOffset: startOffset,
+                        dailyExpense: dailyExpense,
+                        dailyIncome: dailyIncome,
+                        roleColors: roleColors,
+                      ),
+                    ),
+                  ),
+                ),
+
+                // Selected day detail
+                if (_selectedDay != null) ...[
+                  SliverToBoxAdapter(
+                    child: Padding(
+                      padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+                      child: Row(
+                        children: [
+                          Container(
+                            width: 4,
+                            height: 20,
+                            decoration: BoxDecoration(
+                              color: roleColors.primary,
+                              borderRadius: BorderRadius.circular(2),
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          Text(
+                            '${DateFormat('d MMMM').format(_selectedDay!)} Details',
+                            style: Theme.of(context).textTheme.titleMedium,
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                  _buildDayTransactions(transactions, roleColors, catEntityMap),
+                ],
+
+                const SliverToBoxAdapter(child: SizedBox(height: 110)),
+              ],
+            ),
           ),
         ),
-      ),
-    );
+      );
+    } catch (e) {
+      return Scaffold(
+        backgroundColor: Colors.transparent,
+        body: ThemedBackdrop(
+          child: Center(
+            child: Padding(
+              padding: const EdgeInsets.all(24),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Icon(
+                    Icons.error_outline,
+                    size: 34,
+                    color: AppColors.expense,
+                  ),
+                  const SizedBox(height: 10),
+                  const Text(
+                    'Calendar failed to load. Pull to refresh or reopen the app.',
+                    textAlign: TextAlign.center,
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    e.toString(),
+                    style: const TextStyle(
+                      fontSize: 11,
+                      color: AppColors.textSecondary,
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      );
+    }
   }
 
   List<Widget> _buildCalendarRows({
