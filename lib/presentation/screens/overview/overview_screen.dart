@@ -250,56 +250,39 @@ class _OverviewScreenState extends ConsumerState<OverviewScreen> {
                 ),
               ),
               SliverToBoxAdapter(
-                child: _scrollMotion(
-                  start: 20,
-                  child: Padding(
-                    padding: const EdgeInsets.fromLTRB(20, 8, 20, 2),
-                    child: TweenAnimationBuilder<double>(
-                      tween: Tween(begin: 0.0, end: 1.0),
-                      duration: AppMotion.entrance,
-                      curve: AppMotion.pop,
-                      builder: (context, t, child) {
-                        return Opacity(
-                          opacity: t.clamp(0.0, 1.0),
-                          child: Transform.scale(
-                            scale: 0.95 + (0.05 * t),
-                            child: child,
-                          ),
-                        );
-                      },
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          _MemberAvatarBubble(
-                            profile: youProfile,
-                            fallbackAsset: roleColors.mascotImage,
-                            label: youProfile?.name.isNotEmpty == true
-                                ? '${youProfile!.name} (You)'
-                                : 'You',
-                            backgroundColor: roleColors.primary.withValues(
-                              alpha: 0.16,
-                            ),
-                            loading: profilesLoading && youProfile == null,
-                          ),
-                          const SizedBox(width: 22),
-                          _MemberAvatarBubble(
-                            profile: partnerProfile,
-                            fallbackAsset: partnerProfile?.role == 'angel'
-                                ? 'assets/images/angel.svg'
-                                : (partnerProfile?.role == 'solo'
-                                      ? 'assets/images/stitchangel.svg'
-                                      : 'assets/images/stitch.svg'),
-                            label: partnerProfile?.name.isNotEmpty == true
-                                ? partnerProfile!.name
-                                : 'Partner',
-                            backgroundColor: roleColors.accent.withValues(
-                              alpha: 0.16,
-                            ),
-                            loading: profilesLoading && partnerProfile == null,
-                          ),
-                        ],
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(20, 8, 20, 2),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      _MemberAvatarBubble(
+                        profile: youProfile,
+                        fallbackAsset: roleColors.mascotImage,
+                        label: youProfile?.name.isNotEmpty == true
+                            ? '${youProfile!.name} (You)'
+                            : 'You',
+                        backgroundColor: roleColors.primary.withValues(
+                          alpha: 0.16,
+                        ),
+                        loading: profilesLoading && youProfile == null,
                       ),
-                    ),
+                      const SizedBox(width: 22),
+                      _MemberAvatarBubble(
+                        profile: partnerProfile,
+                        fallbackAsset: partnerProfile?.role == 'angel'
+                            ? 'assets/images/angel.svg'
+                            : (partnerProfile?.role == 'solo'
+                                  ? 'assets/images/stitchangel.svg'
+                                  : 'assets/images/stitch.svg'),
+                        label: partnerProfile?.name.isNotEmpty == true
+                            ? partnerProfile!.name
+                            : 'Partner',
+                        backgroundColor: roleColors.accent.withValues(
+                          alpha: 0.16,
+                        ),
+                        loading: profilesLoading && partnerProfile == null,
+                      ),
+                    ],
                   ),
                 ),
               ),
