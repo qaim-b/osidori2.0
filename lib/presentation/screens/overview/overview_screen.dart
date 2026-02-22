@@ -66,7 +66,6 @@ class _OverviewScreenState extends ConsumerState<OverviewScreen> {
   Widget build(BuildContext context) {
     final selectedMonth = ref.watch(selectedMonthProvider);
     final totals = ref.watch(monthlyTotalsProvider);
-    final categoryTotals = ref.watch(categoryTotalsProvider);
     final transactions = ref.watch(monthlyTransactionsProvider);
     final categories = ref.watch(categoriesProvider);
     final roleColors = ref.watch(roleColorsProvider);
@@ -88,9 +87,38 @@ class _OverviewScreenState extends ConsumerState<OverviewScreen> {
 
     final catMap = <String, String>{};
     final catEntityMap = <String, CategoryEntity>{};
+    final snapshotNameById = <String, String>{};
+    final snapshotEmojiById = <String, String>{};
     for (final cat in categories.valueOrNull ?? <CategoryEntity>[]) {
       catMap[cat.id] = cat.shortLabel;
       catEntityMap[cat.id] = cat;
+    }
+    for (final txn in transactions.valueOrNull ?? const []) {
+      if (txn.categoryNameSnapshot != null &&
+          txn.categoryNameSnapshot!.trim().isNotEmpty) {
+        snapshotNameById[txn.categoryId] = txn.categoryNameSnapshot!;
+      }
+      if (txn.categoryEmojiSnapshot != null &&
+          txn.categoryEmojiSnapshot!.trim().isNotEmpty) {
+        snapshotEmojiById[txn.categoryId] = txn.categoryEmojiSnapshot!;
+      }
+    }
+    final breakdownTotals = <String, double>{};
+    final breakdownNames = <String, String>{};
+    for (final txn in transactions.valueOrNull ?? const []) {
+      if (!txn.isExpense) continue;
+      final cat = catEntityMap[txn.categoryId];
+      final resolvedName =
+          cat?.name ??
+          snapshotNameById[txn.categoryId] ??
+          (txn.categoryDisplayNumberSnapshot != null
+              ? 'Category #${txn.categoryDisplayNumberSnapshot}'
+              : 'Other');
+      final resolvedEmoji =
+          cat?.emoji ?? snapshotEmojiById[txn.categoryId] ?? '📦';
+      final key = '$resolvedEmoji $resolvedName';
+      breakdownTotals[key] = (breakdownTotals[key] ?? 0) + txn.amount;
+      breakdownNames[key] = key;
     }
 
     return Scaffold(
@@ -291,13 +319,13 @@ class _OverviewScreenState extends ConsumerState<OverviewScreen> {
                       const SizedBox(height: 16),
                       Builder(
                         builder: (context) {
-                          final total = categoryTotals.values.fold<double>(
+                          final total = breakdownTotals.values.fold<double>(
                             0,
                             (sum, v) => sum + v,
                           );
                           return CategoryDonutChart(
-                            categoryTotals: categoryTotals,
-                            categoryNames: catMap,
+                            categoryTotals: breakdownTotals,
+                            categoryNames: breakdownNames,
                             currency: 'JPY',
                             totalAmount: total,
                           );

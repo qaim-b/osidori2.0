@@ -1,13 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+
 import '../../../core/extensions/datetime_ext.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/utils/currency_formatter.dart';
 import '../../../domain/entities/category_entity.dart';
+import '../../providers/appearance_provider.dart';
 import '../../providers/budget_limit_provider.dart';
 import '../../providers/category_provider.dart';
-import '../../providers/appearance_provider.dart';
 import '../../providers/transaction_provider.dart';
 import '../../widgets/charts/donut_chart.dart';
 import '../../widgets/common/editorial.dart';
@@ -74,25 +75,27 @@ class _BudgetScreenState extends ConsumerState<BudgetScreen> {
     final budgetLimitMap = ref.watch(budgetLimitMapProvider);
 
     final catEntityMap = <String, CategoryEntity>{};
-    final catNameMap = <String, String>{};
     final resolvedCategoryNameMap = <String, String>{};
     final resolvedCategoryEmojiMap = <String, String>{};
     final catSnapshotNameMap = <String, String>{};
     final catSnapshotEmojiMap = <String, String>{};
+
     for (final cat in categories.valueOrNull ?? <CategoryEntity>[]) {
       catEntityMap[cat.id] = cat;
-      catNameMap[cat.id] = cat.shortLabel;
       resolvedCategoryNameMap[cat.id] = cat.name;
       resolvedCategoryEmojiMap[cat.id] = cat.emoji;
     }
+
     for (final txn in txns) {
-      if (txn.categoryNameSnapshot != null) {
+      if (txn.categoryNameSnapshot != null &&
+          txn.categoryNameSnapshot!.trim().isNotEmpty) {
         catSnapshotNameMap[txn.categoryId] = txn.categoryNameSnapshot!;
         resolvedCategoryNameMap[txn.categoryId] =
             resolvedCategoryNameMap[txn.categoryId] ??
             txn.categoryNameSnapshot!;
       }
-      if (txn.categoryEmojiSnapshot != null) {
+      if (txn.categoryEmojiSnapshot != null &&
+          txn.categoryEmojiSnapshot!.trim().isNotEmpty) {
         catSnapshotEmojiMap[txn.categoryId] = txn.categoryEmojiSnapshot!;
         resolvedCategoryEmojiMap[txn.categoryId] =
             resolvedCategoryEmojiMap[txn.categoryId] ??
@@ -102,9 +105,22 @@ class _BudgetScreenState extends ConsumerState<BudgetScreen> {
           resolvedCategoryNameMap[txn.categoryId] ??
           (txn.categoryDisplayNumberSnapshot != null
               ? 'Category #${txn.categoryDisplayNumberSnapshot}'
-              : 'Category');
+              : 'Other');
       resolvedCategoryEmojiMap[txn.categoryId] =
-          resolvedCategoryEmojiMap[txn.categoryId] ?? '🧾';
+          resolvedCategoryEmojiMap[txn.categoryId] ?? '??';
+    }
+
+    final breakdownTotals = <String, double>{};
+    final breakdownNames = <String, String>{};
+    for (final txn in txns) {
+      if (!txn.isExpense) continue;
+      final resolvedName =
+          resolvedCategoryNameMap[txn.categoryId] ?? 'Other';
+      final resolvedEmoji =
+          resolvedCategoryEmojiMap[txn.categoryId] ?? '??';
+      final key = '$resolvedEmoji $resolvedName';
+      breakdownTotals[key] = (breakdownTotals[key] ?? 0) + txn.amount;
+      breakdownNames[key] = key;
     }
 
     return Scaffold(
@@ -126,13 +142,12 @@ class _BudgetScreenState extends ConsumerState<BudgetScreen> {
                     IconButton(
                       icon: const Icon(Icons.chevron_left),
                       onPressed: () {
-                        ref
-                            .read(selectedMonthProvider.notifier)
-                            .state = DateTime(
-                          selectedMonth.year,
-                          selectedMonth.month - 1,
-                          1,
-                        );
+                        ref.read(selectedMonthProvider.notifier).state =
+                            DateTime(
+                              selectedMonth.year,
+                              selectedMonth.month - 1,
+                              1,
+                            );
                       },
                     ),
                     Text(
@@ -145,13 +160,12 @@ class _BudgetScreenState extends ConsumerState<BudgetScreen> {
                     IconButton(
                       icon: const Icon(Icons.chevron_right),
                       onPressed: () {
-                        ref
-                            .read(selectedMonthProvider.notifier)
-                            .state = DateTime(
-                          selectedMonth.year,
-                          selectedMonth.month + 1,
-                          1,
-                        );
+                        ref.read(selectedMonthProvider.notifier).state =
+                            DateTime(
+                              selectedMonth.year,
+                              selectedMonth.month + 1,
+                              1,
+                            );
                       },
                     ),
                   ],
@@ -256,7 +270,7 @@ class _BudgetScreenState extends ConsumerState<BudgetScreen> {
                         const SizedBox(height: 16),
                         Builder(
                           builder: (context) {
-                            final total = categoryTotals.values.fold<double>(
+                            final total = breakdownTotals.values.fold<double>(
                               0,
                               (sum, v) => sum + v,
                             );
@@ -269,14 +283,8 @@ class _BudgetScreenState extends ConsumerState<BudgetScreen> {
                               );
                             }
                             return CategoryDonutChart(
-                              categoryTotals: categoryTotals,
-                              categoryNames: {
-                                for (final e in categoryTotals.entries)
-                                  e.key:
-                                      resolvedCategoryNameMap[e.key] ??
-                                      catNameMap[e.key] ??
-                                      'Category',
-                              },
+                              categoryTotals: breakdownTotals,
+                              categoryNames: breakdownNames,
                               currency: 'JPY',
                               totalAmount: total,
                             );
@@ -362,10 +370,9 @@ class _BudgetScreenState extends ConsumerState<BudgetScreen> {
                                       backgroundColor: preset.surfaceVariant,
                                       child: Text(
                                         cat?.emoji ??
-                                            resolvedCategoryEmojiMap[entry
-                                                .key] ??
+                                            resolvedCategoryEmojiMap[entry.key] ??
                                             catSnapshotEmojiMap[entry.key] ??
-                                            '🧾',
+                                            '??',
                                         style: const TextStyle(fontSize: 16),
                                       ),
                                     ),
@@ -373,10 +380,9 @@ class _BudgetScreenState extends ConsumerState<BudgetScreen> {
                                     Expanded(
                                       child: Text(
                                         cat?.name ??
-                                            resolvedCategoryNameMap[entry
-                                                .key] ??
+                                            resolvedCategoryNameMap[entry.key] ??
                                             catSnapshotNameMap[entry.key] ??
-                                            'Category',
+                                            'Other',
                                         style: const TextStyle(
                                           fontWeight: FontWeight.w600,
                                         ),
