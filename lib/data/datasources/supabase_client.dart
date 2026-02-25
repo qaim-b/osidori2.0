@@ -24,4 +24,6 @@ class AppSupabase {
   static const String transactionsTable = 'transactions';
   static const String goalsTable = 'goals';
   static const String budgetLimitsTable = 'budget_limits';
+  static const String recurringRulesTable = 'recurring_rules';
+  static const String billRemindersTable = 'bill_reminders';
 }

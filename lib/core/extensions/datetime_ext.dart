@@ -11,6 +11,9 @@ extension DateTimeExt on DateTime {
   /// "Jan 15"
   String get shortDate => DateFormat('MMM d').format(this);
 
+  /// "Jan 15, 2026"
+  String get monthDayYear => DateFormat('MMM d, yyyy').format(this);
+
   /// "Wednesday, Jan 15"
   String get longDate => DateFormat('EEEE, MMM d').format(this);
 

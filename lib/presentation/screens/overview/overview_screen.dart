@@ -10,9 +10,11 @@ import '../../../domain/entities/category_entity.dart';
 import '../../providers/account_provider.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/budget_limit_provider.dart';
+import '../../providers/bill_reminder_provider.dart';
 import '../../providers/category_provider.dart';
 import '../../providers/group_provider.dart';
 import '../../providers/goal_provider.dart';
+import '../../providers/recurring_rule_provider.dart';
 import '../../providers/theme_provider.dart';
 import '../../providers/transaction_provider.dart';
 import '../../widgets/charts/donut_chart.dart';
@@ -20,6 +22,7 @@ import '../../widgets/common/animated_mascot.dart';
 import '../../widgets/common/editorial.dart';
 import '../../widgets/common/themed_backdrop.dart';
 import '../../widgets/home/accounts_summary_card.dart';
+import '../../widgets/home/bill_reminders_card.dart';
 import '../../widgets/home/goals_card.dart';
 import '../../widgets/home/memory_timeline_section.dart';
 import '../../widgets/transaction/transaction_tile.dart';
@@ -40,6 +43,10 @@ class _OverviewScreenState extends ConsumerState<OverviewScreen> {
   void initState() {
     super.initState();
     _scrollController.addListener(_onScroll);
+    Future.microtask(() async {
+      await ref.read(recurringRulesProvider.notifier).generateCatchUp();
+      await ref.read(billRemindersProvider.notifier).load();
+    });
   }
 
   @override
@@ -302,6 +309,8 @@ class _OverviewScreenState extends ConsumerState<OverviewScreen> {
               const SliverToBoxAdapter(child: AccountsSummaryCard()),
               const SliverToBoxAdapter(child: SizedBox(height: 12)),
               const SliverToBoxAdapter(child: GoalsCard()),
+              const SliverToBoxAdapter(child: SizedBox(height: 8)),
+              const SliverToBoxAdapter(child: BillRemindersCard()),
               SliverToBoxAdapter(
                 child: EditorialCard(
                   margin: const EdgeInsets.symmetric(

@@ -1,5 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:uuid/uuid.dart';
+import '../../data/repositories/recurring_rule_repository.dart';
 import '../../data/repositories/transaction_repository.dart';
 import '../../data/models/transaction_model.dart';
 import '../../domain/enums/transaction_type.dart';
@@ -31,28 +32,20 @@ final monthlyTransactionsProvider =
       final groupIds = ref.watch(groupIdsProvider);
       final selectedMonth = ref.watch(selectedMonthProvider);
       final repo = ref.read(transactionRepositoryProvider);
-      return TransactionsNotifier(
-        repo,
-        userId,
-        selectedMonth,
-        groupIds,
-      );
+      return TransactionsNotifier(repo, userId, selectedMonth, groupIds);
     });
 
 class TransactionsNotifier
     extends StateNotifier<AsyncValue<List<TransactionModel>>> {
   final TransactionRepository _repo;
+  final RecurringRuleRepository _recurringRepo = RecurringRuleRepository();
   final String? _userId;
   final DateTime _month;
   final List<String> _groupIds;
   static const _uuid = Uuid();
 
-  TransactionsNotifier(
-    this._repo,
-    this._userId,
-    this._month,
-    this._groupIds,
-  ) : super(const AsyncValue.loading()) {
+  TransactionsNotifier(this._repo, this._userId, this._month, this._groupIds)
+    : super(const AsyncValue.loading()) {
     if (_userId != null) load();
   }
 
@@ -60,6 +53,11 @@ class TransactionsNotifier
     if (_userId == null) return;
     state = const AsyncValue.loading();
     try {
+      await _recurringRepo.generateDueTransactions(
+        userId: _userId,
+        groupIds: _groupIds,
+        until: DateTime.now(),
+      );
       final from = DateTime(_month.year, _month.month, 1);
       final to = DateTime(_month.year, _month.month + 1, 0, 23, 59, 59);
       final txns = await _repo.getForUser(

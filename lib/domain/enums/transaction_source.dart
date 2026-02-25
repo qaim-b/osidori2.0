@@ -2,7 +2,8 @@
 /// Architecture is ready for future bank integrations.
 enum TransactionSource {
   manual,
-  sync;
+  sync,
+  recurring;
 
   String get label {
     switch (this) {
@@ -10,6 +11,8 @@ enum TransactionSource {
         return 'Manual';
       case TransactionSource.sync:
         return 'Auto-Synced';
+      case TransactionSource.recurring:
+        return 'Recurring';
     }
   }
 

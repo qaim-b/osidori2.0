@@ -27,6 +27,8 @@ class TransactionEntity implements Comparable<TransactionEntity> {
   final String ownerUserId;
   final String? groupId;
   final TransactionSource source;
+  final String? recurringRuleId;
+  final DateTime? recurrenceOccurrenceDate;
   final DateTime createdAt;
 
   const TransactionEntity({
@@ -46,6 +48,8 @@ class TransactionEntity implements Comparable<TransactionEntity> {
     required this.ownerUserId,
     this.groupId,
     this.source = TransactionSource.manual,
+    this.recurringRuleId,
+    this.recurrenceOccurrenceDate,
     required this.createdAt,
   });
 
@@ -85,6 +89,8 @@ class TransactionEntity implements Comparable<TransactionEntity> {
     String? ownerUserId,
     String? groupId,
     TransactionSource? source,
+    String? recurringRuleId,
+    DateTime? recurrenceOccurrenceDate,
     DateTime? createdAt,
   }) {
     return TransactionEntity(
@@ -106,6 +112,9 @@ class TransactionEntity implements Comparable<TransactionEntity> {
       ownerUserId: ownerUserId ?? this.ownerUserId,
       groupId: groupId ?? this.groupId,
       source: source ?? this.source,
+      recurringRuleId: recurringRuleId ?? this.recurringRuleId,
+      recurrenceOccurrenceDate:
+          recurrenceOccurrenceDate ?? this.recurrenceOccurrenceDate,
       createdAt: createdAt ?? this.createdAt,
     );
   }

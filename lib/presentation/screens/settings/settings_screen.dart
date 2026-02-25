@@ -59,425 +59,441 @@ class SettingsScreen extends ConsumerWidget {
         child: ListView(
           padding: const EdgeInsets.all(16),
           children: [
-          EditorialCard(
-            child: Padding(
-              padding: const EdgeInsets.all(20),
-              child: Row(
+            EditorialCard(
+              child: Padding(
+                padding: const EdgeInsets.all(20),
+                child: Row(
+                  children: [
+                    CircleAvatar(
+                      radius: 28,
+                      backgroundColor: AppColors.primary.withValues(
+                        alpha: 0.16,
+                      ),
+                      backgroundImage: avatarProvider,
+                      child: avatarProvider == null
+                          ? SvgPicture.asset(
+                              roleColors.mascotImage,
+                              width: 32,
+                              height: 32,
+                              fit: BoxFit.contain,
+                            )
+                          : null,
+                    ),
+                    const SizedBox(width: 16),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            user?.name ?? 'Guest',
+                            style: Theme.of(context).textTheme.titleLarge,
+                          ),
+                          const SizedBox(height: 2),
+                          Text(
+                            user?.email ?? '',
+                            style: Theme.of(context).textTheme.bodyMedium,
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            EditorialCard(
+              child: Padding(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 8,
+                ),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: OutlinedButton.icon(
+                        onPressed: () => _pickAvatar(context, ref),
+                        icon: const Icon(Icons.photo_library_rounded),
+                        label: const Text('Set Profile Photo'),
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    OutlinedButton(
+                      onPressed: () async {
+                        await ref
+                            .read(authStateProvider.notifier)
+                            .clearAvatar();
+                      },
+                      child: const Text('Reset'),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            const SizedBox(height: 16),
+            const SectionLabel(text: 'General'),
+            EditorialCard(
+              child: Column(
                 children: [
-                  CircleAvatar(
-                    radius: 28,
-                    backgroundColor: AppColors.primary.withValues(alpha: 0.16),
-                    backgroundImage: avatarProvider,
-                    child: avatarProvider == null
-                        ? SvgPicture.asset(
-                            roleColors.mascotImage,
-                            width: 32,
-                            height: 32,
-                            fit: BoxFit.contain,
-                          )
-                        : null,
+                  _SettingsTile(
+                    label: 'Group Management',
+                    subtitle: 'Connect partner and check sync health',
+                    icon: Icons.group_rounded,
+                    onTap: () => context.push('/settings/group-management'),
                   ),
-                  const SizedBox(width: 16),
-                  Expanded(
+                  const Divider(height: 1, indent: 56),
+                  _SettingsTile(
+                    label: 'Group Status',
+                    subtitle: 'Active group, health, shared activity',
+                    icon: Icons.hub_rounded,
+                    onTap: () => context.push('/settings/group-status'),
+                  ),
+                  const Divider(height: 1, indent: 56),
+                  _SettingsTile(
+                    label: 'Shared Goals',
+                    subtitle: 'Add and manage up to 3 goals',
+                    icon: Icons.flag_circle_rounded,
+                    onTap: () => context.push('/settings/goals'),
+                  ),
+                  const Divider(height: 1, indent: 56),
+                  _SettingsTile(
+                    label: 'Automation',
+                    subtitle: 'Recurring transactions and bill reminders',
+                    icon: Icons.autorenew_rounded,
+                    onTap: () => context.push('/settings/automation'),
+                  ),
+                  const Divider(height: 1, indent: 56),
+                  _SettingsTile(
+                    label: 'Currency',
+                    subtitle:
+                        ref
+                            .watch(authStateProvider)
+                            .valueOrNull
+                            ?.preferredCurrency ??
+                        AppConstants.defaultCurrency,
+                    icon: Icons.currency_yen_rounded,
+                    onTap: () => _pickCurrency(context, ref),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 16),
+            const SectionLabel(text: 'Appearance'),
+            EditorialCard(
+              child: Padding(
+                padding: const EdgeInsets.all(12),
+                child: Wrap(
+                  spacing: 8,
+                  runSpacing: 8,
+                  children: AppThemePreset.values.map((preset) {
+                    final data = themePresetMap[preset]!;
+                    return ChoiceChip(
+                      label: Text(data.label),
+                      selected: activePreset == preset,
+                      onSelected: (_) {
+                        ref.read(themePresetProvider.notifier).state = preset;
+                      },
+                    );
+                  }).toList(),
+                ),
+              ),
+            ),
+            const SizedBox(height: 16),
+            const SectionLabel(text: 'Group Status'),
+            EditorialCard(
+              child: groupsAsync.when(
+                data: (groups) {
+                  if (groups.isEmpty) {
+                    return const ListTile(
+                      leading: Icon(Icons.link_off_rounded),
+                      title: Text('No linked group yet'),
+                      subtitle: Text(
+                        'Open Group Management and connect your partner.',
+                      ),
+                    );
+                  }
+                  final selectedId = activeGroupId ?? groups.first.id;
+                  return Padding(
+                    padding: const EdgeInsets.all(12),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          user?.name ?? 'Guest',
-                          style: Theme.of(context).textTheme.titleLarge,
+                          'Connected groups: ${groups.length}',
+                          style: const TextStyle(fontWeight: FontWeight.w700),
                         ),
-                        const SizedBox(height: 2),
-                        Text(
-                          user?.email ?? '',
-                          style: Theme.of(context).textTheme.bodyMedium,
+                        const SizedBox(height: 8),
+                        Wrap(
+                          spacing: 8,
+                          runSpacing: 8,
+                          children: groups.map((g) {
+                            final isActive = g.id == selectedId;
+                            return ChoiceChip(
+                              label: Text('${g.name} (${g.memberCount})'),
+                              selected: isActive,
+                              onSelected: (_) {
+                                ref
+                                    .read(activeGroupIdStateProvider.notifier)
+                                    .state = g
+                                    .id;
+                              },
+                            );
+                          }).toList(),
+                        ),
+                        const SizedBox(height: 10),
+                        ...groups.where((g) => g.id == selectedId).map((group) {
+                          final short = group.id.length > 8
+                              ? group.id.substring(0, 8)
+                              : group.id;
+                          return Text(
+                            'Active group id: $short\nMembers: ${group.memberCount}',
+                            style: const TextStyle(fontSize: 12),
+                          );
+                        }),
+                      ],
+                    ),
+                  );
+                },
+                loading: () => const Padding(
+                  padding: EdgeInsets.all(16),
+                  child: Center(child: CircularProgressIndicator()),
+                ),
+                error: (e, _) => ListTile(title: Text('Error: $e')),
+              ),
+            ),
+            const SizedBox(height: 16),
+            const SectionLabel(text: 'Transparency This Month'),
+            EditorialCard(
+              child: Padding(
+                padding: const EdgeInsets.all(12),
+                child: Column(
+                  children: [
+                    Row(
+                      children: [
+                        Expanded(
+                          child: _StatBox(
+                            label: 'Shared',
+                            value: '${sharedTxns.length}',
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: _StatBox(
+                            label: 'You',
+                            value: '${yourTxns.length}',
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: _StatBox(
+                            label: 'Partner',
+                            value: '${partnerTxns.length}',
+                          ),
                         ),
                       ],
                     ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-          EditorialCard(
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-              child: Row(
-                children: [
-                  Expanded(
-                    child: OutlinedButton.icon(
-                      onPressed: () => _pickAvatar(context, ref),
-                      icon: const Icon(Icons.photo_library_rounded),
-                      label: const Text('Set Profile Photo'),
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                  OutlinedButton(
-                    onPressed: () async {
-                      await ref.read(authStateProvider.notifier).clearAvatar();
-                    },
-                    child: const Text('Reset'),
-                  ),
-                ],
-              ),
-            ),
-          ),
-          const SizedBox(height: 16),
-          const SectionLabel(text: 'General'),
-          EditorialCard(
-            child: Column(
-              children: [
-                _SettingsTile(
-                  label: 'Group Management',
-                  subtitle: 'Connect partner and check sync health',
-                  icon: Icons.group_rounded,
-                  onTap: () => context.push('/settings/group-management'),
-                ),
-                const Divider(height: 1, indent: 56),
-                _SettingsTile(
-                  label: 'Group Status',
-                  subtitle: 'Active group, health, shared activity',
-                  icon: Icons.hub_rounded,
-                  onTap: () => context.push('/settings/group-status'),
-                ),
-                const Divider(height: 1, indent: 56),
-                _SettingsTile(
-                  label: 'Shared Goals',
-                  subtitle: 'Add and manage up to 3 goals',
-                  icon: Icons.flag_circle_rounded,
-                  onTap: () => context.push('/settings/goals'),
-                ),
-                const Divider(height: 1, indent: 56),
-                _SettingsTile(
-                  label: 'Currency',
-                  subtitle:
-                      ref
-                          .watch(authStateProvider)
-                          .valueOrNull
-                          ?.preferredCurrency ??
-                      AppConstants.defaultCurrency,
-                  icon: Icons.currency_yen_rounded,
-                  onTap: () => _pickCurrency(context, ref),
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(height: 16),
-          const SectionLabel(text: 'Appearance'),
-          EditorialCard(
-            child: Padding(
-              padding: const EdgeInsets.all(12),
-              child: Wrap(
-                spacing: 8,
-                runSpacing: 8,
-                children: AppThemePreset.values.map((preset) {
-                  final data = themePresetMap[preset]!;
-                  return ChoiceChip(
-                    label: Text(data.label),
-                    selected: activePreset == preset,
-                    onSelected: (_) {
-                      ref.read(themePresetProvider.notifier).state = preset;
-                    },
-                  );
-                }).toList(),
-              ),
-            ),
-          ),
-          const SizedBox(height: 16),
-          const SectionLabel(text: 'Group Status'),
-          EditorialCard(
-            child: groupsAsync.when(
-              data: (groups) {
-                if (groups.isEmpty) {
-                  return const ListTile(
-                    leading: Icon(Icons.link_off_rounded),
-                    title: Text('No linked group yet'),
-                    subtitle: Text(
-                      'Open Group Management and connect your partner.',
-                    ),
-                  );
-                }
-                final selectedId = activeGroupId ?? groups.first.id;
-                return Padding(
-                  padding: const EdgeInsets.all(12),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'Connected groups: ${groups.length}',
-                        style: const TextStyle(fontWeight: FontWeight.w700),
+                    const SizedBox(height: 10),
+                    if (partnerTxns.isEmpty)
+                      Container(
+                        width: double.infinity,
+                        padding: const EdgeInsets.all(10),
+                        decoration: BoxDecoration(
+                          color: Colors.orange.withValues(alpha: 0.08),
+                          borderRadius: BorderRadius.circular(10),
+                          border: Border.all(
+                            color: Colors.orange.withValues(alpha: 0.25),
+                          ),
+                        ),
+                        child: const Text(
+                          'No partner transactions visible this month. If your partner already added records, run Group Repair below on both devices.',
+                          style: TextStyle(fontSize: 12),
+                        ),
                       ),
-                      const SizedBox(height: 8),
-                      Wrap(
-                        spacing: 8,
-                        runSpacing: 8,
-                        children: groups.map((g) {
-                          final isActive = g.id == selectedId;
-                          return ChoiceChip(
-                            label: Text('${g.name} (${g.memberCount})'),
-                            selected: isActive,
-                            onSelected: (_) {
-                              ref
-                                      .read(activeGroupIdStateProvider.notifier)
-                                      .state =
-                                  g.id;
-                            },
-                          );
-                        }).toList(),
-                      ),
-                      const SizedBox(height: 10),
-                      ...groups.where((g) => g.id == selectedId).map((group) {
-                        final short = group.id.length > 8
-                            ? group.id.substring(0, 8)
-                            : group.id;
-                        return Text(
-                          'Active group id: $short\nMembers: ${group.memberCount}',
-                          style: const TextStyle(fontSize: 12),
-                        );
-                      }),
-                    ],
-                  ),
-                );
-              },
-              loading: () => const Padding(
-                padding: EdgeInsets.all(16),
-                child: Center(child: CircularProgressIndicator()),
+                  ],
+                ),
               ),
-              error: (e, _) => ListTile(title: Text('Error: $e')),
             ),
-          ),
-          const SizedBox(height: 16),
-          const SectionLabel(text: 'Transparency This Month'),
-          EditorialCard(
-            child: Padding(
-              padding: const EdgeInsets.all(12),
+            const SizedBox(height: 16),
+            const SectionLabel(text: 'Group Repair'),
+            EditorialCard(
+              child: ListTile(
+                leading: const Icon(Icons.build_circle_outlined),
+                title: const Text('Repair legacy shared records'),
+                subtitle: const Text(
+                  'Assign your shared rows without group_id to the active group',
+                ),
+                trailing: FilledButton(
+                  onPressed: activeGroupId == null
+                      ? null
+                      : () async {
+                          final messenger = ScaffoldMessenger.of(context);
+                          try {
+                            final userId = ref.read(currentUserIdProvider);
+                            final groupId = ref.read(activeGroupIdProvider);
+                            if (userId == null || groupId == null) return;
+
+                            final txnCount = await ref
+                                .read(transactionRepositoryProvider)
+                                .assignUngroupedSharedToGroup(
+                                  userId: userId,
+                                  groupId: groupId,
+                                );
+                            final accCount = await ref
+                                .read(accountRepositoryProvider)
+                                .assignUngroupedSharedToGroup(
+                                  userId: userId,
+                                  groupId: groupId,
+                                );
+
+                            await ref
+                                .read(monthlyTransactionsProvider.notifier)
+                                .load();
+                            await ref.read(accountsProvider.notifier).load();
+
+                            messenger.showSnackBar(
+                              SnackBar(
+                                content: Text(
+                                  'Repair completed: $txnCount transactions, $accCount accounts updated.',
+                                ),
+                              ),
+                            );
+                          } catch (e) {
+                            messenger.showSnackBar(
+                              SnackBar(content: Text('Repair failed: $e')),
+                            );
+                          }
+                        },
+                  child: const Text('Run Repair'),
+                ),
+              ),
+            ),
+            const SectionLabel(text: 'Data'),
+            EditorialCard(
               child: Column(
                 children: [
-                  Row(
-                    children: [
-                      Expanded(
-                        child: _StatBox(
-                          label: 'Shared',
-                          value: '${sharedTxns.length}',
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-                      Expanded(
-                        child: _StatBox(
-                          label: 'You',
-                          value: '${yourTxns.length}',
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-                      Expanded(
-                        child: _StatBox(
-                          label: 'Partner',
-                          value: '${partnerTxns.length}',
-                        ),
-                      ),
-                    ],
+                  _SettingsTile(
+                    label: 'Export CSV',
+                    subtitle: 'Download this month transactions',
+                    icon: Icons.download_rounded,
+                    onTap: () async {
+                      final messenger = ScaffoldMessenger.of(context);
+                      final primaryColor = Theme.of(
+                        context,
+                      ).colorScheme.primary;
+                      try {
+                        final selectedMonth = ref.read(selectedMonthProvider);
+                        final repo = ref.read(transactionRepositoryProvider);
+                        final userId = ref.read(currentUserIdProvider);
+                        if (userId == null) return;
+
+                        final txns = await repo.getForMonth(
+                          userId: userId,
+                          year: selectedMonth.year,
+                          month: selectedMonth.month,
+                          groupIds: ref.read(groupIdsProvider),
+                        );
+
+                        final categories =
+                            ref.read(categoriesProvider).valueOrNull ?? [];
+                        final catNameMap = <String, String>{
+                          for (final c in categories) c.id: c.shortLabel,
+                        };
+
+                        final path = await CsvExporter.exportTransactions(
+                          transactions: txns,
+                          categoryNames: catNameMap,
+                          year: selectedMonth.year,
+                          month: selectedMonth.month,
+                        );
+                        await CsvExporter.shareFile(path);
+
+                        messenger.showSnackBar(
+                          SnackBar(
+                            content: const Text('CSV exported'),
+                            backgroundColor: primaryColor,
+                          ),
+                        );
+                      } catch (e) {
+                        messenger.showSnackBar(
+                          SnackBar(content: Text('Export error: $e')),
+                        );
+                      }
+                    },
                   ),
-                  const SizedBox(height: 10),
-                  if (partnerTxns.isEmpty)
-                    Container(
-                      width: double.infinity,
-                      padding: const EdgeInsets.all(10),
-                      decoration: BoxDecoration(
-                        color: Colors.orange.withValues(alpha: 0.08),
-                        borderRadius: BorderRadius.circular(10),
-                        border: Border.all(
-                          color: Colors.orange.withValues(alpha: 0.25),
-                        ),
-                      ),
-                      child: const Text(
-                        'No partner transactions visible this month. If your partner already added records, run Group Repair below on both devices.',
-                        style: TextStyle(fontSize: 12),
-                      ),
-                    ),
+                  const Divider(height: 1, indent: 56),
+                  _SettingsTile(
+                    label: 'Manage Categories',
+                    subtitle: 'Enable, disable, edit categories',
+                    icon: Icons.category_rounded,
+                    onTap: () => context.push('/categories'),
+                  ),
+                  const Divider(height: 1, indent: 56),
+                  _SettingsTile(
+                    label: 'Manage Accounts',
+                    subtitle: 'Edit or delete bank/wallet accounts',
+                    icon: Icons.account_balance_wallet_rounded,
+                    onTap: () => context.push('/accounts'),
+                  ),
                 ],
               ),
             ),
-          ),
-          const SizedBox(height: 16),
-          const SectionLabel(text: 'Group Repair'),
-          EditorialCard(
-            child: ListTile(
-              leading: const Icon(Icons.build_circle_outlined),
-              title: const Text('Repair legacy shared records'),
-              subtitle: const Text(
-                'Assign your shared rows without group_id to the active group',
-              ),
-              trailing: FilledButton(
-                onPressed: activeGroupId == null
-                    ? null
-                    : () async {
-                        final messenger = ScaffoldMessenger.of(context);
-                        try {
-                          final userId = ref.read(currentUserIdProvider);
-                          final groupId = ref.read(activeGroupIdProvider);
-                          if (userId == null || groupId == null) return;
-
-                          final txnCount = await ref
-                              .read(transactionRepositoryProvider)
-                              .assignUngroupedSharedToGroup(
-                                userId: userId,
-                                groupId: groupId,
-                              );
-                          final accCount = await ref
-                              .read(accountRepositoryProvider)
-                              .assignUngroupedSharedToGroup(
-                                userId: userId,
-                                groupId: groupId,
-                              );
-
-                          await ref
-                              .read(monthlyTransactionsProvider.notifier)
-                              .load();
-                          await ref.read(accountsProvider.notifier).load();
-
-                          messenger.showSnackBar(
-                            SnackBar(
-                              content: Text(
-                                'Repair completed: $txnCount transactions, $accCount accounts updated.',
-                              ),
-                            ),
-                          );
-                        } catch (e) {
-                          messenger.showSnackBar(
-                            SnackBar(content: Text('Repair failed: $e')),
-                          );
-                        }
-                      },
-                child: const Text('Run Repair'),
+            const SizedBox(height: 16),
+            const SectionLabel(text: 'Shared Activity'),
+            EditorialCard(
+              child: _SharedActivityList(
+                sharedTxns: sharedTxns,
+                accountNameById: accountNameById,
+                categoryNameById: categoryNameById,
               ),
             ),
-          ),
-          const SectionLabel(text: 'Data'),
-          EditorialCard(
-            child: Column(
-              children: [
-                _SettingsTile(
-                  label: 'Export CSV',
-                  subtitle: 'Download this month transactions',
-                  icon: Icons.download_rounded,
-                  onTap: () async {
-                    final messenger = ScaffoldMessenger.of(context);
-                    final primaryColor = Theme.of(context).colorScheme.primary;
-                    try {
-                      final selectedMonth = ref.read(selectedMonthProvider);
-                      final repo = ref.read(transactionRepositoryProvider);
-                      final userId = ref.read(currentUserIdProvider);
-                      if (userId == null) return;
-
-                      final txns = await repo.getForMonth(
-                        userId: userId,
-                        year: selectedMonth.year,
-                        month: selectedMonth.month,
-                        groupIds: ref.read(groupIdsProvider),
-                      );
-
-                      final categories =
-                          ref.read(categoriesProvider).valueOrNull ?? [];
-                      final catNameMap = <String, String>{
-                        for (final c in categories) c.id: c.shortLabel,
-                      };
-
-                      final path = await CsvExporter.exportTransactions(
-                        transactions: txns,
-                        categoryNames: catNameMap,
-                        year: selectedMonth.year,
-                        month: selectedMonth.month,
-                      );
-                      await CsvExporter.shareFile(path);
-
-                      messenger.showSnackBar(
-                        SnackBar(
-                          content: const Text('CSV exported'),
-                          backgroundColor: primaryColor,
+            const SizedBox(height: 16),
+            const SectionLabel(text: 'About'),
+            EditorialCard(
+              child: _SettingsTile(
+                label: AppConstants.appName,
+                subtitle: 'v1.0.0',
+                icon: Icons.info_outline_rounded,
+                onTap: _showAbout(context),
+              ),
+            ),
+            const SizedBox(height: 24),
+            SizedBox(
+              width: double.infinity,
+              child: OutlinedButton.icon(
+                onPressed: () async {
+                  final confirmed = await showDialog<bool>(
+                    context: context,
+                    builder: (ctx) => AlertDialog(
+                      title: const Text('Sign Out?'),
+                      content: const Text('Your data stays safe in Supabase.'),
+                      actions: [
+                        TextButton(
+                          onPressed: () => Navigator.pop(ctx, false),
+                          child: const Text('Cancel'),
                         ),
-                      );
-                    } catch (e) {
-                      messenger.showSnackBar(
-                        SnackBar(content: Text('Export error: $e')),
-                      );
-                    }
-                  },
-                ),
-                const Divider(height: 1, indent: 56),
-                _SettingsTile(
-                  label: 'Manage Categories',
-                  subtitle: 'Enable, disable, edit categories',
-                  icon: Icons.category_rounded,
-                  onTap: () => context.push('/categories'),
-                ),
-                const Divider(height: 1, indent: 56),
-                _SettingsTile(
-                  label: 'Manage Accounts',
-                  subtitle: 'Edit or delete bank/wallet accounts',
-                  icon: Icons.account_balance_wallet_rounded,
-                  onTap: () => context.push('/accounts'),
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(height: 16),
-          const SectionLabel(text: 'Shared Activity'),
-          EditorialCard(
-            child: _SharedActivityList(
-              sharedTxns: sharedTxns,
-              accountNameById: accountNameById,
-              categoryNameById: categoryNameById,
-            ),
-          ),
-          const SizedBox(height: 16),
-          const SectionLabel(text: 'About'),
-          EditorialCard(
-            child: _SettingsTile(
-              label: AppConstants.appName,
-              subtitle: 'v1.0.0',
-              icon: Icons.info_outline_rounded,
-              onTap: _showAbout(context),
-            ),
-          ),
-          const SizedBox(height: 24),
-          SizedBox(
-            width: double.infinity,
-            child: OutlinedButton.icon(
-              onPressed: () async {
-                final confirmed = await showDialog<bool>(
-                  context: context,
-                  builder: (ctx) => AlertDialog(
-                    title: const Text('Sign Out?'),
-                    content: const Text('Your data stays safe in Supabase.'),
-                    actions: [
-                      TextButton(
-                        onPressed: () => Navigator.pop(ctx, false),
-                        child: const Text('Cancel'),
-                      ),
-                      TextButton(
-                        onPressed: () => Navigator.pop(ctx, true),
-                        child: const Text('Sign Out'),
-                      ),
-                    ],
-                  ),
-                );
+                        TextButton(
+                          onPressed: () => Navigator.pop(ctx, true),
+                          child: const Text('Sign Out'),
+                        ),
+                      ],
+                    ),
+                  );
 
-                if (confirmed == true) {
-                  await ref.read(authStateProvider.notifier).signOut();
-                  if (context.mounted) context.go('/login');
-                }
-              },
-              icon: const Icon(Icons.logout, color: AppColors.expense),
-              label: const Text(
-                'Sign Out',
-                style: TextStyle(color: AppColors.expense),
-              ),
-              style: OutlinedButton.styleFrom(
-                side: const BorderSide(color: AppColors.expense),
-                padding: const EdgeInsets.symmetric(vertical: 14),
+                  if (confirmed == true) {
+                    await ref.read(authStateProvider.notifier).signOut();
+                    if (context.mounted) context.go('/login');
+                  }
+                },
+                icon: const Icon(Icons.logout, color: AppColors.expense),
+                label: const Text(
+                  'Sign Out',
+                  style: TextStyle(color: AppColors.expense),
+                ),
+                style: OutlinedButton.styleFrom(
+                  side: const BorderSide(color: AppColors.expense),
+                  padding: const EdgeInsets.symmetric(vertical: 14),
+                ),
               ),
             ),
-          ),
-          const SizedBox(height: 40),
+            const SizedBox(height: 40),
           ],
         ),
       ),

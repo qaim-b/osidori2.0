@@ -16,6 +16,7 @@ import '../screens/overview/overview_screen.dart';
 import '../screens/settings/manage_goals_screen.dart';
 import '../screens/settings/group_management_screen.dart';
 import '../screens/settings/group_status_screen.dart';
+import '../screens/settings/automation_screen.dart';
 import '../screens/settings/settings_screen.dart';
 import '../screens/summary/set_budget_limit_screen.dart';
 import '../screens/summary/summary_screen.dart';
@@ -128,6 +129,10 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: '/settings/group-status',
         builder: (context, state) => const GroupStatusScreen(),
+      ),
+      GoRoute(
+        path: '/settings/automation',
+        builder: (context, state) => const AutomationScreen(),
       ),
       GoRoute(
         path: '/summary/set-budget',

@@ -21,6 +21,8 @@ class TransactionModel extends TransactionEntity {
     required super.ownerUserId,
     super.groupId,
     super.source,
+    super.recurringRuleId,
+    super.recurrenceOccurrenceDate,
     required super.createdAt,
   });
 
@@ -45,6 +47,10 @@ class TransactionModel extends TransactionEntity {
       source: TransactionSource.fromString(
         json['source'] as String? ?? 'manual',
       ),
+      recurringRuleId: json['recurring_rule_id'] as String?,
+      recurrenceOccurrenceDate: json['recurrence_occurrence_date'] == null
+          ? null
+          : DateTime.parse(json['recurrence_occurrence_date'] as String),
       createdAt: DateTime.parse(json['created_at'] as String),
     );
   }
@@ -67,6 +73,8 @@ class TransactionModel extends TransactionEntity {
       'owner_user_id': ownerUserId,
       'group_id': groupId,
       'source': source.name,
+      'recurring_rule_id': recurringRuleId,
+      'recurrence_occurrence_date': recurrenceOccurrenceDate?.toIso8601String(),
       'created_at': createdAt.toIso8601String(),
     };
   }
@@ -89,6 +97,8 @@ class TransactionModel extends TransactionEntity {
       ownerUserId: entity.ownerUserId,
       groupId: entity.groupId,
       source: entity.source,
+      recurringRuleId: entity.recurringRuleId,
+      recurrenceOccurrenceDate: entity.recurrenceOccurrenceDate,
       createdAt: entity.createdAt,
     );
   }
