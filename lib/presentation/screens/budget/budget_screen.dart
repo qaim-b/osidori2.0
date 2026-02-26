@@ -413,14 +413,45 @@ class _BudgetScreenState extends ConsumerState<BudgetScreen> {
                                         cat?.name ?? entry.name,
                                         style: const TextStyle(
                                           fontWeight: FontWeight.w600,
+                                          fontSize: 14,
                                         ),
                                       ),
                                     ),
-                                    Text(
-                                      '${CurrencyFormatter.format(entry.amount)} (${pct.toStringAsFixed(1)}%)',
-                                      style: const TextStyle(
-                                        fontSize: 12.5,
-                                        fontWeight: FontWeight.w600,
+                                    Container(
+                                      width: 128,
+                                      alignment: Alignment.center,
+                                      child: Text(
+                                        CurrencyFormatter.format(entry.amount),
+                                        textAlign: TextAlign.center,
+                                        style: const TextStyle(
+                                          fontSize: 14.8,
+                                          fontWeight: FontWeight.w700,
+                                        ),
+                                      ),
+                                    ),
+                                    const SizedBox(width: 6),
+                                    Container(
+                                      constraints: const BoxConstraints(
+                                        minWidth: 64,
+                                      ),
+                                      padding: const EdgeInsets.symmetric(
+                                        horizontal: 8,
+                                        vertical: 4,
+                                      ),
+                                      decoration: BoxDecoration(
+                                        color: preset.surfaceVariant,
+                                        borderRadius: BorderRadius.circular(
+                                          999,
+                                        ),
+                                      ),
+                                      child: Text(
+                                        '${pct.toStringAsFixed(1)}%',
+                                        textAlign: TextAlign.center,
+                                        style: TextStyle(
+                                          fontSize: 13.4,
+                                          fontWeight: FontWeight.w800,
+                                          color: preset.primary,
+                                        ),
                                       ),
                                     ),
                                     const SizedBox(width: 4),
