@@ -13,6 +13,7 @@ class BillRemindersCard extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final reminders = ref.watch(upcomingBillRemindersProvider);
     final active = reminders.where((r) => r.reminder.isActive).toList();
+    final urgentCount = active.where((r) => r.daysLeft <= 0).length;
 
     return EditorialCard(
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
@@ -27,6 +28,29 @@ class BillRemindersCard extends ConsumerWidget {
                 'Bill Reminders',
                 style: Theme.of(context).textTheme.titleMedium,
               ),
+              const SizedBox(width: 8),
+              if (urgentCount > 0)
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 3,
+                  ),
+                  decoration: BoxDecoration(
+                    color: Colors.red.withValues(alpha: 0.12),
+                    borderRadius: BorderRadius.circular(999),
+                    border: Border.all(
+                      color: Colors.red.withValues(alpha: 0.4),
+                    ),
+                  ),
+                  child: Text(
+                    ' due',
+                    style: const TextStyle(
+                      color: Colors.red,
+                      fontSize: 11,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                ),
               const Spacer(),
               TextButton(
                 onPressed: () => context.push('/settings/automation'),
@@ -52,7 +76,7 @@ class BillRemindersCard extends ConsumerWidget {
                   children: [
                     Expanded(
                       child: Text(
-                        '${r.reminder.title} · ${r.dueDate.monthDayYear}',
+                        '${r.reminder.title} • ${r.dueDate.monthDayYear}',
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                       ),

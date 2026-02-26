@@ -73,8 +73,15 @@ class _AutomationScreenState extends ConsumerState<AutomationScreen>
             _showBillForm(context);
           }
         },
-        icon: const Icon(Icons.add_rounded),
-        label: Text(_tabs.index == 0 ? 'Add Rule' : 'Add Bill'),
+        icon: const Icon(Icons.add_rounded, size: 20),
+        label: Text(
+          _tabs.index == 0 ? 'New Recurring Rule' : 'New Bill Reminder',
+          style: const TextStyle(fontSize: 14.5, fontWeight: FontWeight.w700),
+        ),
+        backgroundColor: Theme.of(context).colorScheme.primary,
+        foregroundColor: Colors.white,
+        elevation: 6,
+        extendedPadding: const EdgeInsets.symmetric(horizontal: 18),
       ),
     );
   }
@@ -655,6 +662,7 @@ class _RecurringTab extends ConsumerWidget {
                 title: Text(r.name),
                 subtitle: Text(
                   '${r.type.name} • ${r.amount.toStringAsFixed(0)} ${r.currency}\n${r.frequency.name} every ${r.intervalCount} • starts ${r.startDate.monthDayYear}',
+                  style: const TextStyle(fontSize: 12.5),
                 ),
                 isThreeLine: true,
                 trailing: Switch(
@@ -757,6 +765,7 @@ class _BillsTab extends ConsumerWidget {
                   title: Text(r.title),
                   subtitle: Text(
                     '${r.dueFrequency.name} every ${r.dueIntervalCount} • anchor ${r.anchorDate.monthDayYear}\nreminders: ${r.reminderDaysBefore.join(',')} days before',
+                    style: const TextStyle(fontSize: 12.5),
                   ),
                   isThreeLine: true,
                   trailing: Switch(

@@ -38,6 +38,7 @@ class _OverviewScreenState extends ConsumerState<OverviewScreen> {
   final ScrollController _scrollController = ScrollController();
   UserModel? _cachedYouProfile;
   UserModel? _cachedPartnerProfile;
+  String? _lastReminderSignal;
 
   @override
   void initState() {
@@ -76,6 +77,7 @@ class _OverviewScreenState extends ConsumerState<OverviewScreen> {
     final transactions = ref.watch(monthlyTransactionsProvider);
     final categories = ref.watch(categoriesProvider);
     final roleColors = ref.watch(roleColorsProvider);
+    final upcomingReminders = ref.watch(upcomingBillRemindersProvider);
     final user = ref.watch(authStateProvider).valueOrNull;
     final memberProfilesAsync = ref.watch(activeGroupMemberProfilesProvider);
     final memberProfiles = memberProfilesAsync.valueOrNull ?? [];
@@ -126,6 +128,34 @@ class _OverviewScreenState extends ConsumerState<OverviewScreen> {
       final key = '$resolvedEmoji $resolvedName';
       breakdownTotals[key] = (breakdownTotals[key] ?? 0) + txn.amount;
       breakdownNames[key] = key;
+    }
+
+    final urgent = upcomingReminders
+        .where((r) => r.reminder.isActive && r.daysLeft <= 0)
+        .toList();
+    if (urgent.isNotEmpty) {
+      final signal = urgent
+          .map((e) => '${e.reminder.id}:${e.daysLeft}')
+          .join('|');
+      if (_lastReminderSignal != signal) {
+        _lastReminderSignal = signal;
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (!mounted) return;
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(
+                urgent.length == 1
+                    ? 'Reminder: ${urgent.first.reminder.title} is due ${urgent.first.daysLeft < 0 ? 'and overdue' : 'today'}.'
+                    : '${urgent.length} reminders are due or overdue.',
+              ),
+              action: SnackBarAction(
+                label: 'Open',
+                onPressed: () => context.push('/settings/automation'),
+              ),
+            ),
+          );
+        });
+      }
     }
 
     return Scaffold(

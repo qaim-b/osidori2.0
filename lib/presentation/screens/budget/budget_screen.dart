@@ -107,20 +107,48 @@ class _BudgetScreenState extends ConsumerState<BudgetScreen> {
               ? 'Category #${txn.categoryDisplayNumberSnapshot}'
               : 'Other');
       resolvedCategoryEmojiMap[txn.categoryId] =
-          resolvedCategoryEmojiMap[txn.categoryId] ?? '??';
+          resolvedCategoryEmojiMap[txn.categoryId] ?? '📦';
     }
 
     final breakdownTotals = <String, double>{};
     final breakdownNames = <String, String>{};
     for (final txn in txns) {
       if (!txn.isExpense) continue;
-      final resolvedName =
-          resolvedCategoryNameMap[txn.categoryId] ?? 'Other';
-      final resolvedEmoji =
-          resolvedCategoryEmojiMap[txn.categoryId] ?? '??';
+      final resolvedName = resolvedCategoryNameMap[txn.categoryId] ?? 'Other';
+      final resolvedEmoji = resolvedCategoryEmojiMap[txn.categoryId] ?? '📦';
       final key = '$resolvedEmoji $resolvedName';
       breakdownTotals[key] = (breakdownTotals[key] ?? 0) + txn.amount;
       breakdownNames[key] = key;
+    }
+
+    final groupedRows = <String, _BudgetRowAggregate>{};
+    for (final entry in categoryTotals.entries) {
+      final categoryId = entry.key;
+      final name =
+          resolvedCategoryNameMap[categoryId] ??
+          catSnapshotNameMap[categoryId] ??
+          'Other';
+      final emoji =
+          resolvedCategoryEmojiMap[categoryId] ??
+          catSnapshotEmojiMap[categoryId] ??
+          '📦';
+      final groupKey = '$emoji::$name';
+      final current = groupedRows[groupKey];
+      final budgetLimit = budgetLimitMap[categoryId] ?? 0;
+      if (current == null) {
+        groupedRows[groupKey] = _BudgetRowAggregate(
+          representativeCategoryId: categoryId,
+          name: name,
+          emoji: emoji,
+          amount: entry.value,
+          budgetLimit: budgetLimit,
+        );
+      } else {
+        groupedRows[groupKey] = current.copyWith(
+          amount: current.amount + entry.value,
+          budgetLimit: current.budgetLimit + budgetLimit,
+        );
+      }
     }
 
     return Scaffold(
@@ -142,12 +170,13 @@ class _BudgetScreenState extends ConsumerState<BudgetScreen> {
                     IconButton(
                       icon: const Icon(Icons.chevron_left),
                       onPressed: () {
-                        ref.read(selectedMonthProvider.notifier).state =
-                            DateTime(
-                              selectedMonth.year,
-                              selectedMonth.month - 1,
-                              1,
-                            );
+                        ref
+                            .read(selectedMonthProvider.notifier)
+                            .state = DateTime(
+                          selectedMonth.year,
+                          selectedMonth.month - 1,
+                          1,
+                        );
                       },
                     ),
                     Text(
@@ -160,12 +189,13 @@ class _BudgetScreenState extends ConsumerState<BudgetScreen> {
                     IconButton(
                       icon: const Icon(Icons.chevron_right),
                       onPressed: () {
-                        ref.read(selectedMonthProvider.notifier).state =
-                            DateTime(
-                              selectedMonth.year,
-                              selectedMonth.month + 1,
-                              1,
-                            );
+                        ref
+                            .read(selectedMonthProvider.notifier)
+                            .state = DateTime(
+                          selectedMonth.year,
+                          selectedMonth.month + 1,
+                          1,
+                        );
                       },
                     ),
                   ],
@@ -324,12 +354,12 @@ class _BudgetScreenState extends ConsumerState<BudgetScreen> {
               ),
               Builder(
                 builder: (context) {
-                  final total = categoryTotals.values.fold<double>(
+                  final total = groupedRows.values.fold<double>(
                     0,
-                    (sum, v) => sum + v,
+                    (sum, v) => sum + v.amount,
                   );
-                  final sorted = categoryTotals.entries.toList()
-                    ..sort((a, b) => b.value.compareTo(a.value));
+                  final sorted = groupedRows.values.toList()
+                    ..sort((a, b) => b.amount.compareTo(a.amount));
 
                   if (sorted.isEmpty) {
                     return const SliverToBoxAdapter(
@@ -343,12 +373,15 @@ class _BudgetScreenState extends ConsumerState<BudgetScreen> {
                   return SliverList(
                     delegate: SliverChildBuilderDelegate((context, index) {
                       final entry = sorted[index];
-                      final cat = catEntityMap[entry.key];
-                      final pct = total > 0 ? (entry.value / total * 100) : 0.0;
-                      final budgetLimit = budgetLimitMap[entry.key];
-                      final limitProgress =
-                          budgetLimit != null && budgetLimit > 0
-                          ? (entry.value / budgetLimit).clamp(0.0, 1.5)
+                      final cat = catEntityMap[entry.representativeCategoryId];
+                      final pct = total > 0
+                          ? (entry.amount / total * 100)
+                          : 0.0;
+                      final budgetLimit = entry.budgetLimit > 0
+                          ? entry.budgetLimit
+                          : null;
+                      final limitProgress = budgetLimit != null
+                          ? (entry.amount / budgetLimit).clamp(0.0, 1.5)
                           : null;
 
                       return EditorialCard(
@@ -358,8 +391,9 @@ class _BudgetScreenState extends ConsumerState<BudgetScreen> {
                         ),
                         child: InkWell(
                           borderRadius: BorderRadius.circular(12),
-                          onTap: () =>
-                              context.push('/budget/category/${entry.key}'),
+                          onTap: () => context.push(
+                            '/budget/category/${entry.representativeCategoryId}',
+                          ),
                           child: Padding(
                             padding: const EdgeInsets.all(12),
                             child: Column(
@@ -369,27 +403,21 @@ class _BudgetScreenState extends ConsumerState<BudgetScreen> {
                                     CircleAvatar(
                                       backgroundColor: preset.surfaceVariant,
                                       child: Text(
-                                        cat?.emoji ??
-                                            resolvedCategoryEmojiMap[entry.key] ??
-                                            catSnapshotEmojiMap[entry.key] ??
-                                            '??',
+                                        cat?.emoji ?? entry.emoji,
                                         style: const TextStyle(fontSize: 16),
                                       ),
                                     ),
                                     const SizedBox(width: 10),
                                     Expanded(
                                       child: Text(
-                                        cat?.name ??
-                                            resolvedCategoryNameMap[entry.key] ??
-                                            catSnapshotNameMap[entry.key] ??
-                                            'Other',
+                                        cat?.name ?? entry.name,
                                         style: const TextStyle(
                                           fontWeight: FontWeight.w600,
                                         ),
                                       ),
                                     ),
                                     Text(
-                                      '${CurrencyFormatter.format(entry.value)}  ${pct.toStringAsFixed(1)}%',
+                                      '${CurrencyFormatter.format(entry.amount)} (${pct.toStringAsFixed(1)}%)',
                                       style: const TextStyle(
                                         fontSize: 12.5,
                                         fontWeight: FontWeight.w600,
@@ -408,9 +436,8 @@ class _BudgetScreenState extends ConsumerState<BudgetScreen> {
                                     borderRadius: BorderRadius.circular(999),
                                     child: LinearProgressIndicator(
                                       minHeight: 6,
-                                      value: limitProgress == null
-                                          ? 0
-                                          : limitProgress.clamp(0.0, 1.0),
+                                      value:
+                                          limitProgress?.clamp(0.0, 1.0) ?? 0,
                                       backgroundColor: theme
                                           .colorScheme
                                           .surfaceContainerHighest,
@@ -447,6 +474,39 @@ class _BudgetScreenState extends ConsumerState<BudgetScreen> {
           ),
         ),
       ),
+    );
+  }
+}
+
+class _BudgetRowAggregate {
+  final String representativeCategoryId;
+  final String name;
+  final String emoji;
+  final double amount;
+  final double budgetLimit;
+
+  const _BudgetRowAggregate({
+    required this.representativeCategoryId,
+    required this.name,
+    required this.emoji,
+    required this.amount,
+    required this.budgetLimit,
+  });
+
+  _BudgetRowAggregate copyWith({
+    String? representativeCategoryId,
+    String? name,
+    String? emoji,
+    double? amount,
+    double? budgetLimit,
+  }) {
+    return _BudgetRowAggregate(
+      representativeCategoryId:
+          representativeCategoryId ?? this.representativeCategoryId,
+      name: name ?? this.name,
+      emoji: emoji ?? this.emoji,
+      amount: amount ?? this.amount,
+      budgetLimit: budgetLimit ?? this.budgetLimit,
     );
   }
 }
