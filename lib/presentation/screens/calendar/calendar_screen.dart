@@ -347,26 +347,42 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
                         ? roleColors.primary.withValues(alpha: 0.1)
                         : Colors.transparent,
                     borderRadius: BorderRadius.circular(8),
-                    border: isToday
+                    border: isSelected
                         ? Border.all(color: roleColors.primary, width: 2)
                         : null,
                   ),
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      Text(
-                        '$day',
-                        style: TextStyle(
-                          fontSize: 13,
-                          fontWeight: isToday
-                              ? FontWeight.w700
-                              : FontWeight.w500,
-                          color: col == 6
-                              ? AppColors.expense
-                              : (col == 5
-                                    ? roleColors.primary
-                                    : AppColors.textPrimary),
-                        ),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Text(
+                            '$day',
+                            style: TextStyle(
+                              fontSize: 13,
+                              fontWeight: isSelected || isToday
+                                  ? FontWeight.w700
+                                  : FontWeight.w500,
+                              color: col == 6
+                                  ? AppColors.expense
+                                  : (col == 5
+                                        ? roleColors.primary
+                                        : AppColors.textPrimary),
+                            ),
+                          ),
+                          if (isToday && !isSelected) ...[
+                            const SizedBox(width: 4),
+                            Container(
+                              width: 5,
+                              height: 5,
+                              decoration: BoxDecoration(
+                                color: roleColors.primary,
+                                shape: BoxShape.circle,
+                              ),
+                            ),
+                          ],
+                        ],
                       ),
                       if (expense > 0)
                         Text(
