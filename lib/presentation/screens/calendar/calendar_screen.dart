@@ -338,8 +338,10 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
                     _selectedDay = isSameSelected ? null : tappedDay;
                   });
                 },
-                child: AnimatedContainer(
-                  duration: AppMotion.normal,
+                child: Container(
+                  key: ValueKey(
+                    'day-cell-${_displayedMonth.year}-${_displayedMonth.month}-$day-${isSelected ? 1 : 0}',
+                  ),
                   height: 64,
                   margin: const EdgeInsets.all(1),
                   decoration: BoxDecoration(
