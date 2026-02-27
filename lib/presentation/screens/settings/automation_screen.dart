@@ -66,28 +66,26 @@ class _AutomationScreenState extends ConsumerState<AutomationScreen>
         ],
       ),
       floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
-      floatingActionButton: SizedBox(
-        width: 248,
-        child: FloatingActionButton.extended(
-          onPressed: () {
-            if (_tabs.index == 0) {
-              _showRecurringForm(context);
-            } else {
-              _showBillForm(context);
-            }
-          },
-          icon: const Icon(Icons.add_rounded, size: 20),
-          label: Text(
-            _tabs.index == 0 ? 'Add Recurring Rule' : 'Add Bill Reminder',
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            style: const TextStyle(fontSize: 13.5, fontWeight: FontWeight.w700),
-          ),
-          backgroundColor: Theme.of(context).colorScheme.primary,
-          foregroundColor: Colors.white,
-          elevation: 6,
-          extendedPadding: const EdgeInsets.symmetric(horizontal: 14),
+      floatingActionButton: FloatingActionButton.extended(
+        onPressed: () {
+          if (_tabs.index == 0) {
+            _showRecurringForm(context);
+          } else {
+            _showBillForm(context);
+          }
+        },
+        icon: const Icon(Icons.add_rounded, size: 20),
+        label: Text(
+          _tabs.index == 0 ? 'Add Rule' : 'Add Bill',
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+          style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w700),
         ),
+        backgroundColor: Theme.of(context).colorScheme.primary,
+        foregroundColor: Colors.white,
+        elevation: 6,
+        extendedPadding: const EdgeInsets.symmetric(horizontal: 18),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
       ),
     );
   }
