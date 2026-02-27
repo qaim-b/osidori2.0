@@ -325,11 +325,17 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
               child: GestureDetector(
                 onTap: () {
                   setState(() {
-                    _selectedDay = DateTime(
+                    final tappedDay = DateTime(
                       _displayedMonth.year,
                       _displayedMonth.month,
                       day,
                     );
+                    final isSameSelected =
+                        _selectedDay != null &&
+                        _selectedDay!.year == tappedDay.year &&
+                        _selectedDay!.month == tappedDay.month &&
+                        _selectedDay!.day == tappedDay.day;
+                    _selectedDay = isSameSelected ? null : tappedDay;
                   });
                 },
                 child: AnimatedContainer(

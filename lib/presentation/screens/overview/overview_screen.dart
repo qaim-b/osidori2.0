@@ -1,3 +1,5 @@
+import 'dart:ui';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -141,19 +143,7 @@ class _OverviewScreenState extends ConsumerState<OverviewScreen> {
         _lastReminderSignal = signal;
         WidgetsBinding.instance.addPostFrameCallback((_) {
           if (!mounted) return;
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(
-                urgent.length == 1
-                    ? 'Reminder: ${urgent.first.reminder.title} is due ${urgent.first.daysLeft < 0 ? 'and overdue' : 'today'}.'
-                    : '${urgent.length} reminders are due or overdue.',
-              ),
-              action: SnackBarAction(
-                label: 'Open',
-                onPressed: () => context.push('/settings/automation'),
-              ),
-            ),
-          );
+          _showReminderOverlay(context, urgent);
         });
       }
     }
@@ -454,6 +444,124 @@ class _OverviewScreenState extends ConsumerState<OverviewScreen> {
           ),
         ),
       ),
+    );
+  }
+
+  void _showReminderOverlay(
+    BuildContext context,
+    List<BillReminderPreview> urgent,
+  ) {
+    showGeneralDialog(
+      context: context,
+      barrierDismissible: true,
+      barrierLabel: 'reminder-overlay',
+      barrierColor: Colors.black.withValues(alpha: 0.18),
+      transitionDuration: const Duration(milliseconds: 260),
+      pageBuilder: (dialogContext, animation, secondaryAnimation) {
+        final title = urgent.length == 1
+            ? urgent.first.reminder.title
+            : '${urgent.length} reminders';
+        final subtitle = urgent.length == 1
+            ? (urgent.first.daysLeft < 0
+                  ? 'Overdue reminder. Tap to manage now.'
+                  : 'Due today. Tap to manage now.')
+            : 'Some reminders are due or overdue.';
+        return SafeArea(
+          child: Center(
+            child: Stack(
+              children: [
+                BackdropFilter(
+                  filter: ImageFilter.blur(sigmaX: 8, sigmaY: 8),
+                  child: Container(color: Colors.transparent),
+                ),
+                Center(
+                  child: Material(
+                    color: Colors.transparent,
+                    child: InkWell(
+                      borderRadius: BorderRadius.circular(20),
+                      onTap: () {
+                        Navigator.of(context).pop();
+                        context.push('/settings/automation');
+                      },
+                      child: Container(
+                        width: 320,
+                        padding: const EdgeInsets.all(16),
+                        decoration: BoxDecoration(
+                          gradient: const LinearGradient(
+                            colors: [Color(0xFF4A90E2), Color(0xFF7FB3FF)],
+                            begin: Alignment.topLeft,
+                            end: Alignment.bottomRight,
+                          ),
+                          borderRadius: BorderRadius.circular(20),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withValues(alpha: 0.2),
+                              blurRadius: 16,
+                              offset: const Offset(0, 8),
+                            ),
+                          ],
+                        ),
+                        child: Row(
+                          children: [
+                            const Icon(
+                              Icons.notifications_active_rounded,
+                              color: Colors.white,
+                              size: 28,
+                            ),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Text(
+                                    title,
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                    style: const TextStyle(
+                                      color: Colors.white,
+                                      fontWeight: FontWeight.w800,
+                                      fontSize: 16,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 2),
+                                  Text(
+                                    subtitle,
+                                    style: TextStyle(
+                                      color: Colors.white.withValues(
+                                        alpha: 0.92,
+                                      ),
+                                      fontSize: 13,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+      transitionBuilder: (context, animation, secondaryAnimation, child) {
+        final curved = CurvedAnimation(
+          parent: animation,
+          curve: Curves.easeOutBack,
+          reverseCurve: Curves.easeInCubic,
+        );
+        return FadeTransition(
+          opacity: animation,
+          child: ScaleTransition(
+            scale: Tween(begin: 0.88, end: 1.0).animate(curved),
+            child: child,
+          ),
+        );
+      },
     );
   }
 }

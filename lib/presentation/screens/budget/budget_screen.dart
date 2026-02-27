@@ -496,7 +496,7 @@ class _BudgetScreenState extends ConsumerState<BudgetScreen> {
                           ),
                         ),
                       );
-                    }, childCount: sorted.length > 8 ? 8 : sorted.length),
+                    }, childCount: sorted.length),
                   );
                 },
               ),
