@@ -36,6 +36,27 @@ class _AddTransactionScreenState extends ConsumerState<AddTransactionScreen> {
   String? _selectedToAccountId;
   bool _isSaving = false;
 
+  void _appendDoubleZero() {
+    final text = _amountController.text;
+    if (text.isEmpty || text.contains('.')) return;
+
+    final selection = _amountController.selection;
+    if (!selection.isValid) {
+      _amountController.text = '${_amountController.text}00';
+      _amountController.selection = TextSelection.collapsed(
+        offset: _amountController.text.length,
+      );
+      return;
+    }
+
+    final newText = text.replaceRange(selection.start, selection.end, '00');
+    final newOffset = selection.start + 2;
+    _amountController.value = TextEditingValue(
+      text: newText,
+      selection: TextSelection.collapsed(offset: newOffset),
+    );
+  }
+
   @override
   void dispose() {
     _amountController.dispose();
@@ -305,6 +326,14 @@ class _AddTransactionScreenState extends ConsumerState<AddTransactionScreen> {
                       filled: false,
                     ),
                     autofocus: true,
+                  ),
+                  const SizedBox(height: 8),
+                  Align(
+                    alignment: Alignment.centerRight,
+                    child: FilledButton.tonal(
+                      onPressed: _appendDoubleZero,
+                      child: const Text('00'),
+                    ),
                   ),
                 ],
               ),
