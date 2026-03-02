@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/utils/currency_formatter.dart';
 import '../../providers/account_provider.dart';
+import '../../providers/auth_provider.dart';
 
 class AccountsSummaryCard extends ConsumerWidget {
   const AccountsSummaryCard({super.key});
@@ -11,6 +12,7 @@ class AccountsSummaryCard extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final accountsAsync = ref.watch(accountsProvider);
+    final currentCurrency = ref.watch(currentCurrencyProvider);
 
     return Card(
       margin: const EdgeInsets.symmetric(horizontal: 16),
@@ -39,7 +41,7 @@ class AccountsSummaryCard extends ConsumerWidget {
                   ],
                 ),
                 Text(
-                  CurrencyFormatter.format(total),
+                  CurrencyFormatter.format(total, currency: currentCurrency),
                   style: const TextStyle(fontSize: 24, fontWeight: FontWeight.w800),
                 ),
                 const SizedBox(height: 10),
@@ -69,7 +71,10 @@ class AccountsSummaryCard extends ConsumerWidget {
                             ),
                           ),
                           Text(
-                            CurrencyFormatter.format(a.initialBalance),
+                            CurrencyFormatter.format(
+                              a.initialBalance,
+                              currency: currentCurrency,
+                            ),
                             style: const TextStyle(
                               fontWeight: FontWeight.w600,
                               color: AppColors.textPrimary,

@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/utils/currency_formatter.dart';
 import '../../../domain/entities/category_entity.dart';
+import '../../providers/auth_provider.dart';
 import '../../providers/category_provider.dart';
 import '../../providers/transaction_provider.dart';
 import '../../widgets/transaction/transaction_tile.dart';
@@ -16,6 +17,7 @@ class CategoryTransactionsScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final categories = ref.watch(categoriesProvider);
     final transactions = ref.watch(monthlyTransactionsProvider);
+    final currentCurrency = ref.watch(currentCurrencyProvider);
 
     final categoryList = categories.valueOrNull ?? <CategoryEntity>[];
     CategoryEntity? category;
@@ -75,7 +77,7 @@ class CategoryTransactionsScreen extends ConsumerWidget {
                   borderRadius: BorderRadius.circular(14),
                 ),
                 child: Text(
-                  'Total: ${CurrencyFormatter.format(total)}',
+                  'Total: ${CurrencyFormatter.format(total, currency: currentCurrency)}',
                   style: const TextStyle(
                     fontWeight: FontWeight.w700,
                     fontSize: 16,

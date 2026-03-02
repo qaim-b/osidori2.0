@@ -5,6 +5,8 @@ import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_motion.dart';
+import '../../../core/utils/currency_formatter.dart';
+import '../../../core/utils/fx_converter.dart';
 import '../../../domain/enums/transaction_type.dart';
 import '../../../domain/enums/visibility_type.dart';
 import '../../../domain/enums/account_type.dart';
@@ -34,7 +36,14 @@ class _AddTransactionScreenState extends ConsumerState<AddTransactionScreen> {
   String? _selectedCategoryId;
   String? _selectedFromAccountId;
   String? _selectedToAccountId;
+  String _entryCurrency = 'JPY';
   bool _isSaving = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _entryCurrency = ref.read(currentCurrencyProvider);
+  }
 
   void _appendDoubleZero() {
     final text = _amountController.text;
@@ -116,7 +125,6 @@ class _AddTransactionScreenState extends ConsumerState<AddTransactionScreen> {
     setState(() => _isSaving = true);
 
     try {
-      final appCurrency = ref.read(currentCurrencyProvider);
       final categories = ref.read(categoriesProvider).valueOrNull ?? [];
       CategoryEntity? selectedCategory;
       for (final c in categories) {
@@ -131,7 +139,7 @@ class _AddTransactionScreenState extends ConsumerState<AddTransactionScreen> {
           .addTransaction(
             type: _type,
             amount: amount,
-            currency: appCurrency,
+            currency: _entryCurrency,
             date: _date,
             categoryId: _selectedCategoryId!,
             categoryNameSnapshot: selectedCategory?.name,
@@ -184,6 +192,7 @@ class _AddTransactionScreenState extends ConsumerState<AddTransactionScreen> {
   Widget build(BuildContext context) {
     final categoriesAsync = ref.watch(categoriesProvider);
     final accountsAsync = ref.watch(accountsProvider);
+    final appCurrency = ref.watch(currentCurrencyProvider);
 
     final categories = categoriesAsync.valueOrNull ?? [];
     final accounts = accountsAsync.valueOrNull ?? [];
@@ -326,6 +335,92 @@ class _AddTransactionScreenState extends ConsumerState<AddTransactionScreen> {
                       filled: false,
                     ),
                     autofocus: true,
+                  ),
+                  const SizedBox(height: 8),
+                  Row(
+                    children: [
+                      OutlinedButton.icon(
+                        onPressed: () async {
+                          final selected = await showDialog<String>(
+                            context: context,
+                            builder: (ctx) => AlertDialog(
+                              title: const Text('Entry Currency'),
+                              content: Column(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  ListTile(
+                                    leading: Icon(
+                                      _entryCurrency == 'JPY'
+                                          ? Icons.radio_button_checked
+                                          : Icons.radio_button_off,
+                                    ),
+                                    title: const Text('JPY (¥ Japanese Yen)'),
+                                    onTap: () => Navigator.pop(ctx, 'JPY'),
+                                  ),
+                                  ListTile(
+                                    leading: Icon(
+                                      _entryCurrency == 'MYR'
+                                          ? Icons.radio_button_checked
+                                          : Icons.radio_button_off,
+                                    ),
+                                    title: const Text(
+                                      'MYR (RM Malaysian Ringgit)',
+                                    ),
+                                    onTap: () => Navigator.pop(ctx, 'MYR'),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          );
+                          if (selected != null) {
+                            setState(() => _entryCurrency = selected);
+                          }
+                        },
+                        icon: const Icon(Icons.currency_exchange_rounded),
+                        label: Text('Entry: $_entryCurrency'),
+                      ),
+                      const Spacer(),
+                      if (_entryCurrency != appCurrency)
+                        ValueListenableBuilder<TextEditingValue>(
+                          valueListenable: _amountController,
+                          builder: (context, value, _) {
+                            final amount = double.tryParse(value.text);
+                            if (amount == null || amount <= 0) {
+                              return Text(
+                                'Base: $appCurrency',
+                                style: const TextStyle(
+                                  fontSize: 12,
+                                  color: AppColors.textSecondary,
+                                ),
+                              );
+                            }
+                            return FutureBuilder<double>(
+                              future: FxConverter.convert(
+                                amount: amount,
+                                fromCurrency: _entryCurrency,
+                                toCurrency: appCurrency,
+                              ),
+                              builder: (context, snapshot) {
+                                final converted = snapshot.data;
+                                final display = converted == null
+                                    ? 'Converting...'
+                                    : CurrencyFormatter.format(
+                                        converted,
+                                        currency: appCurrency,
+                                      );
+                                return Text(
+                                  '≈ $display',
+                                  style: const TextStyle(
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.w600,
+                                    color: AppColors.textSecondary,
+                                  ),
+                                );
+                              },
+                            );
+                          },
+                        ),
+                    ],
                   ),
                   const SizedBox(height: 8),
                   Align(

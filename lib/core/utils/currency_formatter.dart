@@ -11,7 +11,7 @@ class CurrencyFormatter {
     final formatter = _cache.putIfAbsent(
       currency,
       () => NumberFormat.currency(
-        symbol: _symbolFor(currency),
+        symbol: symbolFor(currency),
         decimalDigits: _decimalsFor(currency),
       ),
     );
@@ -20,7 +20,7 @@ class CurrencyFormatter {
 
   /// Compact format for charts (e.g., "¥12K", "$1.2M")
   static String compact(double amount, {String currency = 'JPY'}) {
-    final symbol = _symbolFor(currency);
+    final symbol = symbolFor(currency);
     if (amount.abs() >= 1000000) {
       return '$symbol${(amount / 1000000).toStringAsFixed(1)}M';
     } else if (amount.abs() >= 1000) {
@@ -29,12 +29,12 @@ class CurrencyFormatter {
     return '$symbol${amount.toStringAsFixed(_decimalsFor(currency))}';
   }
 
-  static String _symbolFor(String currency) {
+  static String symbolFor(String currency) {
     switch (currency.toUpperCase()) {
       case 'JPY':
         return '¥';
       case 'USD':
-        return '\$';
+        return r'$';
       case 'EUR':
         return '€';
       case 'GBP':
@@ -55,3 +55,4 @@ class CurrencyFormatter {
     }
   }
 }
+

@@ -9,6 +9,7 @@ import '../../../domain/entities/category_entity.dart';
 import '../../providers/appearance_provider.dart';
 import '../../providers/budget_limit_provider.dart';
 import '../../providers/category_provider.dart';
+import '../../providers/auth_provider.dart';
 import '../../providers/transaction_provider.dart';
 import '../../widgets/charts/donut_chart.dart';
 import '../../widgets/common/editorial.dart';
@@ -71,6 +72,7 @@ class _BudgetScreenState extends ConsumerState<BudgetScreen> {
     final txns = ref.watch(monthlyTransactionsProvider).valueOrNull ?? [];
     final categories = ref.watch(categoriesProvider);
     final totals = ref.watch(monthlyTotalsProvider);
+    final currentCurrency = ref.watch(currentCurrencyProvider);
     final preset = ref.watch(activeThemePresetDataProvider);
     final budgetLimitMap = ref.watch(budgetLimitMapProvider);
 
@@ -234,6 +236,7 @@ class _BudgetScreenState extends ConsumerState<BudgetScreen> {
                               Text(
                                 CurrencyFormatter.format(
                                   (totals['income'] ?? 0.0).toDouble(),
+                                  currency: currentCurrency,
                                 ),
                                 style: TextStyle(
                                   color: preset.primary,
@@ -268,6 +271,7 @@ class _BudgetScreenState extends ConsumerState<BudgetScreen> {
                               DisplayNumber(
                                 value: CurrencyFormatter.format(
                                   (totals['expense'] ?? 0.0).toDouble(),
+                                  currency: currentCurrency,
                                 ),
                                 size: 34,
                                 color: Colors.white,
@@ -315,7 +319,7 @@ class _BudgetScreenState extends ConsumerState<BudgetScreen> {
                             return CategoryDonutChart(
                               categoryTotals: breakdownTotals,
                               categoryNames: breakdownNames,
-                              currency: 'JPY',
+                              currency: currentCurrency,
                               totalAmount: total,
                             );
                           },
@@ -421,7 +425,10 @@ class _BudgetScreenState extends ConsumerState<BudgetScreen> {
                                       width: 128,
                                       alignment: Alignment.center,
                                       child: Text(
-                                        CurrencyFormatter.format(entry.amount),
+                                        CurrencyFormatter.format(
+                                          entry.amount,
+                                          currency: currentCurrency,
+                                        ),
                                         textAlign: TextAlign.center,
                                         style: const TextStyle(
                                           fontSize: 14.8,
@@ -483,7 +490,7 @@ class _BudgetScreenState extends ConsumerState<BudgetScreen> {
                                   Align(
                                     alignment: Alignment.centerRight,
                                     child: Text(
-                                      'Budget ${CurrencyFormatter.format(budgetLimit)}',
+                                      'Budget ${CurrencyFormatter.format(budgetLimit, currency: currentCurrency)}',
                                       style: const TextStyle(
                                         fontSize: 11,
                                         fontWeight: FontWeight.w600,

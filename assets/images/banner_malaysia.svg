@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 240" preserveAspectRatio="none">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%" stop-color="#d8efff"/>
+      <stop offset="100%" stop-color="#eef8ff"/>
+    </linearGradient>
+  </defs>
+  <rect width="1200" height="240" fill="url(#bg)"/>
+  <rect x="0" y="0" width="340" height="110" fill="#1f4ea8" opacity="0.28"/>
+  <g opacity="0.8">
+    <circle cx="90" cy="55" r="24" fill="#ffd35e"/>
+    <circle cx="100" cy="55" r="21" fill="#1f4ea8"/>
+    <polygon points="150,30 156,44 171,44 159,53 164,67 150,58 136,67 141,53 129,44 144,44" fill="#ffd35e"/>
+  </g>
+  <g opacity="0.14">
+    <rect y="118" width="1200" height="12" fill="#d81f32"/>
+    <rect y="142" width="1200" height="12" fill="#d81f32"/>
+    <rect y="166" width="1200" height="12" fill="#d81f32"/>
+    <rect y="190" width="1200" height="12" fill="#d81f32"/>
+  </g>
+  <path d="M0 198 C170 155 320 155 500 198 C680 241 860 241 1040 198 C1110 182 1160 182 1200 194 L1200 240 L0 240 Z" fill="#b9ddff" opacity="0.72"/>
+  <rect x="780" y="135" width="14" height="48" rx="2" fill="#3f6ebf" opacity="0.72"/>
+  <path d="M720 190 C765 152 810 152 855 190" stroke="#3f6ebf" stroke-width="7" fill="none" stroke-linecap="round" opacity="0.72"/>
+</svg>
+

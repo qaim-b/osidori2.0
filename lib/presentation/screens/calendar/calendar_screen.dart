@@ -10,6 +10,7 @@ import '../../../domain/entities/category_entity.dart';
 import '../../providers/transaction_provider.dart';
 import '../../providers/category_provider.dart';
 import '../../providers/theme_provider.dart';
+import '../../providers/auth_provider.dart';
 import '../../widgets/common/themed_backdrop.dart';
 import '../../widgets/transaction/transaction_tile.dart';
 
@@ -71,6 +72,7 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
   Widget build(BuildContext context) {
     try {
       final roleColors = ref.watch(roleColorsProvider);
+      final currentCurrency = ref.watch(currentCurrencyProvider);
       final transactions = ref.watch(monthlyTransactionsProvider);
       final categories = ref.watch(categoriesProvider);
 
@@ -151,6 +153,7 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
                             (s, v) => s + v,
                           ),
                           color: AppColors.income,
+                          currency: currentCurrency,
                         ),
                         const SizedBox(width: 8),
                         _SummaryPill(
@@ -160,6 +163,7 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
                             (s, v) => s + v,
                           ),
                           color: AppColors.expense,
+                          currency: currentCurrency,
                         ),
                       ],
                     ),
@@ -716,11 +720,13 @@ class _SummaryPill extends StatelessWidget {
   final String label;
   final double amount;
   final Color color;
+  final String currency;
 
   const _SummaryPill({
     required this.label,
     required this.amount,
     required this.color,
+    required this.currency,
   });
 
   @override
@@ -755,7 +761,7 @@ class _SummaryPill extends StatelessWidget {
                     ),
                   ),
                   Text(
-                    CurrencyFormatter.format(amount),
+                    CurrencyFormatter.format(amount, currency: currency),
                     style: TextStyle(
                       fontSize: 14,
                       fontWeight: FontWeight.w700,

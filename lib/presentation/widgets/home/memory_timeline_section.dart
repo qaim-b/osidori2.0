@@ -68,7 +68,10 @@ class MemoryTimelineSection extends ConsumerWidget {
                                 ),
                                 const SizedBox(height: 2),
                                 Text(
-                                  CurrencyFormatter.format(txn.amount),
+                                  CurrencyFormatter.format(
+                                    txn.amount,
+                                    currency: txn.currency,
+                                  ),
                                   style: TextStyle(
                                     color: txn.isExpense
                                         ? AppColors.expense

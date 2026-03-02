@@ -75,6 +75,7 @@ class _OverviewScreenState extends ConsumerState<OverviewScreen> {
   @override
   Widget build(BuildContext context) {
     final selectedMonth = ref.watch(selectedMonthProvider);
+    final currentCurrency = ref.watch(currentCurrencyProvider);
     final totals = ref.watch(monthlyTotalsProvider);
     final transactions = ref.watch(monthlyTransactionsProvider);
     final categories = ref.watch(categoriesProvider);
@@ -277,6 +278,7 @@ class _OverviewScreenState extends ConsumerState<OverviewScreen> {
                   child: _SummaryCards(
                     income: (totals['income'] ?? 0).toDouble(),
                     expense: (totals['expense'] ?? 0).toDouble(),
+                    currency: currentCurrency,
                   ),
                 ),
               ),
@@ -352,13 +354,13 @@ class _OverviewScreenState extends ConsumerState<OverviewScreen> {
                             0,
                             (sum, v) => sum + v,
                           );
-                          return CategoryDonutChart(
-                            categoryTotals: breakdownTotals,
-                            categoryNames: breakdownNames,
-                            currency: 'JPY',
-                            totalAmount: total,
-                          );
-                        },
+                            return CategoryDonutChart(
+                              categoryTotals: breakdownTotals,
+                              categoryNames: breakdownNames,
+                              currency: currentCurrency,
+                              totalAmount: total,
+                            );
+                          },
                       ),
                     ],
                   ),
@@ -609,8 +611,13 @@ class _MemberAvatarBubble extends StatelessWidget {
 class _SummaryCards extends StatelessWidget {
   final double income;
   final double expense;
+  final String currency;
 
-  const _SummaryCards({required this.income, required this.expense});
+  const _SummaryCards({
+    required this.income,
+    required this.expense,
+    required this.currency,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -620,6 +627,7 @@ class _SummaryCards extends StatelessWidget {
           child: _MiniCard(
             label: 'Income',
             amount: income,
+            currency: currency,
             color: AppColors.income,
             icon: Icons.arrow_upward_rounded,
           ),
@@ -629,6 +637,7 @@ class _SummaryCards extends StatelessWidget {
           child: _MiniCard(
             label: 'Expense',
             amount: expense,
+            currency: currency,
             color: AppColors.expense,
             icon: Icons.arrow_downward_rounded,
           ),
@@ -641,12 +650,14 @@ class _SummaryCards extends StatelessWidget {
 class _MiniCard extends StatelessWidget {
   final String label;
   final double amount;
+  final String currency;
   final Color color;
   final IconData icon;
 
   const _MiniCard({
     required this.label,
     required this.amount,
+    required this.currency,
     required this.color,
     required this.icon,
   });
@@ -688,7 +699,7 @@ class _MiniCard extends StatelessWidget {
             fit: BoxFit.scaleDown,
             alignment: Alignment.centerLeft,
             child: DisplayNumber(
-              value: CurrencyFormatter.format(amount),
+              value: CurrencyFormatter.format(amount, currency: currency),
               color: color,
               size: 22,
             ),

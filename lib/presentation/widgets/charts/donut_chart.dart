@@ -169,7 +169,7 @@ class _CategoryDonutChartState extends State<CategoryDonutChart> {
                       ),
                     ),
                     Text(
-                      '${CurrencyFormatter.format(touched.value)} (${pct.toStringAsFixed(1)}%)',
+                      '${CurrencyFormatter.format(touched.value, currency: widget.currency)} (${pct.toStringAsFixed(1)}%)',
                       style: const TextStyle(
                         fontSize: 11.5,
                         fontWeight: FontWeight.w600,

@@ -102,4 +102,52 @@ class TransactionModel extends TransactionEntity {
       createdAt: entity.createdAt,
     );
   }
+
+  @override
+  TransactionModel copyWith({
+    String? id,
+    TransactionType? type,
+    double? amount,
+    String? currency,
+    DateTime? date,
+    String? categoryId,
+    String? categoryNameSnapshot,
+    String? categoryEmojiSnapshot,
+    int? categoryDisplayNumberSnapshot,
+    String? fromAccountId,
+    String? toAccountId,
+    String? note,
+    VisibilityType? visibility,
+    String? ownerUserId,
+    String? groupId,
+    TransactionSource? source,
+    String? recurringRuleId,
+    DateTime? recurrenceOccurrenceDate,
+    DateTime? createdAt,
+  }) {
+    return TransactionModel(
+      id: id ?? this.id,
+      type: type ?? this.type,
+      amount: amount ?? this.amount,
+      currency: currency ?? this.currency,
+      date: date ?? this.date,
+      categoryId: categoryId ?? this.categoryId,
+      categoryNameSnapshot: categoryNameSnapshot ?? this.categoryNameSnapshot,
+      categoryEmojiSnapshot:
+          categoryEmojiSnapshot ?? this.categoryEmojiSnapshot,
+      categoryDisplayNumberSnapshot:
+          categoryDisplayNumberSnapshot ?? this.categoryDisplayNumberSnapshot,
+      fromAccountId: fromAccountId ?? this.fromAccountId,
+      toAccountId: toAccountId ?? this.toAccountId,
+      note: note ?? this.note,
+      visibility: visibility ?? this.visibility,
+      ownerUserId: ownerUserId ?? this.ownerUserId,
+      groupId: groupId ?? this.groupId,
+      source: source ?? this.source,
+      recurringRuleId: recurringRuleId ?? this.recurringRuleId,
+      recurrenceOccurrenceDate:
+          recurrenceOccurrenceDate ?? this.recurrenceOccurrenceDate,
+      createdAt: createdAt ?? this.createdAt,
+    );
+  }
 }

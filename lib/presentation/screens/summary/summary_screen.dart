@@ -10,6 +10,7 @@ import '../../providers/appearance_provider.dart';
 import '../../providers/budget_limit_provider.dart';
 import '../../providers/category_provider.dart';
 import '../../providers/goal_provider.dart';
+import '../../providers/auth_provider.dart';
 import '../../providers/transaction_provider.dart';
 import '../../widgets/common/themed_backdrop.dart';
 
@@ -40,6 +41,7 @@ class _SummaryScreenState extends ConsumerState<SummaryScreen> {
         ref.watch(categoriesProvider).valueOrNull ?? <CategoryEntity>[];
     final txns = ref.watch(monthlyTransactionsProvider).valueOrNull ?? [];
     final selectedMonth = ref.watch(selectedMonthProvider);
+    final currentCurrency = ref.watch(currentCurrencyProvider);
     final preset = ref.watch(activeThemePresetDataProvider);
 
     final catMap = <String, CategoryEntity>{
@@ -161,7 +163,10 @@ class _SummaryScreenState extends ConsumerState<SummaryScreen> {
                             Expanded(
                               child: _MetricPill(
                                 label: 'Income',
-                                value: CurrencyFormatter.format(income),
+                                value: CurrencyFormatter.format(
+                                  income,
+                                  currency: currentCurrency,
+                                ),
                                 icon: Icons.arrow_upward_rounded,
                                 color: AppColors.income,
                               ),
@@ -170,7 +175,10 @@ class _SummaryScreenState extends ConsumerState<SummaryScreen> {
                             Expanded(
                               child: _MetricPill(
                                 label: 'Expense',
-                                value: CurrencyFormatter.format(expense),
+                                value: CurrencyFormatter.format(
+                                  expense,
+                                  currency: currentCurrency,
+                                ),
                                 icon: Icons.arrow_downward_rounded,
                                 color: AppColors.expense,
                               ),
@@ -238,7 +246,7 @@ class _SummaryScreenState extends ConsumerState<SummaryScreen> {
                                           ),
                                         ),
                                         Text(
-                                          '${CurrencyFormatter.format(actual)} / ${CurrencyFormatter.format(limit)}',
+                                          '${CurrencyFormatter.format(actual, currency: currentCurrency)} / ${CurrencyFormatter.format(limit, currency: currentCurrency)}',
                                           style: const TextStyle(fontSize: 12),
                                         ),
                                       ],
@@ -309,7 +317,7 @@ class _SummaryScreenState extends ConsumerState<SummaryScreen> {
                                       ),
                                     ),
                                     Text(
-                                      '${CurrencyFormatter.format(entry.value)} (${pct.toStringAsFixed(1)}%)',
+                                      '${CurrencyFormatter.format(entry.value, currency: currentCurrency)} (${pct.toStringAsFixed(1)}%)',
                                       style: const TextStyle(
                                         fontSize: 12,
                                         fontWeight: FontWeight.w600,
@@ -346,7 +354,8 @@ class _SummaryScreenState extends ConsumerState<SummaryScreen> {
                       children: [
                         _InsightChip(
                           icon: Icons.calendar_today_rounded,
-                          text: 'Daily avg: ${CurrencyFormatter.format(dailyAverage)}',
+                          text:
+                              'Daily avg: ${CurrencyFormatter.format(dailyAverage, currency: currentCurrency)}',
                         ),
                         _InsightChip(
                           icon: Icons.category_rounded,

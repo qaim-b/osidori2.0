@@ -56,4 +56,29 @@ class AccountModel extends AccountEntity {
       createdAt: entity.createdAt,
     );
   }
+
+  @override
+  AccountModel copyWith({
+    String? id,
+    String? name,
+    AccountType? type,
+    OwnerScope? ownerScope,
+    String? ownerUserId,
+    String? groupId,
+    String? currency,
+    double? initialBalance,
+    DateTime? createdAt,
+  }) {
+    return AccountModel(
+      id: id ?? this.id,
+      name: name ?? this.name,
+      type: type ?? this.type,
+      ownerScope: ownerScope ?? this.ownerScope,
+      ownerUserId: ownerUserId ?? this.ownerUserId,
+      groupId: groupId ?? this.groupId,
+      currency: currency ?? this.currency,
+      initialBalance: initialBalance ?? this.initialBalance,
+      createdAt: createdAt ?? this.createdAt,
+    );
+  }
 }

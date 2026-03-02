@@ -3,6 +3,7 @@ import 'package:uuid/uuid.dart';
 import '../../data/repositories/recurring_rule_repository.dart';
 import '../../data/repositories/transaction_repository.dart';
 import '../../data/models/transaction_model.dart';
+import '../../core/utils/fx_converter.dart';
 import '../../domain/enums/transaction_type.dart';
 import '../../domain/enums/visibility_type.dart';
 import '../../domain/enums/transaction_source.dart';
@@ -31,8 +32,15 @@ final monthlyTransactionsProvider =
       final userId = ref.watch(currentUserIdProvider);
       final groupIds = ref.watch(groupIdsProvider);
       final selectedMonth = ref.watch(selectedMonthProvider);
+      final displayCurrency = ref.watch(currentCurrencyProvider);
       final repo = ref.read(transactionRepositoryProvider);
-      return TransactionsNotifier(repo, userId, selectedMonth, groupIds);
+      return TransactionsNotifier(
+        repo,
+        userId,
+        selectedMonth,
+        groupIds,
+        displayCurrency,
+      );
     });
 
 class TransactionsNotifier
@@ -42,9 +50,16 @@ class TransactionsNotifier
   final String? _userId;
   final DateTime _month;
   final List<String> _groupIds;
+  final String _displayCurrency;
   static const _uuid = Uuid();
 
-  TransactionsNotifier(this._repo, this._userId, this._month, this._groupIds)
+  TransactionsNotifier(
+    this._repo,
+    this._userId,
+    this._month,
+    this._groupIds,
+    this._displayCurrency,
+  )
     : super(const AsyncValue.loading()) {
     if (_userId != null) load();
   }
@@ -66,10 +81,30 @@ class TransactionsNotifier
         from: from,
         to: to,
       );
-      state = AsyncValue.data(txns);
+      final converted = await _convertForDisplay(txns);
+      state = AsyncValue.data(converted);
     } catch (e, st) {
       state = AsyncValue.error(e, st);
     }
+  }
+
+  Future<List<TransactionModel>> _convertForDisplay(
+    List<TransactionModel> txns,
+  ) async {
+    final converted = await Future.wait(
+      txns.map((txn) async {
+        if (txn.currency.toUpperCase() == _displayCurrency.toUpperCase()) {
+          return txn;
+        }
+        final amount = await FxConverter.convert(
+          amount: txn.amount,
+          fromCurrency: txn.currency,
+          toCurrency: _displayCurrency,
+        );
+        return txn.copyWith(amount: amount, currency: _displayCurrency);
+      }),
+    );
+    return converted;
   }
 
   Future<void> addTransaction({

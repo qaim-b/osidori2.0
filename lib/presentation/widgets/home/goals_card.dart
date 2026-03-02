@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/utils/currency_formatter.dart';
+import '../../providers/auth_provider.dart';
 import '../../providers/goal_provider.dart';
 import '../../providers/theme_provider.dart';
 
@@ -13,6 +14,7 @@ class GoalsCard extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final goalsAsync = ref.watch(goalsProvider);
     final roleColors = ref.watch(roleColorsProvider);
+    final currentCurrency = ref.watch(currentCurrencyProvider);
 
     return Card(
       margin: const EdgeInsets.symmetric(horizontal: 16),
@@ -93,7 +95,7 @@ class GoalsCard extends ConsumerWidget {
                         ),
                         const SizedBox(height: 4),
                         Text(
-                          '${CurrencyFormatter.format(goal.currentAmount)} / ${CurrencyFormatter.format(goal.targetAmount)}',
+                          '${CurrencyFormatter.format(goal.currentAmount, currency: currentCurrency)} / ${CurrencyFormatter.format(goal.targetAmount, currency: currentCurrency)}',
                           style: const TextStyle(
                             fontSize: 12,
                             color: AppColors.textSecondary,

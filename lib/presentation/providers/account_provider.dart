@@ -1,5 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:uuid/uuid.dart';
+import '../../core/utils/fx_converter.dart';
 import '../../data/repositories/account_repository.dart';
 import '../../data/models/account_model.dart';
 import '../../domain/enums/account_type.dart';
@@ -18,8 +19,15 @@ final accountsProvider =
       final userId = ref.watch(currentUserIdProvider);
       final groupIds = ref.watch(groupIdsProvider);
       final groupMemberIds = ref.watch(groupMemberIdsProvider);
+      final displayCurrency = ref.watch(currentCurrencyProvider);
       final repo = ref.read(accountRepositoryProvider);
-      return AccountsNotifier(repo, userId, groupIds, groupMemberIds);
+      return AccountsNotifier(
+        repo,
+        userId,
+        groupIds,
+        groupMemberIds,
+        displayCurrency,
+      );
     });
 
 class AccountsNotifier extends StateNotifier<AsyncValue<List<AccountModel>>> {
@@ -27,6 +35,7 @@ class AccountsNotifier extends StateNotifier<AsyncValue<List<AccountModel>>> {
   final String? _userId;
   final List<String> _groupIds;
   final List<String> _groupMemberIds;
+  final String _displayCurrency;
   static const _uuid = Uuid();
 
   AccountsNotifier(
@@ -34,6 +43,7 @@ class AccountsNotifier extends StateNotifier<AsyncValue<List<AccountModel>>> {
     this._userId,
     this._groupIds,
     this._groupMemberIds,
+    this._displayCurrency,
   ) : super(const AsyncValue.loading()) {
     if (_userId != null) load();
   }
@@ -47,7 +57,20 @@ class AccountsNotifier extends StateNotifier<AsyncValue<List<AccountModel>>> {
         _groupIds,
         _groupMemberIds,
       );
-      state = AsyncValue.data(accounts);
+      final converted = await Future.wait(
+        accounts.map((account) async {
+          if (account.currency.toUpperCase() == _displayCurrency.toUpperCase()) {
+            return account;
+          }
+          final amount = await FxConverter.convert(
+            amount: account.initialBalance,
+            fromCurrency: account.currency,
+            toCurrency: _displayCurrency,
+          );
+          return account.copyWith(initialBalance: amount, currency: _displayCurrency);
+        }),
+      );
+      state = AsyncValue.data(converted);
     } catch (e, st) {
       state = AsyncValue.error(e, st);
     }
