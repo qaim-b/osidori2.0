@@ -16,8 +16,10 @@ class ThemedBackdrop extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final bg = Theme.of(context).scaffoldBackgroundColor;
     final currency = ref.watch(currentCurrencyProvider).toUpperCase();
+    final bg = currency == 'MYR'
+        ? const Color(0xFFEAF6FF)
+        : const Color(0xFFFFF0F7);
     final bannerAsset = currency == 'MYR'
         ? 'assets/images/banner_malaysia.svg'
         : 'assets/images/banner_japan.svg';
@@ -38,10 +40,10 @@ class ThemedBackdrop extends ConsumerWidget {
               child: Opacity(
                 opacity: 0.32,
                 child: SizedBox(
-                  height: 160,
+                  height: 220,
                   child: SvgPicture.asset(
                     bannerAsset,
-                    fit: BoxFit.cover,
+                    fit: BoxFit.fitWidth,
                     alignment: Alignment.topCenter,
                   ),
                 ),

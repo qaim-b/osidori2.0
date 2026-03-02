@@ -1,4 +1,4 @@
-import 'dart:ui';
+﻿import 'dart:ui';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -107,7 +107,7 @@ class _OverviewScreenState extends ConsumerState<OverviewScreen> {
                   ),
                 ),
                 Text(
-                  'Switch country mode',
+                  'Switch country',
                   style: Theme.of(context).textTheme.titleLarge?.copyWith(
                     fontWeight: FontWeight.w800,
                   ),
@@ -212,7 +212,7 @@ class _OverviewScreenState extends ConsumerState<OverviewScreen> {
               ? 'Category #${txn.categoryDisplayNumberSnapshot}'
               : 'Other');
       final resolvedEmoji =
-          cat?.emoji ?? snapshotEmojiById[txn.categoryId] ?? '📦';
+          cat?.emoji ?? snapshotEmojiById[txn.categoryId] ?? 'ðŸ“¦';
       final key = '$resolvedEmoji $resolvedName';
       breakdownTotals[key] = (breakdownTotals[key] ?? 0) + txn.amount;
       breakdownNames[key] = key;
@@ -668,8 +668,8 @@ class _CountryModePill extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isMalaysia = currency.toUpperCase() == 'MYR';
-    final label = isMalaysia ? 'Malaysia mode' : 'Japan mode';
-    final flag = isMalaysia ? '🇲🇾' : '🇯🇵';
+    final label = isMalaysia ? 'Malaysia' : 'Japan';
+    final code = isMalaysia ? 'MY' : 'JP';
     final banner = isMalaysia
         ? 'assets/images/banner_malaysia.svg'
         : 'assets/images/banner_japan.svg';
@@ -689,7 +689,14 @@ class _CountryModePill extends StatelessWidget {
             mainAxisSize: MainAxisSize.min,
             children: [
               const SizedBox(width: 10),
-              Text(flag, style: const TextStyle(fontSize: 16)),
+              Text(
+                code,
+                style: const TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w800,
+                  letterSpacing: 0.8,
+                ),
+              ),
               const SizedBox(width: 6),
               Text(
                 label,
@@ -974,3 +981,4 @@ class _QuickAction extends StatelessWidget {
     );
   }
 }
+

@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -158,7 +158,7 @@ class _AddTransactionScreenState extends ConsumerState<AddTransactionScreen> {
           SnackBar(
             content: Row(
               children: [
-                const Text('✨ '),
+                const Text('âœ¨ '),
                 Text(
                   _type == TransactionType.expense
                       ? 'Expense added!'
@@ -288,12 +288,22 @@ class _AddTransactionScreenState extends ConsumerState<AddTransactionScreen> {
 
             const SizedBox(height: 24),
 
-            // Amount input — BIG and prominent
+            // Amount input â€” BIG and prominent
             Container(
               padding: const EdgeInsets.all(20),
               decoration: BoxDecoration(
-                color: AppColors.surface,
+                gradient: LinearGradient(
+                  colors: [
+                    Colors.white.withValues(alpha: 0.96),
+                    AppColors.surfaceVariant.withValues(alpha: 0.9),
+                  ],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                ),
                 borderRadius: BorderRadius.circular(20),
+                border: Border.all(
+                  color: AppColors.primary.withValues(alpha: 0.22),
+                ),
                 boxShadow: [
                   BoxShadow(
                     color: AppColors.shadow,
@@ -304,12 +314,21 @@ class _AddTransactionScreenState extends ConsumerState<AddTransactionScreen> {
               ),
               child: Column(
                 children: [
-                  Text(
-                    '¥',
-                    style: TextStyle(
-                      fontSize: 20,
-                      color: AppColors.textHint,
-                      fontWeight: FontWeight.w600,
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 10,
+                      vertical: 4,
+                    ),
+                    decoration: BoxDecoration(
+                      color: AppColors.surfaceVariant,
+                      borderRadius: BorderRadius.circular(999),
+                    ),
+                    child: Text(
+                      CurrencyFormatter.symbolFor(_entryCurrency),
+                      style: const TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.w700,
+                      ),
                     ),
                   ),
                   TextField(
@@ -408,12 +427,23 @@ class _AddTransactionScreenState extends ConsumerState<AddTransactionScreen> {
                                         converted,
                                         currency: appCurrency,
                                       );
-                                return Text(
-                                  '≈ $display',
-                                  style: const TextStyle(
-                                    fontSize: 12,
-                                    fontWeight: FontWeight.w600,
-                                    color: AppColors.textSecondary,
+                                return Container(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 12,
+                                    vertical: 6,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    color: AppColors.surfaceVariant,
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
+                                  child: Text(
+                                    '≈ $display',
+                                    style: const TextStyle(
+                                      fontSize: 36,
+                                      height: 1.0,
+                                      fontWeight: FontWeight.w800,
+                                      color: AppColors.textPrimary,
+                                    ),
                                   ),
                                 );
                               },
@@ -505,7 +535,7 @@ class _AddTransactionScreenState extends ConsumerState<AddTransactionScreen> {
               maxLines: 2,
               decoration: InputDecoration(
                 hintText:
-                    "Add a Note (Optional, let's help each other understand each item more ❤️)",
+                    "Add a Note (Optional, let's help each other understand each item more â¤ï¸)",
                 prefixIcon: const Icon(Icons.notes, size: 20),
               ),
             ),
@@ -544,7 +574,7 @@ class _AddTransactionScreenState extends ConsumerState<AddTransactionScreen> {
                               ),
                             )
                           : const Text(
-                              '✨ Save Transaction',
+                              'âœ¨ Save Transaction',
                               style: TextStyle(
                                 color: Colors.white,
                                 fontSize: 16,
@@ -994,7 +1024,7 @@ class _AccountPickerState extends State<_AccountPicker> {
                     ),
                   ),
                   subtitle: Text(
-                    '${acc.type.label} • ${acc.currency}',
+                    '${acc.type.label} â€¢ ${acc.currency}',
                     style: const TextStyle(
                       fontSize: 11,
                       color: AppColors.textSecondary,
@@ -1025,3 +1055,5 @@ class _AccountPickerState extends State<_AccountPicker> {
     );
   }
 }
+
+
