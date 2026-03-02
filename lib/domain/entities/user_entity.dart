@@ -7,6 +7,7 @@ class UserEntity {
   final String? avatarUrl;
   final String? role; // 'stitch' or 'angel' or 'solo'
   final String preferredCurrency;
+  final String fxDisplayMode; // 'accounting' | 'live'
   final DateTime createdAt;
 
   const UserEntity({
@@ -16,6 +17,7 @@ class UserEntity {
     this.avatarUrl,
     this.role,
     this.preferredCurrency = 'JPY',
+    this.fxDisplayMode = 'accounting',
     required this.createdAt,
   });
 
@@ -31,6 +33,7 @@ class UserEntity {
     String? avatarUrl,
     String? role,
     String? preferredCurrency,
+    String? fxDisplayMode,
     DateTime? createdAt,
   }) {
     return UserEntity(
@@ -40,6 +43,7 @@ class UserEntity {
       avatarUrl: avatarUrl ?? this.avatarUrl,
       role: role ?? this.role,
       preferredCurrency: preferredCurrency ?? this.preferredCurrency,
+      fxDisplayMode: fxDisplayMode ?? this.fxDisplayMode,
       createdAt: createdAt ?? this.createdAt,
     );
   }

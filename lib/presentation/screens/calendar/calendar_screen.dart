@@ -570,6 +570,8 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
     BuildContext context,
     TransactionModel txn,
   ) async {
+    final currentCurrency = ref.read(currentCurrencyProvider);
+    final symbol = currentCurrency == 'MYR' ? 'RM ' : '¥ ';
     final categories = ref.read(categoriesProvider).valueOrNull ?? [];
     final filteredCategories =
         categories
@@ -603,9 +605,9 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
                     keyboardType: const TextInputType.numberWithOptions(
                       decimal: true,
                     ),
-                    decoration: const InputDecoration(
+                    decoration: InputDecoration(
                       labelText: 'Amount',
-                      prefixText: '¥ ',
+                      prefixText: symbol,
                     ),
                   ),
                   const SizedBox(height: 8),
@@ -685,6 +687,12 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
         type: txn.type,
         amount: parsedAmount,
         currency: txn.currency,
+        originalAmount: txn.originalAmount,
+        originalCurrency: txn.originalCurrency,
+        fxRateToBase: txn.fxRateToBase,
+        fxBaseCurrency: txn.fxBaseCurrency,
+        baseAmountLocked: txn.baseAmountLocked,
+        fxRateDate: txn.fxRateDate,
         date: selectedDate,
         categoryId: selectedCategoryId,
         categoryNameSnapshot: filteredCategories

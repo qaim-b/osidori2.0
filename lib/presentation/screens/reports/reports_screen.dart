@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/extensions/datetime_ext.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/utils/currency_formatter.dart';
+import '../../providers/auth_provider.dart';
 import '../../providers/category_provider.dart';
 import '../../providers/transaction_provider.dart';
 
@@ -16,6 +17,7 @@ class ReportsScreen extends ConsumerWidget {
     final transactions = ref.watch(monthlyTransactionsProvider);
     final categories = ref.watch(categoriesProvider);
     final categoryTotals = ref.watch(categoryTotalsProvider);
+    final currentCurrency = ref.watch(currentCurrencyProvider);
 
     final catLookup = <String, dynamic>{};
     for (final cat in categories.valueOrNull ?? []) {
@@ -138,7 +140,10 @@ class ReportsScreen extends ConsumerWidget {
                                 ),
                               ),
                               Text(
-                                CurrencyFormatter.format(entry.value),
+                                CurrencyFormatter.format(
+                                  entry.value,
+                                  currency: currentCurrency,
+                                ),
                                 style: TextStyle(
                                   fontWeight: FontWeight.w600,
                                   color: AppColors.expense,
@@ -206,7 +211,7 @@ class ReportsScreen extends ConsumerWidget {
                             touchTooltipData: BarTouchTooltipData(
                               getTooltipItem: (group, groupIndex, rod, rodIndex) {
                                 return BarTooltipItem(
-                                  'Day ${group.x}\n${CurrencyFormatter.format(rod.toY)}',
+                                  'Day ${group.x}\n${CurrencyFormatter.format(rod.toY, currency: currentCurrency)}',
                                   const TextStyle(color: Colors.white, fontSize: 11),
                                 );
                               },

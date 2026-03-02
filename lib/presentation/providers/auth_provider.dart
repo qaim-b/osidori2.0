@@ -89,6 +89,17 @@ class AuthNotifier extends StateNotifier<AsyncValue<UserModel?>> {
     }
   }
 
+  Future<void> setFxDisplayMode(String mode) async {
+    final user = state.valueOrNull;
+    if (user == null) return;
+    try {
+      final updated = await _repo.updateFxDisplayMode(user.id, mode);
+      state = AsyncValue.data(updated);
+    } catch (e, st) {
+      state = AsyncValue.error(_friendlyError(e), st);
+    }
+  }
+
   Future<void> setAvatar(String avatarUrl) async {
     final user = state.valueOrNull;
     if (user == null) return;
@@ -154,4 +165,8 @@ final currentUserIdProvider = Provider<String?>((ref) {
 
 final currentCurrencyProvider = Provider<String>((ref) {
   return ref.watch(authStateProvider).valueOrNull?.preferredCurrency ?? 'JPY';
+});
+
+final currentFxDisplayModeProvider = Provider<String>((ref) {
+  return ref.watch(authStateProvider).valueOrNull?.fxDisplayMode ?? 'accounting';
 });

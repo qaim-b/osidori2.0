@@ -125,6 +125,14 @@ class _AddTransactionScreenState extends ConsumerState<AddTransactionScreen> {
     setState(() => _isSaving = true);
 
     try {
+      final appCurrency = ref.read(currentCurrencyProvider).toUpperCase();
+      final entryCurrency = _entryCurrency.toUpperCase();
+      final fxRate = await FxConverter.getRate(
+        fromCurrency: entryCurrency,
+        toCurrency: appCurrency,
+      );
+      final lockedBase = amount * fxRate;
+
       final categories = ref.read(categoriesProvider).valueOrNull ?? [];
       CategoryEntity? selectedCategory;
       for (final c in categories) {
@@ -139,7 +147,13 @@ class _AddTransactionScreenState extends ConsumerState<AddTransactionScreen> {
           .addTransaction(
             type: _type,
             amount: amount,
-            currency: _entryCurrency,
+            currency: entryCurrency,
+            originalAmount: amount,
+            originalCurrency: entryCurrency,
+            fxRateToBase: fxRate,
+            fxBaseCurrency: appCurrency,
+            baseAmountLocked: lockedBase,
+            fxRateDate: DateTime.now().toUtc(),
             date: _date,
             categoryId: _selectedCategoryId!,
             categoryNameSnapshot: selectedCategory?.name,

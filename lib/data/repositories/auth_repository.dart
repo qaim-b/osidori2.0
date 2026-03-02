@@ -121,6 +121,14 @@ class AuthRepository {
     return getProfile(userId);
   }
 
+  Future<UserModel> updateFxDisplayMode(String userId, String mode) async {
+    await _client
+        .from(AppSupabase.usersTable)
+        .update({'fx_display_mode': mode})
+        .eq('id', userId);
+    return getProfile(userId);
+  }
+
   /// Update avatar URL
   Future<UserModel> updateAvatar(String userId, String avatarUrl) async {
     await _client

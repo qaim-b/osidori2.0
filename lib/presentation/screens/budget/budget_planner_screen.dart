@@ -1,7 +1,8 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/theme/app_colors.dart';
+import '../../providers/auth_provider.dart';
 import '../../providers/budget_limit_provider.dart';
 import '../../providers/category_provider.dart';
 
@@ -28,6 +29,8 @@ class _BudgetPlannerScreenState extends ConsumerState<BudgetPlannerScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final currentCurrency = ref.watch(currentCurrencyProvider);
+    final symbol = currentCurrency == 'MYR' ? 'RM ' : '¥ ';
     final categories = ref.watch(categoriesProvider).valueOrNull ?? [];
     final limits = ref.watch(budgetLimitMapProvider);
     final query = _searchController.text.trim().toLowerCase();
@@ -90,11 +93,11 @@ class _BudgetPlannerScreenState extends ConsumerState<BudgetPlannerScreen> {
                                         decimal: true,
                                       ),
                                   textAlign: TextAlign.right,
-                                  decoration: const InputDecoration(
+                                  decoration: InputDecoration(
                                     hintText: 'none',
                                     helperText: '0 = none',
                                     isDense: true,
-                                    prefixText: '¥ ',
+                                    prefixText: symbol,
                                   ),
                                 ),
                               ),
@@ -158,3 +161,4 @@ class _BudgetPlannerScreenState extends ConsumerState<BudgetPlannerScreen> {
     );
   }
 }
+

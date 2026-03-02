@@ -33,6 +33,7 @@ final monthlyTransactionsProvider =
       final groupIds = ref.watch(groupIdsProvider);
       final selectedMonth = ref.watch(selectedMonthProvider);
       final displayCurrency = ref.watch(currentCurrencyProvider);
+      final fxMode = ref.watch(currentFxDisplayModeProvider);
       final repo = ref.read(transactionRepositoryProvider);
       return TransactionsNotifier(
         repo,
@@ -40,6 +41,7 @@ final monthlyTransactionsProvider =
         selectedMonth,
         groupIds,
         displayCurrency,
+        fxMode,
       );
     });
 
@@ -51,6 +53,7 @@ class TransactionsNotifier
   final DateTime _month;
   final List<String> _groupIds;
   final String _displayCurrency;
+  final String _fxMode;
   static const _uuid = Uuid();
 
   TransactionsNotifier(
@@ -59,6 +62,7 @@ class TransactionsNotifier
     this._month,
     this._groupIds,
     this._displayCurrency,
+    this._fxMode,
   )
     : super(const AsyncValue.loading()) {
     if (_userId != null) load();
@@ -93,6 +97,15 @@ class TransactionsNotifier
   ) async {
     final converted = await Future.wait(
       txns.map((txn) async {
+        if (_fxMode == 'accounting' &&
+            txn.fxBaseCurrency?.toUpperCase() == _displayCurrency.toUpperCase() &&
+            txn.baseAmountLocked != null) {
+          return txn.copyWith(
+            amount: txn.baseAmountLocked,
+            currency: _displayCurrency,
+          );
+        }
+
         if (txn.currency.toUpperCase() == _displayCurrency.toUpperCase()) {
           return txn;
         }
@@ -111,6 +124,12 @@ class TransactionsNotifier
     required TransactionType type,
     required double amount,
     required String currency,
+    double? originalAmount,
+    String? originalCurrency,
+    double? fxRateToBase,
+    String? fxBaseCurrency,
+    double? baseAmountLocked,
+    DateTime? fxRateDate,
     required DateTime date,
     required String categoryId,
     String? categoryNameSnapshot,
@@ -136,6 +155,12 @@ class TransactionsNotifier
       type: type,
       amount: amount,
       currency: currency,
+      originalAmount: originalAmount,
+      originalCurrency: originalCurrency,
+      fxRateToBase: fxRateToBase,
+      fxBaseCurrency: fxBaseCurrency,
+      baseAmountLocked: baseAmountLocked,
+      fxRateDate: fxRateDate,
       date: date,
       categoryId: categoryId,
       categoryNameSnapshot: categoryNameSnapshot,

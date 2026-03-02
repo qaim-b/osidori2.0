@@ -15,6 +15,12 @@ class TransactionEntity implements Comparable<TransactionEntity> {
   final TransactionType type;
   final double amount;
   final String currency;
+  final double? originalAmount;
+  final String? originalCurrency;
+  final double? fxRateToBase;
+  final String? fxBaseCurrency;
+  final double? baseAmountLocked;
+  final DateTime? fxRateDate;
   final DateTime date;
   final String categoryId;
   final String? categoryNameSnapshot;
@@ -36,6 +42,12 @@ class TransactionEntity implements Comparable<TransactionEntity> {
     required this.type,
     required this.amount,
     required this.currency,
+    this.originalAmount,
+    this.originalCurrency,
+    this.fxRateToBase,
+    this.fxBaseCurrency,
+    this.baseAmountLocked,
+    this.fxRateDate,
     required this.date,
     required this.categoryId,
     this.categoryNameSnapshot,
@@ -77,6 +89,12 @@ class TransactionEntity implements Comparable<TransactionEntity> {
     TransactionType? type,
     double? amount,
     String? currency,
+    double? originalAmount,
+    String? originalCurrency,
+    double? fxRateToBase,
+    String? fxBaseCurrency,
+    double? baseAmountLocked,
+    DateTime? fxRateDate,
     DateTime? date,
     String? categoryId,
     String? categoryNameSnapshot,
@@ -98,6 +116,12 @@ class TransactionEntity implements Comparable<TransactionEntity> {
       type: type ?? this.type,
       amount: amount ?? this.amount,
       currency: currency ?? this.currency,
+      originalAmount: originalAmount ?? this.originalAmount,
+      originalCurrency: originalCurrency ?? this.originalCurrency,
+      fxRateToBase: fxRateToBase ?? this.fxRateToBase,
+      fxBaseCurrency: fxBaseCurrency ?? this.fxBaseCurrency,
+      baseAmountLocked: baseAmountLocked ?? this.baseAmountLocked,
+      fxRateDate: fxRateDate ?? this.fxRateDate,
       date: date ?? this.date,
       categoryId: categoryId ?? this.categoryId,
       categoryNameSnapshot: categoryNameSnapshot ?? this.categoryNameSnapshot,

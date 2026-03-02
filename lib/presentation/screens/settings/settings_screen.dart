@@ -1,4 +1,4 @@
-import 'dart:convert';
+﻿import 'dart:convert';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -164,11 +164,8 @@ class SettingsScreen extends ConsumerWidget {
                   _SettingsTile(
                     label: 'Currency',
                     subtitle:
-                        ref
-                            .watch(authStateProvider)
-                            .valueOrNull
-                            ?.preferredCurrency ??
-                        AppConstants.defaultCurrency,
+                        '${ref.watch(authStateProvider).valueOrNull?.preferredCurrency ?? AppConstants.defaultCurrency} â€¢ '
+                        '${ref.watch(currentFxDisplayModeProvider) == 'live' ? 'Live FX' : 'Accounting'}',
                     icon: Icons.currency_yen_rounded,
                     onTap: () => _pickCurrency(context, ref),
                   ),
@@ -502,37 +499,105 @@ class SettingsScreen extends ConsumerWidget {
 
   Future<void> _pickCurrency(BuildContext context, WidgetRef ref) async {
     final current = ref.read(currentCurrencyProvider);
-    final selected = await showDialog<String>(
+    final currentMode = ref.read(currentFxDisplayModeProvider);
+    final selected = await showDialog<(String, String)>(
       context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text('Choose Currency'),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            ListTile(
-              leading: Icon(
-                current == 'JPY'
-                    ? Icons.radio_button_checked
-                    : Icons.radio_button_off,
+      builder: (ctx) {
+        String selectedCurrency = current;
+        String selectedMode = currentMode;
+        return StatefulBuilder(
+          builder: (ctx, setDialogState) => AlertDialog(
+            title: const Text('Currency & FX Mode'),
+            content: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text(
+                    'Base currency',
+                    style: TextStyle(fontWeight: FontWeight.w700),
+                  ),
+                  const SizedBox(height: 6),
+                  ListTile(
+                    contentPadding: EdgeInsets.zero,
+                    leading: Icon(
+                      selectedCurrency == 'JPY'
+                          ? Icons.radio_button_checked
+                          : Icons.radio_button_off,
+                    ),
+                    title: const Text('JPY (¥ Japanese Yen)'),
+                    onTap: () => setDialogState(() => selectedCurrency = 'JPY'),
+                  ),
+                  ListTile(
+                    contentPadding: EdgeInsets.zero,
+                    leading: Icon(
+                      selectedCurrency == 'MYR'
+                          ? Icons.radio_button_checked
+                          : Icons.radio_button_off,
+                    ),
+                    title: const Text('MYR (RM Malaysian Ringgit)'),
+                    onTap: () => setDialogState(() => selectedCurrency = 'MYR'),
+                  ),
+                  const Divider(height: 18),
+                  const Text(
+                    'Display mode',
+                    style: TextStyle(fontWeight: FontWeight.w700),
+                  ),
+                  const SizedBox(height: 6),
+                  ListTile(
+                    contentPadding: EdgeInsets.zero,
+                    leading: Icon(
+                      selectedMode == 'accounting'
+                          ? Icons.radio_button_checked
+                          : Icons.radio_button_off,
+                    ),
+                    title: const Text('Accounting (recommended)'),
+                    subtitle: const Text(
+                      'Past values stay locked by historical entry rate',
+                    ),
+                    onTap: () => setDialogState(() => selectedMode = 'accounting'),
+                  ),
+                  ListTile(
+                    contentPadding: EdgeInsets.zero,
+                    leading: Icon(
+                      selectedMode == 'live'
+                          ? Icons.radio_button_checked
+                          : Icons.radio_button_off,
+                    ),
+                    title: const Text('Live FX'),
+                    subtitle: const Text(
+                      'Revalue all transactions using today\'s rate',
+                    ),
+                    onTap: () => setDialogState(() => selectedMode = 'live'),
+                  ),
+                ],
               ),
-              title: const Text('JPY (¥ Japanese Yen)'),
-              onTap: () => Navigator.pop(ctx, 'JPY'),
             ),
-            ListTile(
-              leading: Icon(
-                current == 'MYR'
-                    ? Icons.radio_button_checked
-                    : Icons.radio_button_off,
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(ctx),
+                child: const Text('Cancel'),
               ),
-              title: const Text('MYR (RM Malaysian Ringgit)'),
-              onTap: () => Navigator.pop(ctx, 'MYR'),
-            ),
-          ],
-        ),
-      ),
+              FilledButton(
+                onPressed: () =>
+                    Navigator.pop(ctx, (selectedCurrency, selectedMode)),
+                child: const Text('Save'),
+              ),
+            ],
+          ),
+        );
+      },
     );
     if (selected != null) {
-      await ref.read(authStateProvider.notifier).setPreferredCurrency(selected);
+      final (currency, mode) = selected;
+      if (currency != current) {
+        await ref
+            .read(authStateProvider.notifier)
+            .setPreferredCurrency(currency);
+      }
+      if (mode != currentMode) {
+        await ref.read(authStateProvider.notifier).setFxDisplayMode(mode);
+      }
     }
   }
 
@@ -860,3 +925,4 @@ class _SettingsTile extends StatelessWidget {
     );
   }
 }
+
