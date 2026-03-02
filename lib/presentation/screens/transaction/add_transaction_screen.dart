@@ -207,6 +207,8 @@ class _AddTransactionScreenState extends ConsumerState<AddTransactionScreen> {
     final categoriesAsync = ref.watch(categoriesProvider);
     final accountsAsync = ref.watch(accountsProvider);
     final appCurrency = ref.watch(currentCurrencyProvider);
+    final counterCurrency =
+        _entryCurrency.toUpperCase() == 'JPY' ? 'MYR' : 'JPY';
 
     final categories = categoriesAsync.valueOrNull ?? [];
     final accounts = accountsAsync.valueOrNull ?? [];
@@ -413,57 +415,70 @@ class _AddTransactionScreenState extends ConsumerState<AddTransactionScreen> {
                         label: Text('Entry: $_entryCurrency'),
                       ),
                       const Spacer(),
-                      if (_entryCurrency != appCurrency)
-                        ValueListenableBuilder<TextEditingValue>(
-                          valueListenable: _amountController,
-                          builder: (context, value, _) {
-                            final amount = double.tryParse(value.text);
-                            if (amount == null || amount <= 0) {
-                              return Text(
-                                'Base: $appCurrency',
-                                style: const TextStyle(
-                                  fontSize: 12,
-                                  color: AppColors.textSecondary,
-                                ),
-                              );
-                            }
-                            return FutureBuilder<double>(
-                              future: FxConverter.convert(
-                                amount: amount,
-                                fromCurrency: _entryCurrency,
-                                toCurrency: appCurrency,
+                      ValueListenableBuilder<TextEditingValue>(
+                        valueListenable: _amountController,
+                        builder: (context, value, _) {
+                          final amount = double.tryParse(value.text);
+                          if (amount == null || amount <= 0) {
+                            return Text(
+                              'Base: ${appCurrency.toUpperCase()}',
+                              style: const TextStyle(
+                                fontSize: 12,
+                                color: AppColors.textSecondary,
                               ),
-                              builder: (context, snapshot) {
-                                final converted = snapshot.data;
-                                final display = converted == null
-                                    ? 'Converting...'
-                                    : CurrencyFormatter.format(
-                                        converted,
-                                        currency: appCurrency,
-                                      );
-                                return Container(
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: 12,
-                                    vertical: 6,
-                                  ),
-                                  decoration: BoxDecoration(
-                                    color: AppColors.surfaceVariant,
-                                    borderRadius: BorderRadius.circular(12),
-                                  ),
-                                  child: Text(
-                                    '≈ $display',
-                                    style: const TextStyle(
-                                      fontSize: 36,
-                                      height: 1.0,
-                                      fontWeight: FontWeight.w800,
-                                      color: AppColors.textPrimary,
+                            );
+                          }
+                          return FutureBuilder<double>(
+                            future: FxConverter.convert(
+                              amount: amount,
+                              fromCurrency: _entryCurrency,
+                              toCurrency: counterCurrency,
+                            ),
+                            builder: (context, snapshot) {
+                              final converted = snapshot.data;
+                              final display = converted == null
+                                  ? 'Converting...'
+                                  : CurrencyFormatter.format(
+                                      converted,
+                                      currency: counterCurrency,
+                                    );
+                              return Column(
+                                crossAxisAlignment: CrossAxisAlignment.end,
+                                children: [
+                                  Container(
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 12,
+                                      vertical: 6,
+                                    ),
+                                    decoration: BoxDecoration(
+                                      color: AppColors.surfaceVariant,
+                                      borderRadius: BorderRadius.circular(12),
+                                    ),
+                                    child: Text(
+                                      '≈ $display',
+                                      style: const TextStyle(
+                                        fontSize: 36,
+                                        height: 1.0,
+                                        fontWeight: FontWeight.w800,
+                                        color: AppColors.textPrimary,
+                                      ),
                                     ),
                                   ),
-                                );
-                              },
-                            );
-                          },
-                        ),
+                                  const SizedBox(height: 2),
+                                  Text(
+                                    '${_entryCurrency.toUpperCase()} -> $counterCurrency',
+                                    style: const TextStyle(
+                                      fontSize: 11,
+                                      color: AppColors.textSecondary,
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  ),
+                                ],
+                              );
+                            },
+                          );
+                        },
+                      ),
                     ],
                   ),
                   const SizedBox(height: 8),
