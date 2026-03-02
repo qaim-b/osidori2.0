@@ -15,67 +15,61 @@ class AppShell extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final bottomInset = MediaQuery.of(context).viewPadding.bottom;
     final scheme = Theme.of(context).colorScheme;
 
     return Scaffold(
+      extendBody: true,
       body: navigationShell,
-      bottomNavigationBar: Padding(
-        padding: EdgeInsets.only(bottom: bottomInset > 0 ? bottomInset : 8),
-        child: ClipRRect(
-          borderRadius: const BorderRadius.vertical(top: Radius.circular(8)),
-          child: BackdropFilter(
-            filter: ImageFilter.blur(sigmaX: 8, sigmaY: 8),
-            child: DecoratedBox(
-              decoration: BoxDecoration(
-                color: scheme.surface.withValues(alpha: 0.95),
-                border: Border(
-                  top: BorderSide(color: AppColors.border.withValues(alpha: 0.9)),
-                ),
+      bottomNavigationBar: ClipRRect(
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(8)),
+        child: BackdropFilter(
+          filter: ImageFilter.blur(sigmaX: 8, sigmaY: 8),
+          child: DecoratedBox(
+            decoration: BoxDecoration(
+              color: scheme.surface.withValues(alpha: 0.95),
+              border: Border(
+                top: BorderSide(color: AppColors.border.withValues(alpha: 0.9)),
               ),
-              child: SafeArea(
-                top: false,
-                bottom: false,
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
-                  child: Row(
-                    children: [
-                      Expanded(
-                        child: _NavItem(
-                          label: 'Home',
-                          icon: Icons.home_rounded,
-                          selected: navigationShell.currentIndex == 0,
-                          onTap: () => navigationShell.goBranch(0),
-                        ),
-                      ),
-                      Expanded(
-                        child: _NavItem(
-                          label: 'Summary',
-                          icon: Icons.analytics_rounded,
-                          selected: navigationShell.currentIndex == 1,
-                          onTap: () => navigationShell.goBranch(1),
-                        ),
-                      ),
-                      _AddButton(onTap: () => context.push('/add')),
-                      Expanded(
-                        child: _NavItem(
-                          label: 'Budget',
-                          icon: Icons.pie_chart_rounded,
-                          selected: navigationShell.currentIndex == 2,
-                          onTap: () => navigationShell.goBranch(2),
-                        ),
-                      ),
-                      Expanded(
-                        child: _NavItem(
-                          label: 'Calendar',
-                          icon: Icons.calendar_month_rounded,
-                          selected: navigationShell.currentIndex == 3,
-                          onTap: () => navigationShell.goBranch(3),
-                        ),
-                      ),
-                    ],
+            ),
+            child: SafeArea(
+              top: false,
+              minimum: const EdgeInsets.fromLTRB(8, 6, 8, 8),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: _NavItem(
+                      label: 'Home',
+                      icon: Icons.home_rounded,
+                      selected: navigationShell.currentIndex == 0,
+                      onTap: () => navigationShell.goBranch(0),
+                    ),
                   ),
-                ),
+                  Expanded(
+                    child: _NavItem(
+                      label: 'Summary',
+                      icon: Icons.analytics_rounded,
+                      selected: navigationShell.currentIndex == 1,
+                      onTap: () => navigationShell.goBranch(1),
+                    ),
+                  ),
+                  _AddButton(onTap: () => context.push('/add')),
+                  Expanded(
+                    child: _NavItem(
+                      label: 'Budget',
+                      icon: Icons.pie_chart_rounded,
+                      selected: navigationShell.currentIndex == 2,
+                      onTap: () => navigationShell.goBranch(2),
+                    ),
+                  ),
+                  Expanded(
+                    child: _NavItem(
+                      label: 'Calendar',
+                      icon: Icons.calendar_month_rounded,
+                      selected: navigationShell.currentIndex == 3,
+                      onTap: () => navigationShell.goBranch(3),
+                    ),
+                  ),
+                ],
               ),
             ),
           ),
