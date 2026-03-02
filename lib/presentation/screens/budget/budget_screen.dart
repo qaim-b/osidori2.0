@@ -156,6 +156,7 @@ class _BudgetScreenState extends ConsumerState<BudgetScreen> {
     return Scaffold(
       backgroundColor: Colors.transparent,
       body: ThemedBackdrop(
+        showCountryBanner: true,
         child: RefreshIndicator(
           onRefresh: () => _refresh(ref),
           child: CustomScrollView(

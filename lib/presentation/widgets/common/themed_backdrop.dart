@@ -6,8 +6,13 @@ import '../../providers/auth_provider.dart';
 
 class ThemedBackdrop extends ConsumerWidget {
   final Widget child;
+  final bool showCountryBanner;
 
-  const ThemedBackdrop({super.key, required this.child});
+  const ThemedBackdrop({
+    super.key,
+    required this.child,
+    this.showCountryBanner = false,
+  });
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -24,26 +29,27 @@ class ThemedBackdrop extends ConsumerWidget {
             decoration: BoxDecoration(color: bg),
           ),
         ),
-        Positioned(
-          top: 0,
-          left: 0,
-          right: 0,
-          child: IgnorePointer(
-            child: Opacity(
-              opacity: 0.2,
-              child: SizedBox(
-                height: 120,
-                child: SvgPicture.asset(
-                  bannerAsset,
-                  fit: BoxFit.cover,
+        if (showCountryBanner)
+          Positioned(
+            top: 0,
+            left: 0,
+            right: 0,
+            child: IgnorePointer(
+              child: Opacity(
+                opacity: 0.32,
+                child: SizedBox(
+                  height: 160,
+                  child: SvgPicture.asset(
+                    bannerAsset,
+                    fit: BoxFit.cover,
+                    alignment: Alignment.topCenter,
+                  ),
                 ),
               ),
             ),
           ),
-        ),
         child,
       ],
     );
   }
 }
-

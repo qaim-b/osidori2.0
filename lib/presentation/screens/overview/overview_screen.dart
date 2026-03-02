@@ -2,6 +2,7 @@ import 'dart:ui';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'package:go_router/go_router.dart';
 import '../../../core/extensions/datetime_ext.dart';
 import '../../../core/theme/app_colors.dart';
@@ -70,6 +71,90 @@ class _OverviewScreenState extends ConsumerState<OverviewScreen> {
       ref.read(goalsProvider.notifier).load(),
       ref.read(budgetLimitsProvider.notifier).load(),
     ]);
+  }
+
+  Future<void> _showCountrySelector(BuildContext context) async {
+    await showModalBottomSheet<String>(
+      context: context,
+      isScrollControlled: true,
+      barrierColor: Colors.black.withValues(alpha: 0.32),
+      backgroundColor: Colors.transparent,
+      builder: (ctx) {
+        final current = ref.read(currentCurrencyProvider).toUpperCase();
+        return SafeArea(
+          child: Container(
+            margin: const EdgeInsets.only(top: 48),
+            padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
+            decoration: BoxDecoration(
+              color: Theme.of(context).colorScheme.surface,
+              borderRadius: const BorderRadius.vertical(
+                top: Radius.circular(24),
+              ),
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Center(
+                  child: Container(
+                    width: 42,
+                    height: 4,
+                    margin: const EdgeInsets.only(bottom: 14),
+                    decoration: BoxDecoration(
+                      color: AppColors.border,
+                      borderRadius: BorderRadius.circular(99),
+                    ),
+                  ),
+                ),
+                Text(
+                  'Switch country mode',
+                  style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                const Text(
+                  'Pick your current country. More countries on the way soon!',
+                ),
+                const SizedBox(height: 14),
+                _CountryOptionTile(
+                  title: 'Japan',
+                  subtitle: 'Base currency: JPY',
+                  bannerAsset: 'assets/images/banner_japan.svg',
+                  selected: current == 'JPY',
+                  onTap: () => Navigator.pop(ctx, 'JPY'),
+                ),
+                const SizedBox(height: 10),
+                _CountryOptionTile(
+                  title: 'Malaysia',
+                  subtitle: 'Base currency: MYR',
+                  bannerAsset: 'assets/images/banner_malaysia.svg',
+                  selected: current == 'MYR',
+                  onTap: () => Navigator.pop(ctx, 'MYR'),
+                ),
+                const SizedBox(height: 14),
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: AppColors.surfaceVariant,
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: const Text(
+                    'Other countries on the way soon.',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(fontWeight: FontWeight.w600),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    ).then((selected) async {
+      if (selected == null) return;
+      await ref.read(authStateProvider.notifier).setPreferredCurrency(selected);
+    });
   }
 
   @override
@@ -152,6 +237,7 @@ class _OverviewScreenState extends ConsumerState<OverviewScreen> {
     return Scaffold(
       backgroundColor: Colors.transparent,
       body: ThemedBackdrop(
+        showCountryBanner: true,
         child: RefreshIndicator(
           onRefresh: () => _refresh(ref),
           child: CustomScrollView(
@@ -182,6 +268,11 @@ class _OverviewScreenState extends ConsumerState<OverviewScreen> {
                                   fontSize: 12,
                                   color: AppColors.textSecondary,
                                 ),
+                              ),
+                              const SizedBox(height: 8),
+                              _CountryModePill(
+                                currency: currentCurrency,
+                                onTap: () => _showCountrySelector(context),
                               ),
                             ],
                           ),
@@ -564,6 +655,142 @@ class _OverviewScreenState extends ConsumerState<OverviewScreen> {
           ),
         );
       },
+    );
+  }
+}
+
+class _CountryModePill extends StatelessWidget {
+  final String currency;
+  final VoidCallback onTap;
+
+  const _CountryModePill({required this.currency, required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    final isMalaysia = currency.toUpperCase() == 'MYR';
+    final label = isMalaysia ? 'Malaysia mode' : 'Japan mode';
+    final flag = isMalaysia ? '🇲🇾' : '🇯🇵';
+    final banner = isMalaysia
+        ? 'assets/images/banner_malaysia.svg'
+        : 'assets/images/banner_japan.svg';
+
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(999),
+        child: Ink(
+          decoration: BoxDecoration(
+            color: Colors.white.withValues(alpha: 0.9),
+            borderRadius: BorderRadius.circular(999),
+            border: Border.all(color: AppColors.border),
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const SizedBox(width: 10),
+              Text(flag, style: const TextStyle(fontSize: 16)),
+              const SizedBox(width: 6),
+              Text(
+                label,
+                style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700),
+              ),
+              const SizedBox(width: 8),
+              ClipRRect(
+                borderRadius: BorderRadius.circular(999),
+                child: SizedBox(
+                  width: 56,
+                  height: 22,
+                  child: SvgPicture.asset(
+                    banner,
+                    fit: BoxFit.cover,
+                  ),
+                ),
+              ),
+              const SizedBox(width: 6),
+              const Icon(
+                Icons.keyboard_arrow_down_rounded,
+                size: 18,
+                color: AppColors.textSecondary,
+              ),
+              const SizedBox(width: 8),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _CountryOptionTile extends StatelessWidget {
+  final String title;
+  final String subtitle;
+  final String bannerAsset;
+  final bool selected;
+  final VoidCallback onTap;
+
+  const _CountryOptionTile({
+    required this.title,
+    required this.subtitle,
+    required this.bannerAsset,
+    required this.selected,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(16),
+        child: Ink(
+          padding: const EdgeInsets.all(10),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(
+              color: selected ? Theme.of(context).colorScheme.primary : AppColors.border,
+              width: selected ? 1.6 : 1,
+            ),
+          ),
+          child: Row(
+            children: [
+              ClipRRect(
+                borderRadius: BorderRadius.circular(12),
+                child: SizedBox(
+                  width: 88,
+                  height: 48,
+                  child: SvgPicture.asset(
+                    bannerAsset,
+                    fit: BoxFit.cover,
+                  ),
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      title,
+                      style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w700),
+                    ),
+                    Text(
+                      subtitle,
+                      style: const TextStyle(fontSize: 12, color: AppColors.textSecondary),
+                    ),
+                  ],
+                ),
+              ),
+              Icon(
+                selected ? Icons.check_circle_rounded : Icons.circle_outlined,
+                color: selected ? Theme.of(context).colorScheme.primary : AppColors.textHint,
+              ),
+            ],
+          ),
+        ),
+      ),
     );
   }
 }

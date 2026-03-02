@@ -111,6 +111,7 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
       return Scaffold(
         backgroundColor: Colors.transparent,
         body: ThemedBackdrop(
+          showCountryBanner: true,
           child: RefreshIndicator(
             onRefresh: _refresh,
             child: CustomScrollView(
@@ -256,6 +257,7 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
       return Scaffold(
         backgroundColor: Colors.transparent,
         body: ThemedBackdrop(
+          showCountryBanner: true,
           child: Center(
             child: Padding(
               padding: const EdgeInsets.all(24),

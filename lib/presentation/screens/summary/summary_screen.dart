@@ -71,6 +71,7 @@ class _SummaryScreenState extends ConsumerState<SummaryScreen> {
     return Scaffold(
       backgroundColor: Colors.transparent,
       body: ThemedBackdrop(
+        showCountryBanner: true,
         child: RefreshIndicator(
           onRefresh: () => _refresh(ref),
           child: CustomScrollView(
