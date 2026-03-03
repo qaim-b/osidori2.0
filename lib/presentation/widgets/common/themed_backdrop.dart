@@ -18,10 +18,11 @@ class ThemedBackdrop extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
     final currency = ref.watch(currentCurrencyProvider).toUpperCase();
+    final isMalaysia = currency == 'MYR';
     final bannerAsset = currency == 'MYR'
         ? 'assets/images/banner_malaysia.svg'
         : 'assets/images/banner_japan.svg';
-    final bannerTint = theme.colorScheme.primary.withValues(alpha: 0.22);
+    final bannerTint = theme.colorScheme.primary.withValues(alpha: 0.75);
 
     return Stack(
       children: [
@@ -55,7 +56,9 @@ class ThemedBackdrop extends ConsumerWidget {
                     bannerAsset,
                     fit: BoxFit.fitWidth,
                     alignment: Alignment.topCenter,
-                    colorFilter: ColorFilter.mode(bannerTint, BlendMode.srcIn),
+                    colorFilter: isMalaysia
+                        ? ColorFilter.mode(bannerTint, BlendMode.modulate)
+                        : null,
                   ),
                 ),
               ),

@@ -1,4 +1,4 @@
-﻿import 'dart:convert';
+import 'dart:convert';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -164,7 +164,7 @@ class SettingsScreen extends ConsumerWidget {
                   _SettingsTile(
                     label: 'Currency',
                     subtitle:
-                        '${ref.watch(authStateProvider).valueOrNull?.preferredCurrency ?? AppConstants.defaultCurrency} â€¢ '
+                        '${ref.watch(authStateProvider).valueOrNull?.preferredCurrency ?? AppConstants.defaultCurrency} -  '
                         '${ref.watch(currentFxDisplayModeProvider) == 'live' ? 'Live FX' : 'Accounting'}',
                     icon: Icons.currency_yen_rounded,
                     onTap: () => _pickCurrency(context, ref),
@@ -525,7 +525,7 @@ class SettingsScreen extends ConsumerWidget {
                           ? Icons.radio_button_checked
                           : Icons.radio_button_off,
                     ),
-                    title: const Text('JPY (¥ Japanese Yen)'),
+                    title: const Text('JPY (Japanese Yen)'),
                     onTap: () => setDialogState(() => selectedCurrency = 'JPY'),
                   ),
                   ListTile(
@@ -555,7 +555,8 @@ class SettingsScreen extends ConsumerWidget {
                     subtitle: const Text(
                       'Past values stay locked by historical entry rate',
                     ),
-                    onTap: () => setDialogState(() => selectedMode = 'accounting'),
+                    onTap: () =>
+                        setDialogState(() => selectedMode = 'accounting'),
                   ),
                   ListTile(
                     contentPadding: EdgeInsets.zero,
@@ -925,4 +926,3 @@ class _SettingsTile extends StatelessWidget {
     );
   }
 }
-

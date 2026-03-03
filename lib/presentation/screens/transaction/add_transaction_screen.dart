@@ -1,4 +1,4 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -172,7 +172,7 @@ class _AddTransactionScreenState extends ConsumerState<AddTransactionScreen> {
           SnackBar(
             content: Row(
               children: [
-                const Text('âœ¨ '),
+                const Text(''),
                 Text(
                   _type == TransactionType.expense
                       ? 'Expense added!'
@@ -207,8 +207,9 @@ class _AddTransactionScreenState extends ConsumerState<AddTransactionScreen> {
     final categoriesAsync = ref.watch(categoriesProvider);
     final accountsAsync = ref.watch(accountsProvider);
     final appCurrency = ref.watch(currentCurrencyProvider);
-    final counterCurrency =
-        _entryCurrency.toUpperCase() == 'JPY' ? 'MYR' : 'JPY';
+    final counterCurrency = _entryCurrency.toUpperCase() == 'JPY'
+        ? 'MYR'
+        : 'JPY';
 
     final categories = categoriesAsync.valueOrNull ?? [];
     final accounts = accountsAsync.valueOrNull ?? [];
@@ -304,7 +305,7 @@ class _AddTransactionScreenState extends ConsumerState<AddTransactionScreen> {
 
             const SizedBox(height: 24),
 
-            // Amount input â€” BIG and prominent
+            // Amount input — BIG and prominent
             Container(
               padding: const EdgeInsets.all(20),
               decoration: BoxDecoration(
@@ -389,7 +390,7 @@ class _AddTransactionScreenState extends ConsumerState<AddTransactionScreen> {
                                           ? Icons.radio_button_checked
                                           : Icons.radio_button_off,
                                     ),
-                                    title: const Text('JPY (¥ Japanese Yen)'),
+                                    title: const Text('JPY (Japanese Yen)'),
                                     onTap: () => Navigator.pop(ctx, 'JPY'),
                                   ),
                                   ListTile(
@@ -455,7 +456,7 @@ class _AddTransactionScreenState extends ConsumerState<AddTransactionScreen> {
                                       borderRadius: BorderRadius.circular(12),
                                     ),
                                     child: Text(
-                                      '≈ $display',
+                                      '~ $display',
                                       style: const TextStyle(
                                         fontSize: 36,
                                         height: 1.0,
@@ -564,7 +565,7 @@ class _AddTransactionScreenState extends ConsumerState<AddTransactionScreen> {
               maxLines: 2,
               decoration: InputDecoration(
                 hintText:
-                    "Add a Note (Optional, let's help each other understand each item more â¤ï¸)",
+                    "Add a Note (Optional, let's help each other understand each item more)",
                 prefixIcon: const Icon(Icons.notes, size: 20),
               ),
             ),
@@ -603,7 +604,7 @@ class _AddTransactionScreenState extends ConsumerState<AddTransactionScreen> {
                               ),
                             )
                           : const Text(
-                              'âœ¨ Save Transaction',
+                              'Save Transaction',
                               style: TextStyle(
                                 color: Colors.white,
                                 fontSize: 16,
@@ -1053,7 +1054,7 @@ class _AccountPickerState extends State<_AccountPicker> {
                     ),
                   ),
                   subtitle: Text(
-                    '${acc.type.label} â€¢ ${acc.currency}',
+                    '${acc.type.label} -  ${acc.currency}',
                     style: const TextStyle(
                       fontSize: 11,
                       color: AppColors.textSecondary,
@@ -1084,5 +1085,3 @@ class _AccountPickerState extends State<_AccountPicker> {
     );
   }
 }
-
-

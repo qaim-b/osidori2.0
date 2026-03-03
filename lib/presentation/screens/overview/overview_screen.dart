@@ -212,7 +212,7 @@ class _OverviewScreenState extends ConsumerState<OverviewScreen> {
               ? 'Category #${txn.categoryDisplayNumberSnapshot}'
               : 'Other');
       final resolvedEmoji =
-          cat?.emoji ?? snapshotEmojiById[txn.categoryId] ?? 'ðŸ“¦';
+          cat?.emoji ?? snapshotEmojiById[txn.categoryId] ?? '[Cat]';
       final key = '$resolvedEmoji $resolvedName';
       breakdownTotals[key] = (breakdownTotals[key] ?? 0) + txn.amount;
       breakdownNames[key] = key;
@@ -674,6 +674,12 @@ class _CountryModePill extends StatelessWidget {
     final banner = isMalaysia
         ? 'assets/images/banner_malaysia.svg'
         : 'assets/images/banner_japan.svg';
+    final previewColorFilter = isMalaysia
+        ? ColorFilter.mode(
+            theme.colorScheme.primary.withValues(alpha: 0.75),
+            BlendMode.modulate,
+          )
+        : null;
 
     return Material(
       color: Colors.transparent,
@@ -715,10 +721,7 @@ class _CountryModePill extends StatelessWidget {
                   child: SvgPicture.asset(
                     banner,
                     fit: BoxFit.cover,
-                    colorFilter: ColorFilter.mode(
-                      theme.colorScheme.primary.withValues(alpha: 0.55),
-                      BlendMode.srcIn,
-                    ),
+                    colorFilter: previewColorFilter,
                   ),
                 ),
               ),
@@ -755,6 +758,13 @@ class _CountryOptionTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final isMalaysia = bannerAsset.contains('malaysia');
+    final previewColorFilter = isMalaysia
+        ? ColorFilter.mode(
+            theme.colorScheme.primary.withValues(alpha: 0.75),
+            BlendMode.modulate,
+          )
+        : null;
     return Material(
       color: Colors.transparent,
       child: InkWell(
@@ -782,10 +792,7 @@ class _CountryOptionTile extends StatelessWidget {
                   child: SvgPicture.asset(
                     bannerAsset,
                     fit: BoxFit.cover,
-                    colorFilter: ColorFilter.mode(
-                      theme.colorScheme.primary.withValues(alpha: 0.55),
-                      BlendMode.srcIn,
-                    ),
+                    colorFilter: previewColorFilter,
                   ),
                 ),
               ),
