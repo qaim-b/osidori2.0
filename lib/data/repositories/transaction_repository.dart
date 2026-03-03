@@ -7,10 +7,23 @@ import '../../core/constants/app_constants.dart';
 /// Uses efficient pagination and date-range filtering.
 class TransactionRepository {
   final SupabaseClient _client = AppSupabase.client;
+  bool _fxColumnsUnsupported = false;
 
   /// Create a new transaction
   Future<TransactionModel> create(TransactionModel txn) async {
-    await _client.from(AppSupabase.transactionsTable).insert(txn.toJson());
+    final payload = _txPayload(txn);
+    try {
+      await _client.from(AppSupabase.transactionsTable).insert(payload);
+    } on PostgrestException catch (e) {
+      if (_shouldFallbackToLegacyFxPayload(e)) {
+        _fxColumnsUnsupported = true;
+        await _client
+            .from(AppSupabase.transactionsTable)
+            .insert(_legacyFxPayload(payload));
+      } else {
+        rethrow;
+      }
+    }
     return txn;
   }
 
@@ -164,10 +177,23 @@ class TransactionRepository {
   }
 
   Future<void> update(TransactionModel txn) async {
-    await _client
-        .from(AppSupabase.transactionsTable)
-        .update(txn.toJson())
-        .eq('id', txn.id);
+    final payload = _txPayload(txn);
+    try {
+      await _client
+          .from(AppSupabase.transactionsTable)
+          .update(payload)
+          .eq('id', txn.id);
+    } on PostgrestException catch (e) {
+      if (_shouldFallbackToLegacyFxPayload(e)) {
+        _fxColumnsUnsupported = true;
+        await _client
+            .from(AppSupabase.transactionsTable)
+            .update(_legacyFxPayload(payload))
+            .eq('id', txn.id);
+      } else {
+        rethrow;
+      }
+    }
   }
 
   Future<void> delete(String id) async {
@@ -187,5 +213,32 @@ class TransactionRepository {
         .isFilter('group_id', null)
         .select('id');
     return updated.length;
+  }
+
+  Map<String, dynamic> _txPayload(TransactionModel txn) {
+    final payload = txn.toJson();
+    return _fxColumnsUnsupported ? _legacyFxPayload(payload) : payload;
+  }
+
+  bool _shouldFallbackToLegacyFxPayload(PostgrestException e) {
+    if (e.code != 'PGRST204') return false;
+    final message = e.message.toLowerCase();
+    return message.contains('base_amount_locked') ||
+        message.contains('original_amount') ||
+        message.contains('original_currency') ||
+        message.contains('fx_rate_to_base') ||
+        message.contains('fx_base_currency') ||
+        message.contains('fx_rate_date');
+  }
+
+  Map<String, dynamic> _legacyFxPayload(Map<String, dynamic> payload) {
+    final legacy = Map<String, dynamic>.from(payload);
+    legacy.remove('original_amount');
+    legacy.remove('original_currency');
+    legacy.remove('fx_rate_to_base');
+    legacy.remove('fx_base_currency');
+    legacy.remove('base_amount_locked');
+    legacy.remove('fx_rate_date');
+    return legacy;
   }
 }

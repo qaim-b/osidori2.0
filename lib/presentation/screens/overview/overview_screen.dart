@@ -1,4 +1,4 @@
-﻿import 'dart:ui';
+import 'dart:ui';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -108,9 +108,9 @@ class _OverviewScreenState extends ConsumerState<OverviewScreen> {
                 ),
                 Text(
                   'Switch country',
-                  style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                    fontWeight: FontWeight.w800,
-                  ),
+                  style: Theme.of(
+                    context,
+                  ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w800),
                 ),
                 const SizedBox(height: 4),
                 const Text(
@@ -445,13 +445,13 @@ class _OverviewScreenState extends ConsumerState<OverviewScreen> {
                             0,
                             (sum, v) => sum + v,
                           );
-                            return CategoryDonutChart(
-                              categoryTotals: breakdownTotals,
-                              categoryNames: breakdownNames,
-                              currency: currentCurrency,
-                              totalAmount: total,
-                            );
-                          },
+                          return CategoryDonutChart(
+                            categoryTotals: breakdownTotals,
+                            categoryNames: breakdownNames,
+                            currency: currentCurrency,
+                            totalAmount: total,
+                          );
+                        },
                       ),
                     ],
                   ),
@@ -667,6 +667,7 @@ class _CountryModePill extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     final isMalaysia = currency.toUpperCase() == 'MYR';
     final label = isMalaysia ? 'Malaysia' : 'Japan';
     final code = isMalaysia ? 'MY' : 'JP';
@@ -700,7 +701,10 @@ class _CountryModePill extends StatelessWidget {
               const SizedBox(width: 6),
               Text(
                 label,
-                style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700),
+                style: const TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w700,
+                ),
               ),
               const SizedBox(width: 8),
               ClipRRect(
@@ -711,6 +715,10 @@ class _CountryModePill extends StatelessWidget {
                   child: SvgPicture.asset(
                     banner,
                     fit: BoxFit.cover,
+                    colorFilter: ColorFilter.mode(
+                      theme.colorScheme.primary.withValues(alpha: 0.55),
+                      BlendMode.srcIn,
+                    ),
                   ),
                 ),
               ),
@@ -746,6 +754,7 @@ class _CountryOptionTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     return Material(
       color: Colors.transparent,
       child: InkWell(
@@ -757,7 +766,9 @@ class _CountryOptionTile extends StatelessWidget {
             color: Colors.white,
             borderRadius: BorderRadius.circular(16),
             border: Border.all(
-              color: selected ? Theme.of(context).colorScheme.primary : AppColors.border,
+              color: selected
+                  ? Theme.of(context).colorScheme.primary
+                  : AppColors.border,
               width: selected ? 1.6 : 1,
             ),
           ),
@@ -771,6 +782,10 @@ class _CountryOptionTile extends StatelessWidget {
                   child: SvgPicture.asset(
                     bannerAsset,
                     fit: BoxFit.cover,
+                    colorFilter: ColorFilter.mode(
+                      theme.colorScheme.primary.withValues(alpha: 0.55),
+                      BlendMode.srcIn,
+                    ),
                   ),
                 ),
               ),
@@ -781,18 +796,26 @@ class _CountryOptionTile extends StatelessWidget {
                   children: [
                     Text(
                       title,
-                      style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w700),
+                      style: const TextStyle(
+                        fontSize: 15,
+                        fontWeight: FontWeight.w700,
+                      ),
                     ),
                     Text(
                       subtitle,
-                      style: const TextStyle(fontSize: 12, color: AppColors.textSecondary),
+                      style: const TextStyle(
+                        fontSize: 12,
+                        color: AppColors.textSecondary,
+                      ),
                     ),
                   ],
                 ),
               ),
               Icon(
                 selected ? Icons.check_circle_rounded : Icons.circle_outlined,
-                color: selected ? Theme.of(context).colorScheme.primary : AppColors.textHint,
+                color: selected
+                    ? Theme.of(context).colorScheme.primary
+                    : AppColors.textHint,
               ),
             ],
           ),
@@ -981,4 +1004,3 @@ class _QuickAction extends StatelessWidget {
     );
   }
 }
-
