@@ -120,18 +120,40 @@ class CsvExporter {
     }).toList();
 
     final categoryDisplayNames = <String, String>{...categoryNames};
+    final categoryIdToCanonical = <String, String>{};
+    final canonicalToDisplay = <String, String>{};
+    String toCanonicalFromRaw(String raw) {
+      final canonical = _canonicalCategoryKey(raw);
+      canonicalToDisplay[canonical] =
+          canonicalToDisplay[canonical] ?? _displayCategoryLabel(raw);
+      return canonical;
+    }
+
     for (final txn in expenseTxns) {
       categoryDisplayNames[txn.categoryId] =
           categoryDisplayNames[txn.categoryId] ??
           txn.categoryNameSnapshot ??
           txn.categoryId;
+      final raw =
+          categoryDisplayNames[txn.categoryId] ??
+          txn.categoryNameSnapshot ??
+          txn.categoryId;
+      final numberedKey = txn.categoryDisplayNumberSnapshot == null
+          ? null
+          : 'n:${txn.categoryDisplayNumberSnapshot}';
+      final canonical = numberedKey ?? toCanonicalFromRaw(raw);
+      canonicalToDisplay[canonical] =
+          canonicalToDisplay[canonical] ?? _displayCategoryLabel(raw);
+      categoryIdToCanonical[txn.categoryId] = canonical;
     }
 
     // One column per category label (merge duplicate IDs with same label).
-    final labels = <String>{
-      ...categoryDisplayNames.values.where((e) => e.trim().isNotEmpty),
+    final keys = <String>{
+      ...categoryIdToCanonical.values,
     }.toList()
       ..sort();
+
+    final labels = keys.map((k) => canonicalToDisplay[k] ?? k).toList();
 
     final header = <String>[
       'Date',
@@ -142,12 +164,14 @@ class CsvExporter {
     final byDate = <String, Map<String, double>>{};
     for (final txn in expenseTxns) {
       final dateKey = DateFormat('yyyy-MM-dd').format(txn.date);
-      final label =
+      final raw =
           categoryDisplayNames[txn.categoryId] ??
           txn.categoryNameSnapshot ??
           txn.categoryId;
+      final canonical = categoryIdToCanonical[txn.categoryId] ??
+          toCanonicalFromRaw(raw);
       final dateMap = byDate.putIfAbsent(dateKey, () => <String, double>{});
-      dateMap[label] = (dateMap[label] ?? 0) + txn.amount;
+      dateMap[canonical] = (dateMap[canonical] ?? 0) + txn.amount;
     }
 
     final dateKeys = List.generate(
@@ -157,7 +181,7 @@ class CsvExporter {
 
     final rows = <List<String>>[header];
     final categoryTotals = <String, double>{
-      for (final label in labels) label: 0,
+      for (final key in keys) key: 0,
     };
     double grandTotal = 0;
 
@@ -165,10 +189,10 @@ class CsvExporter {
       final values = byDate[dateKey] ?? {};
       double rowTotal = 0;
       final row = <String>[dateKey];
-      for (final label in labels) {
-        final amount = values[label] ?? 0;
+      for (final key in keys) {
+        final amount = values[key] ?? 0;
         rowTotal += amount;
-        categoryTotals[label] = (categoryTotals[label] ?? 0) + amount;
+        categoryTotals[key] = (categoryTotals[key] ?? 0) + amount;
         row.add(amount.toStringAsFixed(2));
       }
       grandTotal += rowTotal;
@@ -178,7 +202,7 @@ class CsvExporter {
 
     rows.add(<String>[
       'TOTAL',
-      ...labels.map((label) => (categoryTotals[label] ?? 0).toStringAsFixed(2)),
+      ...keys.map((key) => (categoryTotals[key] ?? 0).toStringAsFixed(2)),
       grandTotal.toStringAsFixed(2),
     ]);
 
@@ -346,6 +370,7 @@ class CsvExporter {
     }).toList();
 
     final categoryDisplayNames = <String, String>{...categoryNames};
+    final categoryIdToCanonical = <String, String>{};
     for (final txn in expenseTxns) {
       categoryDisplayNames[txn.categoryId] =
           categoryDisplayNames[txn.categoryId] ??
@@ -382,7 +407,13 @@ class CsvExporter {
           categoryDisplayNames[txn.categoryId] ??
           txn.categoryNameSnapshot ??
           txn.categoryId;
-      final key = toCanonical(rawLabel);
+      final numberedKey = txn.categoryDisplayNumberSnapshot == null
+          ? null
+          : 'n:${txn.categoryDisplayNumberSnapshot}';
+      final key = numberedKey ?? toCanonical(rawLabel);
+      canonicalToDisplay[key] =
+          canonicalToDisplay[key] ?? _displayCategoryLabel(rawLabel);
+      categoryIdToCanonical[txn.categoryId] = key;
       expenseTotalsByCanonical[key] =
           (expenseTotalsByCanonical[key] ?? 0) + txn.amount;
     }
@@ -390,7 +421,7 @@ class CsvExporter {
     final budgetByCanonical = <String, double>{};
     for (final entry in budgetLimits.entries) {
       final rawLabel = categoryDisplayNames[entry.key] ?? entry.key;
-      final key = toCanonical(rawLabel);
+      final key = categoryIdToCanonical[entry.key] ?? toCanonical(rawLabel);
       budgetByCanonical[key] = (budgetByCanonical[key] ?? 0) + entry.value;
     }
 
@@ -653,6 +684,15 @@ class CsvExporter {
       return;
     }
     await Share.shareXFiles([XFile(filePath)], subject: 'Osidori 2.0 Export');
+  }
+
+  static Future<void> shareFiles(List<String> filePaths) async {
+    if (filePaths.isEmpty) return;
+    if (kIsWeb) return;
+    await Share.shareXFiles(
+      filePaths.map((p) => XFile(p)).toList(),
+      subject: 'Osidori 2.0 Export',
+    );
   }
 
   static Future<String> _persistText({
