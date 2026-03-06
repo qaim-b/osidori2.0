@@ -5,12 +5,15 @@ import '../../../core/extensions/datetime_ext.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/utils/csv_exporter.dart';
 import '../../../core/utils/currency_formatter.dart';
+import '../../../core/utils/fx_converter.dart';
+import '../../../data/models/transaction_model.dart';
 import '../../../domain/entities/category_entity.dart';
 import '../../providers/appearance_provider.dart';
 import '../../providers/budget_limit_provider.dart';
 import '../../providers/category_provider.dart';
 import '../../providers/goal_provider.dart';
 import '../../providers/auth_provider.dart';
+import '../../providers/group_provider.dart';
 import '../../providers/transaction_provider.dart';
 import '../../widgets/common/themed_backdrop.dart';
 
@@ -31,6 +34,58 @@ class _SummaryScreenState extends ConsumerState<SummaryScreen> {
     ]);
   }
 
+  Future<DateTime?> _pickExportMonth(DateTime initialMonth) async {
+    final picked = await showDatePicker(
+      context: context,
+      initialDate: initialMonth,
+      firstDate: DateTime(2020, 1, 1),
+      lastDate: DateTime(2100, 12, 31),
+      helpText: 'Select Export Month',
+      initialDatePickerMode: DatePickerMode.year,
+    );
+    if (picked == null) return null;
+    return DateTime(picked.year, picked.month, 1);
+  }
+
+  Future<List<TransactionModel>> _loadTransactionsForExport({
+    required DateTime exportMonth,
+    required String displayCurrency,
+    required String fxMode,
+  }) async {
+    final userId = ref.read(currentUserIdProvider);
+    if (userId == null) return [];
+    final groupIds = ref.read(groupIdsProvider);
+    final repo = ref.read(transactionRepositoryProvider);
+    final raw = await repo.getForMonth(
+      userId: userId,
+      year: exportMonth.year,
+      month: exportMonth.month,
+      groupIds: groupIds,
+    );
+
+    return Future.wait(
+      raw.map((txn) async {
+        if (fxMode == 'accounting' &&
+            txn.fxBaseCurrency?.toUpperCase() == displayCurrency.toUpperCase() &&
+            txn.baseAmountLocked != null) {
+          return txn.copyWith(
+            amount: txn.baseAmountLocked,
+            currency: displayCurrency,
+          );
+        }
+        if (txn.currency.toUpperCase() == displayCurrency.toUpperCase()) {
+          return txn;
+        }
+        final converted = await FxConverter.convert(
+          amount: txn.amount,
+          fromCurrency: txn.currency,
+          toCurrency: displayCurrency,
+        );
+        return txn.copyWith(amount: converted, currency: displayCurrency);
+      }),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -42,6 +97,7 @@ class _SummaryScreenState extends ConsumerState<SummaryScreen> {
     final txns = ref.watch(monthlyTransactionsProvider).valueOrNull ?? [];
     final selectedMonth = ref.watch(selectedMonthProvider);
     final currentCurrency = ref.watch(currentCurrencyProvider);
+    final currentFxMode = ref.watch(currentFxDisplayModeProvider);
     final preset = ref.watch(activeThemePresetDataProvider);
 
     final catMap = <String, CategoryEntity>{
@@ -395,25 +451,36 @@ class _SummaryScreenState extends ConsumerState<SummaryScreen> {
                           leading: const Icon(Icons.table_chart_rounded),
                           title: const Text('Export Planning Summary XLSX'),
                           subtitle: const Text(
-                            'Category totals + Budget + Exp-Bud for easy copy/paste',
+                            'Choose month, then export category totals + budget',
                           ),
                           onTap: () async {
+                            final exportMonth = await _pickExportMonth(
+                              DateTime(selectedMonth.year, selectedMonth.month, 1),
+                            );
+                            if (exportMonth == null) return;
+                            final exportTxns = await _loadTransactionsForExport(
+                              exportMonth: exportMonth,
+                              displayCurrency: currentCurrency,
+                              fxMode: currentFxMode,
+                            );
                             final catNameMap = <String, String>{
                               for (final c in categories.where((c) => c.isExpense))
                                 c.id: c.shortLabel,
                             };
                             final path = await CsvExporter.exportExpenseCategoryMatrixXlsx(
-                              transactions: txns,
+                              transactions: exportTxns,
                               categoryNames: catNameMap,
-                              year: selectedMonth.year,
-                              month: selectedMonth.month,
+                              year: exportMonth.year,
+                              month: exportMonth.month,
                               budgetLimits: budgetLimits,
                             );
                             await CsvExporter.shareFile(path);
                             if (!context.mounted) return;
                             ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(
-                                content: Text('Planning summary XLSX exported'),
+                              SnackBar(
+                                content: Text(
+                                  'Planning summary exported (${exportMonth.monthYear})',
+                                ),
                               ),
                             );
                           },
@@ -423,22 +490,33 @@ class _SummaryScreenState extends ConsumerState<SummaryScreen> {
                           contentPadding: EdgeInsets.zero,
                           leading: const Icon(Icons.download_rounded),
                           title: const Text('Export Standard Transactions XLSX'),
-                          subtitle: const Text('General transaction export'),
+                          subtitle: const Text('Choose month, then export transactions'),
                           onTap: () async {
+                            final exportMonth = await _pickExportMonth(
+                              DateTime(selectedMonth.year, selectedMonth.month, 1),
+                            );
+                            if (exportMonth == null) return;
+                            final exportTxns = await _loadTransactionsForExport(
+                              exportMonth: exportMonth,
+                              displayCurrency: currentCurrency,
+                              fxMode: currentFxMode,
+                            );
                             final catNameMap = <String, String>{
                               for (final c in categories) c.id: c.shortLabel,
                             };
                             final path = await CsvExporter.exportTransactionsXlsx(
-                              transactions: txns,
+                              transactions: exportTxns,
                               categoryNames: catNameMap,
-                              year: selectedMonth.year,
-                              month: selectedMonth.month,
+                              year: exportMonth.year,
+                              month: exportMonth.month,
                             );
                             await CsvExporter.shareFile(path);
                             if (!context.mounted) return;
                             ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(
-                                content: Text('Transactions XLSX exported'),
+                              SnackBar(
+                                content: Text(
+                                  'Transactions exported (${exportMonth.monthYear})',
+                                ),
                               ),
                             );
                           },

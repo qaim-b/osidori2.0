@@ -122,8 +122,26 @@ class _BudgetScreenState extends ConsumerState<BudgetScreen> {
       breakdownTotals[key] = (breakdownTotals[key] ?? 0) + txn.amount;
       breakdownNames[key] = key;
     }
-
     final groupedRows = <String, _BudgetRowAggregate>{};
+    final enabledExpenseCategories =
+        (categories.valueOrNull ?? <CategoryEntity>[])
+            .where((c) => c.isExpense && c.isEnabled)
+            .toList()
+          ..sort((a, b) => a.sortOrder.compareTo(b.sortOrder));
+
+    // Show all enabled expense categories, including zero-amount rows.
+    for (final cat in enabledExpenseCategories) {
+      final groupKey = '${cat.emoji}::${cat.name}';
+      groupedRows[groupKey] = _BudgetRowAggregate(
+        representativeCategoryId: cat.id,
+        name: cat.name,
+        emoji: cat.emoji,
+        amount: categoryTotals[cat.id] ?? 0,
+        budgetLimit: budgetLimitMap[cat.id] ?? 0,
+      );
+    }
+
+    // Merge any transaction-only categories not present in current enabled list.
     for (final entry in categoryTotals.entries) {
       final categoryId = entry.key;
       final name =
@@ -146,13 +164,15 @@ class _BudgetScreenState extends ConsumerState<BudgetScreen> {
           budgetLimit: budgetLimit,
         );
       } else {
+        final mergedAmount = current.representativeCategoryId == categoryId
+            ? current.amount
+            : current.amount + entry.value;
         groupedRows[groupKey] = current.copyWith(
-          amount: current.amount + entry.value,
+          amount: mergedAmount,
           budgetLimit: current.budgetLimit + budgetLimit,
         );
       }
     }
-
     return Scaffold(
       backgroundColor: Colors.transparent,
       body: ThemedBackdrop(
@@ -549,3 +569,4 @@ class _BudgetRowAggregate {
     );
   }
 }
+
