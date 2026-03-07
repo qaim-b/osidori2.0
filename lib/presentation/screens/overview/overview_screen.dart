@@ -199,6 +199,26 @@ class _OverviewScreenState extends ConsumerState<OverviewScreen> {
           txn.categoryEmojiSnapshot!.trim().isNotEmpty) {
         snapshotEmojiById[txn.categoryId] = txn.categoryEmojiSnapshot!;
       }
+      if (!catEntityMap.containsKey(txn.categoryId)) {
+        final fallbackName = txn.categoryNameSnapshot?.trim().isNotEmpty == true
+            ? txn.categoryNameSnapshot!.trim()
+            : (txn.categoryDisplayNumberSnapshot != null
+                ? 'Category #${txn.categoryDisplayNumberSnapshot}'
+                : 'Other');
+        final fallbackEmoji =
+            txn.categoryEmojiSnapshot?.trim().isNotEmpty == true
+            ? txn.categoryEmojiSnapshot!.trim()
+            : '📦';
+        catEntityMap[txn.categoryId] = CategoryEntity(
+          id: txn.categoryId,
+          displayNumber: txn.categoryDisplayNumberSnapshot ?? 9999,
+          name: fallbackName,
+          emoji: fallbackEmoji,
+          type: txn.isIncome ? 'income' : 'expense',
+          sortOrder: txn.categoryDisplayNumberSnapshot ?? 9999,
+          createdAt: txn.createdAt,
+        );
+      }
     }
     final breakdownTotals = <String, double>{};
     final breakdownNames = <String, String>{};

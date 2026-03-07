@@ -224,10 +224,7 @@ class CsvExporter {
   }) async {
     final monthLabel = DateFormat('yyyy-MM').format(DateTime(year, month));
     final excel = Excel.createExcel();
-    if (excel.sheets.containsKey('Sheet1')) {
-      excel.delete('Sheet1');
-    }
-    final sheet = excel['Transactions'];
+    final sheet = _prepareWorkbookSheet(excel, 'Transactions');
     final moneyFormat = NumFormat.custom(formatCode: '#,##0.00;[Red]-#,##0.00');
     final thinBorder = Border(
       borderStyle: BorderStyle.Thin,
@@ -379,10 +376,7 @@ class CsvExporter {
     }
 
     final excel = Excel.createExcel();
-    if (excel.sheets.containsKey('Sheet1')) {
-      excel.delete('Sheet1');
-    }
-    final planningSheet = excel['Planning Summary'];
+    final planningSheet = _prepareWorkbookSheet(excel, 'Planning Summary');
 
     final currency = expenseTxns.isNotEmpty ? expenseTxns.first.currency : 'JPY';
     final symbol = currency.toUpperCase() == 'MYR' ? 'RM' : '\u00A5';
@@ -720,6 +714,15 @@ class CsvExporter {
     final file = File('${dir.path}/$fileName');
     await file.writeAsBytes(bytes, flush: true);
     return file.path;
+  }
+
+  static Sheet _prepareWorkbookSheet(Excel excel, String sheetName) {
+    final target = excel[sheetName];
+    final toDelete = excel.sheets.keys.where((k) => k != sheetName).toList();
+    for (final key in toDelete) {
+      excel.delete(key);
+    }
+    return target;
   }
 
   static String _canonicalCategoryKey(String raw) {

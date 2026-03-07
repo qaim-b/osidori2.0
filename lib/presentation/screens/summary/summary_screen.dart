@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -17,7 +18,7 @@ import '../../providers/group_provider.dart';
 import '../../providers/transaction_provider.dart';
 import '../../widgets/common/themed_backdrop.dart';
 
-enum _ExportScope { current, picked, allMonths }
+enum _ExportScope { current, picked, lastSixMonths, allMonths }
 
 class SummaryScreen extends ConsumerStatefulWidget {
   const SummaryScreen({super.key});
@@ -37,16 +38,125 @@ class _SummaryScreenState extends ConsumerState<SummaryScreen> {
   }
 
   Future<DateTime?> _pickExportMonth(DateTime initialMonth) async {
-    final picked = await showDatePicker(
+    final monthNames = const [
+      'Jan',
+      'Feb',
+      'Mar',
+      'Apr',
+      'May',
+      'Jun',
+      'Jul',
+      'Aug',
+      'Sep',
+      'Oct',
+      'Nov',
+      'Dec',
+    ];
+    var displayYear = initialMonth.year;
+    return showModalBottomSheet<DateTime>(
       context: context,
-      initialDate: initialMonth,
-      firstDate: DateTime(2020, 1, 1),
-      lastDate: DateTime(2100, 12, 31),
-      helpText: 'Select Export Month',
-      initialDatePickerMode: DatePickerMode.year,
+      showDragHandle: true,
+      builder: (context) {
+        return StatefulBuilder(
+          builder: (context, setLocalState) {
+            return SafeArea(
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(12, 6, 12, 12),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Row(
+                      children: [
+                        const Icon(Icons.calendar_month_rounded),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            'Choose Month',
+                            style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                                  fontWeight: FontWeight.w700,
+                                ),
+                          ),
+                        ),
+                        IconButton(
+                          onPressed: () =>
+                              setLocalState(() => displayYear -= 1),
+                          icon: const Icon(Icons.chevron_left_rounded),
+                        ),
+                        Text(
+                          '$displayYear',
+                          style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                                fontWeight: FontWeight.w700,
+                              ),
+                        ),
+                        IconButton(
+                          onPressed: () =>
+                              setLocalState(() => displayYear += 1),
+                          icon: const Icon(Icons.chevron_right_rounded),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 8),
+                    GridView.builder(
+                      shrinkWrap: true,
+                      itemCount: 12,
+                      physics: const NeverScrollableScrollPhysics(),
+                      gridDelegate:
+                          const SliverGridDelegateWithFixedCrossAxisCount(
+                        crossAxisCount: 4,
+                        crossAxisSpacing: 8,
+                        mainAxisSpacing: 8,
+                        childAspectRatio: 2.2,
+                      ),
+                      itemBuilder: (context, index) {
+                        final month = index + 1;
+                        final isSelected =
+                            initialMonth.year == displayYear &&
+                                initialMonth.month == month;
+                        return InkWell(
+                          borderRadius: BorderRadius.circular(12),
+                          onTap: () => Navigator.of(context).pop(
+                            DateTime(displayYear, month, 1),
+                          ),
+                          child: Container(
+                            decoration: BoxDecoration(
+                              color: isSelected
+                                  ? Theme.of(context)
+                                      .colorScheme
+                                      .primary
+                                      .withValues(alpha: 0.15)
+                                  : Theme.of(context)
+                                      .colorScheme
+                                      .surfaceContainerHighest,
+                              borderRadius: BorderRadius.circular(12),
+                              border: Border.all(
+                                color: isSelected
+                                    ? Theme.of(context).colorScheme.primary
+                                    : Colors.transparent,
+                              ),
+                            ),
+                            alignment: Alignment.center,
+                            child: Text(
+                              monthNames[index],
+                              style: TextStyle(
+                                fontWeight:
+                                    isSelected ? FontWeight.w700 : FontWeight.w500,
+                                color: isSelected
+                                    ? Theme.of(context).colorScheme.primary
+                                    : Theme.of(context).colorScheme.onSurface,
+                              ),
+                            ),
+                          ),
+                        );
+                      },
+                    ),
+                  ],
+                ),
+              ),
+            );
+          },
+        );
+      },
     );
-    if (picked == null) return null;
-    return DateTime(picked.year, picked.month, 1);
   }
 
   Future<_ExportScope?> _pickExportScope(String title) {
@@ -78,6 +188,13 @@ class _SummaryScreenState extends ConsumerState<SummaryScreen> {
                   title: const Text('Export specific month'),
                   subtitle: const Text('Pick February 2026, March 2026, etc.'),
                   onTap: () => Navigator.of(context).pop(_ExportScope.picked),
+                ),
+                ListTile(
+                  leading: const Icon(Icons.timeline_rounded),
+                  title: const Text('Export last 6 months'),
+                  subtitle: const Text('Portable monthly package'),
+                  onTap: () =>
+                      Navigator.of(context).pop(_ExportScope.lastSixMonths),
                 ),
                 ListTile(
                   leading: const Icon(Icons.auto_awesome_motion_rounded),
@@ -193,8 +310,23 @@ class _SummaryScreenState extends ConsumerState<SummaryScreen> {
       return;
     }
 
+    if (kIsWeb && scope != _ExportScope.current && scope != _ExportScope.picked) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+            'Multi-file export is supported on app builds. On web, export one month at a time.',
+          ),
+        ),
+      );
+      return;
+    }
+
     final months = await _loadAvailableHistoryMonths();
-    if (months.isEmpty) {
+    final exportMonths = scope == _ExportScope.lastSixMonths
+        ? months.reversed.take(6).toList().reversed.toList()
+        : months;
+    if (exportMonths.isEmpty) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('No transactions found to export.')),
@@ -203,10 +335,10 @@ class _SummaryScreenState extends ConsumerState<SummaryScreen> {
     }
     if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('Exporting ${months.length} month files...')),
+      SnackBar(content: Text('Exporting ${exportMonths.length} month files...')),
     );
     final paths = <String>[];
-    for (final month in months) {
+    for (final month in exportMonths) {
       final exportTxns = await _loadTransactionsForExport(
         exportMonth: month,
         displayCurrency: displayCurrency,
@@ -226,7 +358,9 @@ class _SummaryScreenState extends ConsumerState<SummaryScreen> {
     await CsvExporter.shareFiles(paths);
     if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('Exported ${months.length} monthly planning files')),
+      SnackBar(
+        content: Text('Exported ${exportMonths.length} monthly planning files'),
+      ),
     );
   }
 
@@ -264,8 +398,23 @@ class _SummaryScreenState extends ConsumerState<SummaryScreen> {
       return;
     }
 
+    if (kIsWeb && scope != _ExportScope.current && scope != _ExportScope.picked) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+            'Multi-file export is supported on app builds. On web, export one month at a time.',
+          ),
+        ),
+      );
+      return;
+    }
+
     final months = await _loadAvailableHistoryMonths();
-    if (months.isEmpty) {
+    final exportMonths = scope == _ExportScope.lastSixMonths
+        ? months.reversed.take(6).toList().reversed.toList()
+        : months;
+    if (exportMonths.isEmpty) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('No transactions found to export.')),
@@ -274,10 +423,10 @@ class _SummaryScreenState extends ConsumerState<SummaryScreen> {
     }
     if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('Exporting ${months.length} month files...')),
+      SnackBar(content: Text('Exporting ${exportMonths.length} month files...')),
     );
     final paths = <String>[];
-    for (final month in months) {
+    for (final month in exportMonths) {
       final exportTxns = await _loadTransactionsForExport(
         exportMonth: month,
         displayCurrency: displayCurrency,
@@ -296,7 +445,9 @@ class _SummaryScreenState extends ConsumerState<SummaryScreen> {
     await CsvExporter.shareFiles(paths);
     if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('Exported ${months.length} monthly transaction files')),
+      SnackBar(
+        content: Text('Exported ${exportMonths.length} monthly transaction files'),
+      ),
     );
   }
 

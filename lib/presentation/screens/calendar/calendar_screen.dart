@@ -81,6 +81,28 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
       for (final cat in categories.valueOrNull ?? <CategoryEntity>[]) {
         catEntityMap[cat.id] = cat;
       }
+      // Add fallback categories from transaction snapshots so shared rows
+      // always resolve to a visible name/emoji even if category IDs differ.
+      for (final txn in transactions.valueOrNull ?? <TransactionModel>[]) {
+        if (catEntityMap.containsKey(txn.categoryId)) continue;
+        final fallbackName = txn.categoryNameSnapshot?.trim().isNotEmpty == true
+            ? txn.categoryNameSnapshot!.trim()
+            : (txn.categoryDisplayNumberSnapshot != null
+                ? 'Category #${txn.categoryDisplayNumberSnapshot}'
+                : 'Other');
+        final fallbackEmoji = txn.categoryEmojiSnapshot?.trim().isNotEmpty == true
+            ? txn.categoryEmojiSnapshot!.trim()
+            : '📦';
+        catEntityMap[txn.categoryId] = CategoryEntity(
+          id: txn.categoryId,
+          displayNumber: txn.categoryDisplayNumberSnapshot ?? 9999,
+          name: fallbackName,
+          emoji: fallbackEmoji,
+          type: txn.isIncome ? 'income' : 'expense',
+          sortOrder: txn.categoryDisplayNumberSnapshot ?? 9999,
+          createdAt: txn.createdAt,
+        );
+      }
 
       // Compute daily totals from transactions (safe even when async is loading/error)
       final txns = transactions.valueOrNull ?? <TransactionModel>[];
