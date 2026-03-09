@@ -10,6 +10,7 @@ import 'package:share_plus/share_plus.dart';
 
 import '../../data/models/transaction_model.dart';
 import '../constants/app_constants.dart';
+import '../constants/category_defaults.dart';
 
 class CsvExporter {
   CsvExporter._();
@@ -367,7 +368,7 @@ class CsvExporter {
     }).toList();
 
     final categoryDisplayNames = <String, String>{...categoryNames};
-    final categoryIdToCanonical = <String, String>{};
+    final categoryIdToResolvedKey = <String, String>{};
     for (final txn in expenseTxns) {
       categoryDisplayNames[txn.categoryId] =
           categoryDisplayNames[txn.categoryId] ??
@@ -382,53 +383,105 @@ class CsvExporter {
     final symbol = currency.toUpperCase() == 'MYR' ? 'RM' : '\u00A5';
     final decimalDigits = currency.toUpperCase() == 'JPY' ? 0 : 2;
 
-    final canonicalToDisplay = <String, String>{};
+    final defaultKeyToHeader = <String, String>{};
+    final defaultAliasToKey = <String, String>{};
+    final defaultKeysInOrder = <String>[];
+    final defaultByNumber = <int, List<SubCategoryDef>>{};
 
-    String toCanonical(String raw) {
-      final canonical = _canonicalCategoryKey(raw);
-      canonicalToDisplay[canonical] =
-          canonicalToDisplay[canonical] ?? _displayCategoryLabel(raw);
-      return canonical;
+    for (final def in CategoryDefaults.expenseCategories) {
+      final key = 'def:${def.key}';
+      defaultKeysInOrder.add(key);
+      defaultKeyToHeader[key] = '${def.number}. ${def.emoji} ${def.name}';
+      defaultByNumber.putIfAbsent(def.number, () => <SubCategoryDef>[]).add(def);
+
+      final aliases = <String>{
+        def.name,
+        '${def.emoji} ${def.name}',
+        '${def.number}. ${def.name}',
+        '${def.number}. ${def.emoji} ${def.name}',
+        def.key,
+        def.key.replaceAll('_', ' '),
+      };
+      for (final alias in aliases) {
+        defaultAliasToKey[_canonicalCategoryKey(alias)] = key;
+      }
     }
 
-    for (final name in categoryDisplayNames.values) {
-      toCanonical(name);
+    final keyToDisplay = <String, String>{...defaultKeyToHeader};
+
+    String resolveCategoryKey({
+      required String rawLabel,
+      int? displayNumber,
+    }) {
+      if (displayNumber != null) {
+        final defs = defaultByNumber[displayNumber] ?? const <SubCategoryDef>[];
+        if (defs.length == 1) {
+          return 'def:${defs.first.key}';
+        }
+        if (defs.length > 1) {
+          final rawCanonical = _canonicalCategoryKey(rawLabel);
+          for (final def in defs) {
+            final matches = <String>{
+              _canonicalCategoryKey(def.name),
+              _canonicalCategoryKey('${def.emoji} ${def.name}'),
+              _canonicalCategoryKey(def.key),
+              _canonicalCategoryKey(def.key.replaceAll('_', ' ')),
+            };
+            if (matches.contains(rawCanonical)) {
+              return 'def:${def.key}';
+            }
+          }
+          return 'def:${defs.first.key}';
+        }
+      }
+
+      final byAlias = defaultAliasToKey[_canonicalCategoryKey(rawLabel)];
+      if (byAlias != null) return byAlias;
+
+      final safeLabel = _displayCategoryLabel(rawLabel);
+      final key = displayNumber == null
+          ? 'custom:${_canonicalCategoryKey(safeLabel)}'
+          : 'custom:n:$displayNumber:${_canonicalCategoryKey(safeLabel)}';
+      keyToDisplay[key] = displayNumber == null
+          ? safeLabel
+          : '$displayNumber. $safeLabel';
+      return key;
     }
 
-    final expenseTotalsByCanonical = <String, double>{};
+    final expenseTotalsByKey = <String, double>{};
     for (final txn in expenseTxns) {
       final rawLabel =
           categoryDisplayNames[txn.categoryId] ??
           txn.categoryNameSnapshot ??
           txn.categoryId;
-      final numberedKey = txn.categoryDisplayNumberSnapshot == null
-          ? null
-          : 'n:${txn.categoryDisplayNumberSnapshot}';
-      final key = numberedKey ?? toCanonical(rawLabel);
-      canonicalToDisplay[key] =
-          canonicalToDisplay[key] ?? _displayCategoryLabel(rawLabel);
-      categoryIdToCanonical[txn.categoryId] = key;
-      expenseTotalsByCanonical[key] =
-          (expenseTotalsByCanonical[key] ?? 0) + txn.amount;
+      final key = resolveCategoryKey(
+        rawLabel: rawLabel,
+        displayNumber: txn.categoryDisplayNumberSnapshot,
+      );
+      categoryIdToResolvedKey[txn.categoryId] = key;
+      expenseTotalsByKey[key] = (expenseTotalsByKey[key] ?? 0) + txn.amount;
     }
 
-    final budgetByCanonical = <String, double>{};
+    final budgetByKey = <String, double>{};
     for (final entry in budgetLimits.entries) {
       final rawLabel = categoryDisplayNames[entry.key] ?? entry.key;
-      final key = categoryIdToCanonical[entry.key] ?? toCanonical(rawLabel);
-      budgetByCanonical[key] = (budgetByCanonical[key] ?? 0) + entry.value;
+      final key =
+          categoryIdToResolvedKey[entry.key] ??
+          resolveCategoryKey(rawLabel: rawLabel);
+      budgetByKey[key] = (budgetByKey[key] ?? 0) + entry.value;
     }
 
-    final keys = <String>{
-      ...canonicalToDisplay.keys,
-      ...expenseTotalsByCanonical.keys,
-      ...budgetByCanonical.keys,
-    }.toList()
+    final defaultKeys = defaultKeysInOrder.toList(growable: false);
+    final customKeys = <String>{
+      ...expenseTotalsByKey.keys,
+      ...budgetByKey.keys,
+    }.where((k) => !defaultKeys.contains(k)).toList()
       ..sort((a, b) {
-        final aDisplay = canonicalToDisplay[a] ?? a;
-        final bDisplay = canonicalToDisplay[b] ?? b;
+        final aDisplay = keyToDisplay[a] ?? a;
+        final bDisplay = keyToDisplay[b] ?? b;
         return aDisplay.compareTo(bDisplay);
       });
+    final keys = <String>[...defaultKeys, ...customKeys];
 
     final totalColumns = keys.length + 2;
     final titleText =
@@ -441,7 +494,7 @@ class CsvExporter {
 
     final header = <CellValue>[
       TextCellValue('Metric'),
-      ...keys.map((k) => TextCellValue(canonicalToDisplay[k] ?? k)),
+      ...keys.map((k) => TextCellValue(keyToDisplay[k] ?? k)),
       TextCellValue('Monthly Sum'),
     ];
     planningSheet.appendRow(header);
@@ -449,7 +502,7 @@ class CsvExporter {
     double expenseSum = 0;
     final expenseRow = <CellValue>[TextCellValue('Expense')];
     for (final key in keys) {
-      final amount = expenseTotalsByCanonical[key] ?? 0;
+      final amount = expenseTotalsByKey[key] ?? 0;
       expenseSum += amount;
       expenseRow.add(DoubleCellValue(amount));
     }
@@ -459,7 +512,7 @@ class CsvExporter {
     double budgetSum = 0;
     final budgetRow = <CellValue>[TextCellValue('Budget')];
     for (final key in keys) {
-      final amount = budgetByCanonical[key] ?? 0;
+      final amount = budgetByKey[key] ?? 0;
       budgetSum += amount;
       budgetRow.add(DoubleCellValue(amount));
     }
@@ -468,8 +521,7 @@ class CsvExporter {
 
     final diffRow = <CellValue>[TextCellValue('Exp-Bud')];
     for (final key in keys) {
-      final diff =
-          (expenseTotalsByCanonical[key] ?? 0) - (budgetByCanonical[key] ?? 0);
+      final diff = (expenseTotalsByKey[key] ?? 0) - (budgetByKey[key] ?? 0);
       diffRow.add(DoubleCellValue(diff));
     }
     diffRow.add(DoubleCellValue(expenseSum - budgetSum));
