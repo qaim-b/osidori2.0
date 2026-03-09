@@ -14,7 +14,7 @@ class ReportsScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final selectedMonth = ref.watch(selectedMonthProvider);
-    final transactions = ref.watch(monthlyTransactionsProvider);
+    final transactions = ref.watch(visibleMonthlyTransactionsProvider);
     final categories = ref.watch(categoriesProvider);
     final categoryTotals = ref.watch(categoryTotalsProvider);
     final currentCurrency = ref.watch(currentCurrencyProvider);
@@ -180,8 +180,9 @@ class ReportsScreen extends ConsumerWidget {
             ),
           ),
           SliverToBoxAdapter(
-            child: transactions.when(
-              data: (txns) {
+            child: Builder(
+              builder: (context) {
+                final txns = transactions;
                 final dailyTotals = <int, double>{};
                 final daysInMonth = DateTime(selectedMonth.year, selectedMonth.month + 1, 0).day;
 
@@ -271,8 +272,6 @@ class ReportsScreen extends ConsumerWidget {
                   ),
                 );
               },
-              loading: () => const Center(child: CircularProgressIndicator()),
-              error: (e, _) => Text('Error: $e'),
             ),
           ),
           const SliverToBoxAdapter(child: SizedBox(height: 100)),

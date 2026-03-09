@@ -26,7 +26,7 @@ class _RecentTransactionsScreenState
 
   @override
   Widget build(BuildContext context) {
-    final txns = ref.watch(monthlyTransactionsProvider).valueOrNull ?? [];
+    final txns = ref.watch(visibleMonthlyTransactionsProvider);
     final categories = ref.watch(categoriesProvider).valueOrNull ?? [];
     final accounts = ref.watch(accountsProvider).valueOrNull ?? [];
 

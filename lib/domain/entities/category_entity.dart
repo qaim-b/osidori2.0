@@ -9,6 +9,7 @@ class CategoryEntity implements Comparable<CategoryEntity> {
   final String? parentId;
   final String? parentKey;
   final bool isEnabled;
+  final bool isHiddenFromExpenseViews;
   final int sortOrder;
   final DateTime createdAt;
 
@@ -21,6 +22,7 @@ class CategoryEntity implements Comparable<CategoryEntity> {
     this.parentId,
     this.parentKey,
     this.isEnabled = true,
+    this.isHiddenFromExpenseViews = false,
     required this.sortOrder,
     required this.createdAt,
   });
@@ -44,6 +46,7 @@ class CategoryEntity implements Comparable<CategoryEntity> {
     String? parentId,
     String? parentKey,
     bool? isEnabled,
+    bool? isHiddenFromExpenseViews,
     int? sortOrder,
     DateTime? createdAt,
   }) {
@@ -56,6 +59,8 @@ class CategoryEntity implements Comparable<CategoryEntity> {
       parentId: parentId ?? this.parentId,
       parentKey: parentKey ?? this.parentKey,
       isEnabled: isEnabled ?? this.isEnabled,
+      isHiddenFromExpenseViews:
+          isHiddenFromExpenseViews ?? this.isHiddenFromExpenseViews,
       sortOrder: sortOrder ?? this.sortOrder,
       createdAt: createdAt ?? this.createdAt,
     );

@@ -8,6 +8,7 @@ import '../../domain/enums/transaction_type.dart';
 import '../../domain/enums/visibility_type.dart';
 import '../../domain/enums/transaction_source.dart';
 import 'auth_provider.dart';
+import 'category_provider.dart';
 import 'group_provider.dart';
 
 final transactionRepositoryProvider = Provider<TransactionRepository>(
@@ -22,6 +23,25 @@ final selectedMonthProvider = StateProvider<DateTime>((ref) {
 
 /// Visibility filter: null = all, 'personal', 'shared'
 final visibilityFilterProvider = StateProvider<String?>((ref) => null);
+
+final hiddenExpenseCategoryIdsProvider = Provider<Set<String>>((ref) {
+  final categories = ref.watch(categoriesProvider).valueOrNull ?? [];
+  return categories
+      .where((c) => c.isExpense && c.isHiddenFromExpenseViews)
+      .map((c) => c.id)
+      .toSet();
+});
+
+final visibleMonthlyTransactionsProvider = Provider<List<TransactionModel>>((ref) {
+  final txns = ref.watch(monthlyTransactionsProvider).valueOrNull ?? [];
+  final hiddenExpenseCategoryIds = ref.watch(hiddenExpenseCategoryIdsProvider);
+  if (hiddenExpenseCategoryIds.isEmpty) return txns;
+  return txns
+      .where(
+        (t) => !(t.isExpense && hiddenExpenseCategoryIds.contains(t.categoryId)),
+      )
+      .toList();
+});
 
 /// Transactions for the selected month
 final monthlyTransactionsProvider =
@@ -193,7 +213,7 @@ class TransactionsNotifier
 
 /// Monthly totals for the overview
 final monthlyTotalsProvider = Provider<Map<String, double>>((ref) {
-  final txns = ref.watch(monthlyTransactionsProvider).valueOrNull ?? [];
+  final txns = ref.watch(visibleMonthlyTransactionsProvider);
   final visibility = ref.watch(visibilityFilterProvider);
 
   Iterable<TransactionModel> filtered = txns;
@@ -213,7 +233,7 @@ final monthlyTotalsProvider = Provider<Map<String, double>>((ref) {
 
 /// Category totals for the donut chart
 final categoryTotalsProvider = Provider<Map<String, double>>((ref) {
-  final txns = ref.watch(monthlyTransactionsProvider).valueOrNull ?? [];
+  final txns = ref.watch(visibleMonthlyTransactionsProvider);
   final visibility = ref.watch(visibilityFilterProvider);
 
   Iterable<TransactionModel> filtered = txns.where((t) => t.isExpense);

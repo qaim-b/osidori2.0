@@ -459,7 +459,7 @@ class _SummaryScreenState extends ConsumerState<SummaryScreen> {
     final budgetLimits = ref.watch(budgetLimitMapProvider);
     final categories =
         ref.watch(categoriesProvider).valueOrNull ?? <CategoryEntity>[];
-    final txns = ref.watch(monthlyTransactionsProvider).valueOrNull ?? [];
+    final txns = ref.watch(visibleMonthlyTransactionsProvider);
     final selectedMonth = ref.watch(selectedMonthProvider);
     final currentCurrency = ref.watch(currentCurrencyProvider);
     final currentFxMode = ref.watch(currentFxDisplayModeProvider);
@@ -468,6 +468,10 @@ class _SummaryScreenState extends ConsumerState<SummaryScreen> {
     final catMap = <String, CategoryEntity>{
       for (final c in categories) c.id: c,
     };
+    final visibleBudgetEntries = budgetLimits.entries.where((entry) {
+      final cat = catMap[entry.key];
+      return cat == null || !cat.isHiddenFromExpenseViews;
+    }).toList();
     final catSnapshotNameMap = <String, String>{};
     final catSnapshotEmojiMap = <String, String>{};
     for (final t in txns) {
@@ -636,8 +640,15 @@ class _SummaryScreenState extends ConsumerState<SummaryScreen> {
                               'No budget limits yet. Tap the top-right sliders icon to add them.',
                             ),
                           )
+                        : visibleBudgetEntries.isEmpty
+                        ? const Padding(
+                            padding: EdgeInsets.all(8),
+                            child: Text(
+                              'All budgeted categories are currently hidden from monthly spending views.',
+                            ),
+                          )
                         : Column(
-                            children: budgetLimits.entries.map((entry) {
+                            children: visibleBudgetEntries.map((entry) {
                               final cat = catMap[entry.key];
                               final actual = categoryTotals[entry.key] ?? 0;
                               final limit = entry.value;

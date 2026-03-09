@@ -44,6 +44,11 @@ class CategoriesNotifier
     await load();
   }
 
+  Future<void> toggleExpenseViewHidden(String categoryId, bool hidden) async {
+    await _repo.toggleExpenseViewHidden(categoryId, hidden);
+    await load();
+  }
+
   Future<void> updateCategory(CategoryModel category) async {
     await _repo.update(category);
     await load();
@@ -66,6 +71,7 @@ class CategoriesNotifier
       type: type,
       parentKey: parentKey,
       isEnabled: true,
+      isHiddenFromExpenseViews: false,
       sortOrder: displayNumber,
       createdAt: now,
     );

@@ -251,7 +251,58 @@ class _CategoryTile extends ConsumerWidget {
           decoration: category.isEnabled ? null : TextDecoration.lineThrough,
         ),
       ),
-      subtitle: Text(category.type),
+      subtitle: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text(category.type),
+          const SizedBox(height: 6),
+          Wrap(
+            spacing: 12,
+            runSpacing: 4,
+            crossAxisAlignment: WrapCrossAlignment.center,
+            children: [
+              Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Text('Active', style: TextStyle(fontSize: 12)),
+                  const SizedBox(width: 4),
+                  Switch.adaptive(
+                    value: category.isEnabled,
+                    activeTrackColor: AppColors.primary.withValues(alpha: 0.4),
+                    activeThumbColor: AppColors.primary,
+                    onChanged: (val) {
+                      ref
+                          .read(categoriesProvider.notifier)
+                          .toggleEnabled(category.id, val);
+                    },
+                  ),
+                ],
+              ),
+              Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Text(
+                    'Hide monthly spending',
+                    style: TextStyle(fontSize: 12),
+                  ),
+                  const SizedBox(width: 4),
+                  Switch.adaptive(
+                    value: category.isHiddenFromExpenseViews,
+                    activeTrackColor: AppColors.expense.withValues(alpha: 0.35),
+                    activeThumbColor: AppColors.expense,
+                    onChanged: (val) {
+                      ref
+                          .read(categoriesProvider.notifier)
+                          .toggleExpenseViewHidden(category.id, val);
+                    },
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ],
+      ),
       trailing: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
@@ -269,18 +320,9 @@ class _CategoryTile extends ConsumerWidget {
               size: 18,
             ),
           ),
-          Switch.adaptive(
-            value: category.isEnabled,
-            activeTrackColor: AppColors.primary.withValues(alpha: 0.4),
-            activeThumbColor: AppColors.primary,
-            onChanged: (val) {
-              ref
-                  .read(categoriesProvider.notifier)
-                  .toggleEnabled(category.id, val);
-            },
-          ),
         ],
       ),
+      isThreeLine: true,
       dense: true,
     );
   }
@@ -340,6 +382,7 @@ class _CategoryTile extends ConsumerWidget {
                 parentId: category.parentId,
                 parentKey: category.parentKey,
                 isEnabled: category.isEnabled,
+                isHiddenFromExpenseViews: category.isHiddenFromExpenseViews,
                 sortOrder: number,
                 createdAt: category.createdAt,
               );

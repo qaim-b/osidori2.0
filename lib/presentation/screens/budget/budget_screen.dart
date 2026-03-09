@@ -64,17 +64,87 @@ class _BudgetScreenState extends ConsumerState<BudgetScreen> {
     ]);
   }
 
+  Future<void> _showHideCategoriesSheet({
+    required BuildContext context,
+    required List<CategoryEntity> categories,
+  }) async {
+    final expenseCategories = categories.where((c) => c.isExpense).toList()
+      ..sort((a, b) => a.sortOrder.compareTo(b.sortOrder));
+    if (expenseCategories.isEmpty) return;
+
+    await showModalBottomSheet<void>(
+      context: context,
+      showDragHandle: true,
+      isScrollControlled: true,
+      builder: (sheetContext) {
+        return SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(16, 4, 16, 16),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Hide Categories',
+                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+                const SizedBox(height: 6),
+                const Text(
+                  'Hidden categories are removed from monthly spending totals and lists on the app screens.',
+                ),
+                const SizedBox(height: 12),
+                Flexible(
+                  child: ListView.builder(
+                    shrinkWrap: true,
+                    itemCount: expenseCategories.length,
+                    itemBuilder: (context, index) {
+                      final category = expenseCategories[index];
+                      return SwitchListTile.adaptive(
+                        contentPadding: EdgeInsets.zero,
+                        value: category.isHiddenFromExpenseViews,
+                        title: Text(
+                          '${category.displayNumber}. ${category.emoji} ${category.name}',
+                        ),
+                        subtitle: Text(
+                          category.isHiddenFromExpenseViews
+                              ? 'Hidden from monthly spending views'
+                              : 'Visible in monthly spending views',
+                        ),
+                        onChanged: (value) async {
+                          await ref
+                              .read(categoriesProvider.notifier)
+                              .toggleExpenseViewHidden(category.id, value);
+                        },
+                      );
+                    },
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final selectedMonth = ref.watch(selectedMonthProvider);
     final categoryTotals = ref.watch(categoryTotalsProvider);
-    final txns = ref.watch(monthlyTransactionsProvider).valueOrNull ?? [];
+    final txns = ref.watch(visibleMonthlyTransactionsProvider);
     final categories = ref.watch(categoriesProvider);
     final totals = ref.watch(monthlyTotalsProvider);
     final currentCurrency = ref.watch(currentCurrencyProvider);
     final preset = ref.watch(activeThemePresetDataProvider);
     final budgetLimitMap = ref.watch(budgetLimitMapProvider);
+    final allCategories = categories.valueOrNull ?? <CategoryEntity>[];
+    final hiddenExpenseCount =
+        allCategories
+            .where((c) => c.isExpense && c.isHiddenFromExpenseViews)
+            .length;
 
     final catEntityMap = <String, CategoryEntity>{};
     final resolvedCategoryNameMap = <String, String>{};
@@ -82,7 +152,7 @@ class _BudgetScreenState extends ConsumerState<BudgetScreen> {
     final catSnapshotNameMap = <String, String>{};
     final catSnapshotEmojiMap = <String, String>{};
 
-    for (final cat in categories.valueOrNull ?? <CategoryEntity>[]) {
+    for (final cat in allCategories) {
       catEntityMap[cat.id] = cat;
       resolvedCategoryNameMap[cat.id] = cat.name;
       resolvedCategoryEmojiMap[cat.id] = cat.emoji;
@@ -124,8 +194,13 @@ class _BudgetScreenState extends ConsumerState<BudgetScreen> {
     }
     final groupedRows = <String, _BudgetRowAggregate>{};
     final enabledExpenseCategories =
-        (categories.valueOrNull ?? <CategoryEntity>[])
-            .where((c) => c.isExpense && c.isEnabled)
+        allCategories
+            .where(
+              (c) =>
+                  c.isExpense &&
+                  c.isEnabled &&
+                  !c.isHiddenFromExpenseViews,
+            )
             .toList()
           ..sort((a, b) => a.sortOrder.compareTo(b.sortOrder));
 
@@ -367,6 +442,22 @@ class _BudgetScreenState extends ConsumerState<BudgetScreen> {
                                 ),
                           ),
                         ),
+                        TextButton.icon(
+                          onPressed:
+                              categories.isLoading
+                                  ? null
+                                  : () => _showHideCategoriesSheet(
+                                    context: context,
+                                    categories: allCategories,
+                                  ),
+                          icon: const Icon(Icons.visibility_off_rounded, size: 18),
+                          label: Text(
+                            hiddenExpenseCount == 0
+                                ? 'Hide Categories'
+                                : 'Hidden ($hiddenExpenseCount)',
+                          ),
+                        ),
+                        const SizedBox(width: 4),
                         TextButton.icon(
                           onPressed: () => context.push('/budget/planner'),
                           icon: const Icon(Icons.tune_rounded, size: 18),

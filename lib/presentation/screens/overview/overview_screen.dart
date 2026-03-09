@@ -162,7 +162,8 @@ class _OverviewScreenState extends ConsumerState<OverviewScreen> {
     final selectedMonth = ref.watch(selectedMonthProvider);
     final currentCurrency = ref.watch(currentCurrencyProvider);
     final totals = ref.watch(monthlyTotalsProvider);
-    final transactions = ref.watch(monthlyTransactionsProvider);
+    final monthlyTransactions = ref.watch(monthlyTransactionsProvider);
+    final visibleTransactions = ref.watch(visibleMonthlyTransactionsProvider);
     final categories = ref.watch(categoriesProvider);
     final roleColors = ref.watch(roleColorsProvider);
     final upcomingReminders = ref.watch(upcomingBillRemindersProvider);
@@ -190,7 +191,7 @@ class _OverviewScreenState extends ConsumerState<OverviewScreen> {
       catMap[cat.id] = cat.shortLabel;
       catEntityMap[cat.id] = cat;
     }
-    for (final txn in transactions.valueOrNull ?? const []) {
+    for (final txn in visibleTransactions) {
       if (txn.categoryNameSnapshot != null &&
           txn.categoryNameSnapshot!.trim().isNotEmpty) {
         snapshotNameById[txn.categoryId] = txn.categoryNameSnapshot!;
@@ -222,7 +223,7 @@ class _OverviewScreenState extends ConsumerState<OverviewScreen> {
     }
     final breakdownTotals = <String, double>{};
     final breakdownNames = <String, String>{};
-    for (final txn in transactions.valueOrNull ?? const []) {
+    for (final txn in visibleTransactions) {
       if (!txn.isExpense) continue;
       final cat = catEntityMap[txn.categoryId];
       final resolvedName =
@@ -497,53 +498,58 @@ class _OverviewScreenState extends ConsumerState<OverviewScreen> {
                   ),
                 ),
               ),
-              transactions.when(
-                data: (txns) {
-                  if (txns.isEmpty) {
-                    return SliverToBoxAdapter(
-                      child: Padding(
-                        padding: const EdgeInsets.all(40),
-                        child: Column(
-                          children: [
-                            AnimatedMascot(
-                              imagePath: roleColors.mascotImage,
-                              size: 60,
-                              glowColor: roleColors.primary,
-                            ),
-                            const SizedBox(height: 16),
-                            Text(
-                              'No transactions this month',
-                              style: Theme.of(context).textTheme.bodyMedium,
-                            ),
-                            const SizedBox(height: 4),
-                            Text(
-                              'Tap + to add your first one!',
-                              style: Theme.of(context).textTheme.bodyMedium
-                                  ?.copyWith(color: AppColors.textHint),
-                            ),
-                          ],
-                        ),
-                      ),
-                    );
-                  }
+              monthlyTransactions.when(
+                data: (_) => SliverToBoxAdapter(
+                  child: Builder(
+                    builder: (context) {
+                      final displayTxns = visibleTransactions.take(7).toList();
+                      if (displayTxns.isEmpty) {
+                        return Padding(
+                          padding: const EdgeInsets.all(40),
+                          child: Column(
+                            children: [
+                              AnimatedMascot(
+                                imagePath: roleColors.mascotImage,
+                                size: 60,
+                                glowColor: roleColors.primary,
+                              ),
+                              const SizedBox(height: 16),
+                              Text(
+                                'No visible transactions this month',
+                                style: Theme.of(context).textTheme.bodyMedium,
+                              ),
+                              const SizedBox(height: 4),
+                              Text(
+                                'Hidden categories are excluded here.',
+                                style: Theme.of(context).textTheme.bodyMedium
+                                    ?.copyWith(color: AppColors.textHint),
+                              ),
+                            ],
+                          ),
+                        );
+                      }
 
-                  final displayTxns = txns.take(7).toList();
-                  return SliverList(
-                    delegate: SliverChildBuilderDelegate((context, index) {
-                      final txn = displayTxns[index];
-                      return EditorialCard(
-                        margin: const EdgeInsets.symmetric(
-                          horizontal: 16,
-                          vertical: 3,
-                        ),
-                        child: TransactionTile(
-                          transaction: txn,
-                          category: catEntityMap[txn.categoryId],
-                        ),
+                      return ListView.builder(
+                        shrinkWrap: true,
+                        physics: const NeverScrollableScrollPhysics(),
+                        itemCount: displayTxns.length,
+                        itemBuilder: (context, index) {
+                          final txn = displayTxns[index];
+                          return EditorialCard(
+                            margin: const EdgeInsets.symmetric(
+                              horizontal: 16,
+                              vertical: 3,
+                            ),
+                            child: TransactionTile(
+                              transaction: txn,
+                              category: catEntityMap[txn.categoryId],
+                            ),
+                          );
+                        },
                       );
-                    }, childCount: displayTxns.length),
-                  );
-                },
+                    },
+                  ),
+                ),
                 loading: () => const SliverToBoxAdapter(
                   child: Padding(
                     padding: EdgeInsets.all(40),

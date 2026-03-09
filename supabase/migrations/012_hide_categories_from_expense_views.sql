@@ -1,0 +1,2 @@
+ALTER TABLE categories
+ADD COLUMN IF NOT EXISTS is_hidden_from_expense_views BOOLEAN NOT NULL DEFAULT FALSE;

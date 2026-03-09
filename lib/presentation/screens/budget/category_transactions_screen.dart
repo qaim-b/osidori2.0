@@ -16,7 +16,7 @@ class CategoryTransactionsScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final categories = ref.watch(categoriesProvider);
-    final transactions = ref.watch(monthlyTransactionsProvider);
+    final transactions = ref.watch(visibleMonthlyTransactionsProvider);
     final currentCurrency = ref.watch(currentCurrencyProvider);
 
     final categoryList = categories.valueOrNull ?? <CategoryEntity>[];
@@ -35,8 +35,9 @@ class CategoryTransactionsScreen extends ConsumerWidget {
         ),
       ),
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-      body: transactions.when(
-        data: (txns) {
+      body: Builder(
+        builder: (context) {
+          final txns = transactions;
           final filtered =
               txns.where((t) => t.categoryId == categoryId).toList()
                 ..sort((a, b) => b.date.compareTo(a.date));
@@ -105,8 +106,6 @@ class CategoryTransactionsScreen extends ConsumerWidget {
             ],
           );
         },
-        loading: () => const Center(child: CircularProgressIndicator()),
-        error: (e, _) => Center(child: Text('Error: $e')),
       ),
     );
   }

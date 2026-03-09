@@ -10,6 +10,7 @@ class CategoryModel extends CategoryEntity {
     super.parentId,
     super.parentKey,
     super.isEnabled,
+    super.isHiddenFromExpenseViews,
     required super.sortOrder,
     required super.createdAt,
   });
@@ -24,6 +25,8 @@ class CategoryModel extends CategoryEntity {
       parentId: json['parent_id'] as String?,
       parentKey: json['parent_key'] as String?,
       isEnabled: json['is_enabled'] as bool? ?? true,
+      isHiddenFromExpenseViews:
+          json['is_hidden_from_expense_views'] as bool? ?? false,
       sortOrder: json['sort_order'] as int? ?? 0,
       createdAt: DateTime.parse(json['created_at'] as String),
     );
@@ -39,6 +42,7 @@ class CategoryModel extends CategoryEntity {
       'parent_id': parentId,
       'parent_key': parentKey,
       'is_enabled': isEnabled,
+      'is_hidden_from_expense_views': isHiddenFromExpenseViews,
       'sort_order': sortOrder,
       'created_at': createdAt.toIso8601String(),
     };
@@ -54,6 +58,7 @@ class CategoryModel extends CategoryEntity {
       parentId: entity.parentId,
       parentKey: entity.parentKey,
       isEnabled: entity.isEnabled,
+      isHiddenFromExpenseViews: entity.isHiddenFromExpenseViews,
       sortOrder: entity.sortOrder,
       createdAt: entity.createdAt,
     );

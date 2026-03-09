@@ -41,6 +41,7 @@ class CategoryRepository {
           type: 'expense',
           parentKey: def.parentKey,
           isEnabled: true,
+          isHiddenFromExpenseViews: false,
           sortOrder: def.number,
           createdAt: now,
         ),
@@ -58,6 +59,7 @@ class CategoryRepository {
           type: 'income',
           parentKey: 'income',
           isEnabled: true,
+          isHiddenFromExpenseViews: false,
           sortOrder: 100 + def.number, // Income sorts after expense
           createdAt: now,
         ),
@@ -80,6 +82,13 @@ class CategoryRepository {
     await _client
         .from(AppSupabase.categoriesTable)
         .update({'is_enabled': enabled})
+        .eq('id', categoryId);
+  }
+
+  Future<void> toggleExpenseViewHidden(String categoryId, bool hidden) async {
+    await _client
+        .from(AppSupabase.categoriesTable)
+        .update({'is_hidden_from_expense_views': hidden})
         .eq('id', categoryId);
   }
 
@@ -193,6 +202,7 @@ class CategoryRepository {
       type: type,
       parentKey: parentKey,
       isEnabled: false,
+      isHiddenFromExpenseViews: false,
       sortOrder: 999999,
       createdAt: DateTime.now(),
     );
