@@ -24,15 +24,11 @@ class BudgetScreen extends ConsumerStatefulWidget {
 
 class _BudgetScreenState extends ConsumerState<BudgetScreen> {
   final ScrollController _scrollController = ScrollController();
-  double _scrollOffset = 0;
+  List<CategoryEntity> _cachedCategories = const [];
 
   @override
   void initState() {
     super.initState();
-    _scrollController.addListener(() {
-      if (!mounted) return;
-      setState(() => _scrollOffset = _scrollController.offset);
-    });
   }
 
   @override
@@ -46,13 +42,21 @@ class _BudgetScreenState extends ConsumerState<BudgetScreen> {
     required double start,
     double distance = 22,
   }) {
-    final progress = ((_scrollOffset - start) / 260).clamp(0.0, 1.0);
-    return Opacity(
-      opacity: (0.74 + (0.26 * progress)).clamp(0.0, 1.0),
-      child: Transform.translate(
-        offset: Offset(0, distance * (1 - progress)),
-        child: child,
-      ),
+    return AnimatedBuilder(
+      animation: _scrollController,
+      child: child,
+      builder: (context, child) {
+        final offset =
+            _scrollController.hasClients ? _scrollController.offset : 0.0;
+        final progress = ((offset - start) / 260).clamp(0.0, 1.0);
+        return Opacity(
+          opacity: (0.74 + (0.26 * progress)).clamp(0.0, 1.0),
+          child: Transform.translate(
+            offset: Offset(0, distance * (1 - progress)),
+            child: child,
+          ),
+        );
+      },
     );
   }
 
@@ -72,61 +76,137 @@ class _BudgetScreenState extends ConsumerState<BudgetScreen> {
       ..sort((a, b) => a.sortOrder.compareTo(b.sortOrder));
     if (expenseCategories.isEmpty) return;
 
+    final hiddenById = <String, bool>{
+      for (final category in expenseCategories)
+        category.id: category.isHiddenFromExpenseViews,
+    };
+    final pendingIds = <String>{};
+
     await showModalBottomSheet<void>(
       context: context,
       showDragHandle: true,
       isScrollControlled: true,
       builder: (sheetContext) {
-        return SafeArea(
-          child: Padding(
-            padding: const EdgeInsets.fromLTRB(16, 4, 16, 16),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'Hide Categories',
-                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
-                const SizedBox(height: 6),
-                const Text(
-                  'Hidden categories are removed from monthly spending totals and lists on the app screens.',
-                ),
-                const SizedBox(height: 12),
-                Flexible(
-                  child: ListView.builder(
-                    shrinkWrap: true,
-                    itemCount: expenseCategories.length,
-                    itemBuilder: (context, index) {
-                      final category = expenseCategories[index];
-                      return SwitchListTile.adaptive(
-                        contentPadding: EdgeInsets.zero,
-                        value: category.isHiddenFromExpenseViews,
-                        title: Text(
-                          '${category.displayNumber}. ${category.emoji} ${category.name}',
-                        ),
-                        subtitle: Text(
-                          category.isHiddenFromExpenseViews
-                              ? 'Hidden from monthly spending views'
-                              : 'Visible in monthly spending views',
-                        ),
-                        onChanged: (value) async {
-                          await ref
-                              .read(categoriesProvider.notifier)
-                              .toggleExpenseViewHidden(category.id, value);
+        return StatefulBuilder(
+          builder: (context, setSheetState) {
+            return SafeArea(
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(16, 4, 16, 16),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Hide Categories',
+                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                    const SizedBox(height: 6),
+                    const Text(
+                      'Hidden categories are removed from monthly spending totals and lists on the app screens.',
+                    ),
+                    const SizedBox(height: 12),
+                    Flexible(
+                      child: ListView.builder(
+                        shrinkWrap: true,
+                        itemCount: expenseCategories.length,
+                        itemBuilder: (context, index) {
+                          final category = expenseCategories[index];
+                          final baseColor = _categoryAccent(category);
+                          final isHidden = hiddenById[category.id] ?? false;
+                          final isPending = pendingIds.contains(category.id);
+                          final tileShade = baseColor.withValues(
+                            alpha: isHidden ? 0.07 : 0.12,
+                          );
+                          return SwitchListTile.adaptive(
+                            contentPadding: const EdgeInsets.symmetric(
+                              horizontal: 12,
+                              vertical: 2,
+                            ),
+                            value: isHidden,
+                            tileColor: tileShade,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            secondary: Container(
+                              width: 34,
+                              height: 34,
+                              alignment: Alignment.center,
+                              decoration: BoxDecoration(
+                                color: baseColor.withValues(alpha: 0.22),
+                                shape: BoxShape.circle,
+                                border: Border.all(
+                                  color: baseColor.withValues(alpha: 0.5),
+                                ),
+                              ),
+                              child: Text(
+                                category.emoji,
+                                style: const TextStyle(fontSize: 16),
+                              ),
+                            ),
+                            title: Text(
+                              '${category.displayNumber}. ${category.name}',
+                            ),
+                            subtitle: Text(
+                              isHidden
+                                  ? 'Hidden from monthly spending views'
+                                  : 'Visible in monthly spending views',
+                            ),
+                            activeColor: baseColor,
+                            onChanged:
+                                isPending
+                                    ? null
+                                    : (value) {
+                                      setSheetState(() {
+                                        hiddenById[category.id] = value;
+                                        pendingIds.add(category.id);
+                                      });
+                                      () async {
+                                        try {
+                                          await ref
+                                              .read(
+                                                categoriesProvider.notifier,
+                                              )
+                                              .toggleExpenseViewHidden(
+                                                category.id,
+                                                value,
+                                              );
+                                        } finally {
+                                          if (!context.mounted) return;
+                                          setSheetState(() {
+                                            pendingIds.remove(category.id);
+                                          });
+                                        }
+                                      }();
+                                    },
+                          );
                         },
-                      );
-                    },
-                  ),
+                      ),
+                    ),
+                  ],
                 ),
-              ],
-            ),
-          ),
+              ),
+            );
+          },
         );
       },
     );
+  }
+
+  Color _categoryAccent(CategoryEntity category) {
+    return _categoryAccentFromSeed(category.sortOrder);
+  }
+
+  Color _categoryAccentForRow(CategoryEntity? category, String fallbackKey) {
+    final seed = category?.sortOrder ?? fallbackKey.hashCode;
+    return _categoryAccentFromSeed(seed);
+  }
+
+  Color _categoryAccentFromSeed(int seed) {
+    final palette = AppColors.chartPalette;
+    final index = seed.abs() % palette.length;
+    return palette[index];
   }
 
   @override
@@ -140,7 +220,11 @@ class _BudgetScreenState extends ConsumerState<BudgetScreen> {
     final currentCurrency = ref.watch(currentCurrencyProvider);
     final preset = ref.watch(activeThemePresetDataProvider);
     final budgetLimitMap = ref.watch(budgetLimitMapProvider);
-    final allCategories = categories.valueOrNull ?? <CategoryEntity>[];
+    final allCategories = categories.valueOrNull ?? _cachedCategories;
+    final latestCategories = categories.valueOrNull;
+    if (latestCategories != null) {
+      _cachedCategories = latestCategories;
+    }
     final hiddenExpenseCount =
         allCategories
             .where((c) => c.isExpense && c.isHiddenFromExpenseViews)
@@ -496,6 +580,10 @@ class _BudgetScreenState extends ConsumerState<BudgetScreen> {
                       final budgetLimit = entry.budgetLimit > 0
                           ? entry.budgetLimit
                           : null;
+                      final accentColor = _categoryAccentForRow(
+                        cat,
+                        entry.representativeCategoryId,
+                      );
                       final limitProgress = budgetLimit != null
                           ? (entry.amount / budgetLimit).clamp(0.0, 1.5)
                           : null;
@@ -516,8 +604,19 @@ class _BudgetScreenState extends ConsumerState<BudgetScreen> {
                               children: [
                                 Row(
                                   children: [
+                                    Container(
+                                      width: 6,
+                                      height: 32,
+                                      decoration: BoxDecoration(
+                                        color: accentColor,
+                                        borderRadius: BorderRadius.circular(6),
+                                      ),
+                                    ),
+                                    const SizedBox(width: 10),
                                     CircleAvatar(
-                                      backgroundColor: preset.surfaceVariant,
+                                      backgroundColor: accentColor.withValues(
+                                        alpha: 0.18,
+                                      ),
                                       child: Text(
                                         cat?.emoji ?? entry.emoji,
                                         style: const TextStyle(fontSize: 16),
@@ -536,16 +635,25 @@ class _BudgetScreenState extends ConsumerState<BudgetScreen> {
                                     Container(
                                       width: 128,
                                       alignment: Alignment.center,
-                                      child: Text(
-                                        CurrencyFormatter.format(
-                                          entry.amount,
-                                          currency: currentCurrency,
+                                      child: TweenAnimationBuilder<double>(
+                                        tween: Tween<double>(end: entry.amount),
+                                        duration: const Duration(
+                                          milliseconds: 350,
                                         ),
-                                        textAlign: TextAlign.center,
-                                        style: const TextStyle(
-                                          fontSize: 14.8,
-                                          fontWeight: FontWeight.w700,
-                                        ),
+                                        curve: Curves.easeOutCubic,
+                                        builder: (context, value, child) {
+                                          return Text(
+                                            CurrencyFormatter.format(
+                                              value,
+                                              currency: currentCurrency,
+                                            ),
+                                            textAlign: TextAlign.center,
+                                            style: const TextStyle(
+                                              fontSize: 14.8,
+                                              fontWeight: FontWeight.w700,
+                                            ),
+                                          );
+                                        },
                                       ),
                                     ),
                                     const SizedBox(width: 6),
@@ -558,7 +666,9 @@ class _BudgetScreenState extends ConsumerState<BudgetScreen> {
                                         vertical: 4,
                                       ),
                                       decoration: BoxDecoration(
-                                        color: preset.surfaceVariant,
+                                        color: accentColor.withValues(
+                                          alpha: 0.12,
+                                        ),
                                         borderRadius: BorderRadius.circular(
                                           999,
                                         ),
@@ -569,7 +679,7 @@ class _BudgetScreenState extends ConsumerState<BudgetScreen> {
                                         style: TextStyle(
                                           fontSize: 13.4,
                                           fontWeight: FontWeight.w800,
-                                          color: preset.primary,
+                                          color: accentColor,
                                         ),
                                       ),
                                     ),

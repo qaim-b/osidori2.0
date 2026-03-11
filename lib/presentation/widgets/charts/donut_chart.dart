@@ -183,26 +183,37 @@ class _CategoryDonutChartState extends State<CategoryDonutChart> {
         ],
         const SizedBox(height: 16),
         Wrap(
+          alignment: WrapAlignment.center,
+          runAlignment: WrapAlignment.center,
+          crossAxisAlignment: WrapCrossAlignment.center,
           spacing: 12,
           runSpacing: 8,
           children: List.generate(sorted.length, (i) {
             final entry = sorted[i];
             final color = AppColors.chartPalette[i % AppColors.chartPalette.length];
             final name = widget.categoryNames[entry.key] ?? entry.key;
-            return Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Container(
-                  width: 10,
-                  height: 10,
-                  decoration: BoxDecoration(
-                    color: color,
-                    shape: BoxShape.circle,
+            return Container(
+              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
+              decoration: BoxDecoration(
+                color: color.withValues(alpha: 0.1),
+                borderRadius: BorderRadius.circular(999),
+                border: Border.all(color: color.withValues(alpha: 0.25)),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Container(
+                    width: 10,
+                    height: 10,
+                    decoration: BoxDecoration(
+                      color: color,
+                      shape: BoxShape.circle,
+                    ),
                   ),
-                ),
-                const SizedBox(width: 4),
-                Text(name, style: const TextStyle(fontSize: 11)),
-              ],
+                  const SizedBox(width: 6),
+                  Text(name, style: const TextStyle(fontSize: 11)),
+                ],
+              ),
             );
           }),
         ),
