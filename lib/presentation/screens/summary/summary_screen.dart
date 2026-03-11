@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 import '../../../core/extensions/datetime_ext.dart';
 import '../../../core/theme/app_colors.dart';
@@ -28,6 +29,59 @@ class SummaryScreen extends ConsumerStatefulWidget {
 }
 
 class _SummaryScreenState extends ConsumerState<SummaryScreen> {
+  static const int _planningSheetMetaColumns = 3;
+  static const int _planningSheetTotalColumns = 50;
+  static final List<_SheetColumn> _planningSheetColumns = [
+    _SheetColumn(label: 'Housing', nameHints: ['housing']),
+    _SheetColumn(label: 'Wi-Fi', nameHints: ['wi fi', 'wifi', 'wi-fi']),
+    _SheetColumn(label: 'Phone', nameHints: ['phone']),
+    _SheetColumn(label: 'AI', nameHints: ['ai']),
+    _SheetColumn(label: 'Spotify/Canva', nameHints: ['spotify', 'canva']),
+    _SheetColumn(label: 'Taxes', nameHints: ['tax']),
+    _SheetColumn(label: 'Social Insurance', nameHints: ['social insurance']),
+    _SheetColumn(label: 'Pension', nameHints: ['pension']),
+    _SheetColumn(label: 'Insurance', nameHints: ['insurance']),
+    _SheetColumn(label: 'Scholarship', nameHints: ['scholarship']),
+    _SheetColumn(label: 'Water Bill', nameHints: ['water']),
+    _SheetColumn(label: 'Utility Bill', nameHints: ['utility']),
+    _SheetColumn(label: 'Home Cooking', nameHints: ['home cooking', 'cooking']),
+    _SheetColumn(label: 'Snacking', nameHints: ['snack', 'snacking']),
+    _SheetColumn(label: 'Clothing', nameHints: ['clothing']),
+    _SheetColumn(label: 'Household Goods', nameHints: ['household']),
+    _SheetColumn(label: 'Gadgets', nameHints: ['gadgets', 'gadget']),
+    _SheetColumn(label: 'Public Transport', nameHints: ['public transport', 'transport']),
+    _SheetColumn(label: 'Dating', nameHints: ['dating']),
+    _SheetColumn(label: 'Dining Out', nameHints: ['dining', 'dining out']),
+    _SheetColumn(label: 'Social Mami', nameHints: ['social mami']),
+    _SheetColumn(label: 'Social Qaim', nameHints: ['social qaim']),
+    _SheetColumn(label: 'Hobby Mami', nameHints: ['hobby mami']),
+    _SheetColumn(label: 'Hobby Qaim', nameHints: ['hobby qaim']),
+    _SheetColumn(label: 'Travel', nameHints: ['travel']),
+    _SheetColumn(label: 'Anjyo', nameHints: ['anjyo']),
+    _SheetColumn(label: 'Malaysia', nameHints: ['malaysia']),
+    _SheetColumn(label: 'Honeymoon', nameHints: ['honeymoon']),
+    _SheetColumn(label: 'Books', nameHints: ['book', 'books']),
+    _SheetColumn(label: 'Other Education', nameHints: ['education']),
+    _SheetColumn(label: 'Haircut', nameHints: ['haircut']),
+    _SheetColumn(label: 'Hospital', nameHints: ['hospital']),
+    _SheetColumn(label: 'Meds', nameHints: ['med', 'medicine']),
+    _SheetColumn(label: 'Charity', nameHints: ['charity']),
+    _SheetColumn(label: 'Gifts', nameHints: ['gift']),
+    _SheetColumn(label: 'Furniture/Appliances', nameHints: ['furniture', 'appliance']),
+    _SheetColumn(label: 'Moving', nameHints: ['moving']),
+    _SheetColumn(label: 'Miscellaneous', nameHints: ['misc']),
+    _SheetColumn(label: 'Hari Raya Angpao', nameHints: ['hari raya', 'angpao']),
+    _SheetColumn(label: 'Qaim Account', nameHints: ['qaim account']),
+    _SheetColumn(label: 'Mami Account', nameHints: ['mami account']),
+    _SheetColumn(label: 'Qaim Sadaqah', nameHints: ['qaim sadaqah']),
+    _SheetColumn(label: 'Mami Family Sadaqah', nameHints: ['mami family', 'family sadaqah']),
+    _SheetColumn(
+      label: 'Mami Aunty & Uncle Sadaqah',
+      nameHints: ['aunty', 'uncle', 'sadaqah'],
+    ),
+    const _SheetColumn(label: 'Monthly Sum', isComputed: true),
+  ];
+
   Future<void> _refresh(WidgetRef ref) async {
     await Future.wait([
       ref.read(monthlyTransactionsProvider.notifier).load(),
@@ -451,6 +505,96 @@ class _SummaryScreenState extends ConsumerState<SummaryScreen> {
     );
   }
 
+  Future<void> _copyPlanningSheetExpenseRow({
+    required DateTime selectedMonth,
+    required List<CategoryEntity> categories,
+    required List<TransactionModel> allMonthlyTransactions,
+  }) async {
+    final visibility = ref.read(visibilityFilterProvider);
+    Iterable<TransactionModel> filtered = allMonthlyTransactions;
+    if (visibility != null) {
+      filtered = filtered.where((t) => t.visibility.name == visibility);
+    }
+
+    final catMap = <String, CategoryEntity>{
+      for (final c in categories) c.id: c,
+    };
+
+    final totals = List<double>.filled(_planningSheetColumns.length, 0);
+    final unmatched = <String, double>{};
+
+    for (final txn in filtered) {
+      if (!txn.isExpense) continue;
+      final cat = catMap[txn.categoryId];
+      final name = cat?.name ?? txn.categoryNameSnapshot ?? 'Unknown';
+      final columnIndex = _matchPlanningSheetColumnIndex(name);
+      if (columnIndex == null) {
+        unmatched[name] = (unmatched[name] ?? 0) + txn.amount;
+        continue;
+      }
+      totals[columnIndex] += txn.amount;
+    }
+
+    final sumIndex = _planningSheetColumns.indexWhere((c) => c.isComputed);
+    final runningSum = totals
+        .asMap()
+        .entries
+        .where((entry) => entry.key != sumIndex)
+        .fold<double>(0, (sum, entry) => sum + entry.value);
+    if (sumIndex >= 0) {
+      totals[sumIndex] = runningSum;
+    }
+
+    final row = List<String>.filled(_planningSheetTotalColumns, '');
+    row[0] = selectedMonth.month.toString();
+    row[1] = '月';
+    row[2] = 'Expense';
+    for (var i = 0; i < _planningSheetColumns.length; i++) {
+      row[_planningSheetMetaColumns + i] = _formatSheetValue(totals[i]);
+    }
+
+    final tsv = row.join('\t');
+    await Clipboard.setData(ClipboardData(text: tsv));
+    if (!mounted) return;
+    final unmatchedNames = unmatched.keys.toList()..sort();
+    final suffix =
+        unmatchedNames.isEmpty
+            ? ''
+            : ' Unmatched: ${unmatchedNames.take(3).join(', ')}'
+              '${unmatchedNames.length > 3 ? '…' : ''}';
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text('Copied ${selectedMonth.monthYear} expense row.$suffix'),
+      ),
+    );
+  }
+
+  int? _matchPlanningSheetColumnIndex(String name) {
+    final normalized = _normalizeSheetKey(name);
+    for (var i = 0; i < _planningSheetColumns.length; i++) {
+      if (_planningSheetColumns[i].matches(normalized)) {
+        return i;
+      }
+    }
+    return null;
+  }
+
+  String _normalizeSheetKey(String input) {
+    return input
+        .toLowerCase()
+        .replaceAll(RegExp(r'[^a-z0-9]+'), ' ')
+        .trim();
+  }
+
+  String _formatSheetValue(double value) {
+    if (value.abs() < 0.005) return '0';
+    final rounded = value.roundToDouble();
+    if ((value - rounded).abs() < 0.005) {
+      return rounded.toStringAsFixed(0);
+    }
+    return value.toStringAsFixed(2);
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -460,6 +604,7 @@ class _SummaryScreenState extends ConsumerState<SummaryScreen> {
     final categories =
         ref.watch(categoriesProvider).valueOrNull ?? <CategoryEntity>[];
     final txns = ref.watch(visibleMonthlyTransactionsProvider);
+    final allTxns = ref.watch(monthlyTransactionsProvider).valueOrNull ?? [];
     final selectedMonth = ref.watch(selectedMonthProvider);
     final currentCurrency = ref.watch(currentCurrencyProvider);
     final currentFxMode = ref.watch(currentFxDisplayModeProvider);
@@ -824,6 +969,22 @@ class _SummaryScreenState extends ConsumerState<SummaryScreen> {
                       children: [
                         ListTile(
                           contentPadding: EdgeInsets.zero,
+                          leading: const Icon(Icons.content_paste_rounded),
+                          title: const Text('Copy 2026 Expense Row (Sheets)'),
+                          subtitle: const Text(
+                            'Paste-ready row for the 2026 expense sheet tab',
+                          ),
+                          onTap: () async {
+                            await _copyPlanningSheetExpenseRow(
+                              selectedMonth: selectedMonth,
+                              categories: categories,
+                              allMonthlyTransactions: allTxns,
+                            );
+                          },
+                        ),
+                        const Divider(),
+                        ListTile(
+                          contentPadding: EdgeInsets.zero,
                           leading: const Icon(Icons.table_chart_rounded),
                           title: const Text('Export Planning Summary XLSX'),
                           subtitle: const Text(
@@ -956,5 +1117,28 @@ class _InsightChip extends StatelessWidget {
         ],
       ),
     );
+  }
+}
+
+class _SheetColumn {
+  final String label;
+  final List<String> nameHints;
+  final bool isComputed;
+
+  const _SheetColumn({
+    required this.label,
+    this.nameHints = const [],
+    this.isComputed = false,
+  });
+
+  bool matches(String normalizedName) {
+    if (isComputed) return false;
+    if (normalizedName.isEmpty) return false;
+    for (final hint in nameHints) {
+      if (normalizedName.contains(hint)) {
+        return true;
+      }
+    }
+    return false;
   }
 }
