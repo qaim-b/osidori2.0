@@ -34,12 +34,36 @@ class ThemedBackdrop extends ConsumerWidget {
                 end: Alignment.bottomCenter,
                 colors: [
                   theme.colorScheme.surfaceContainerHighest.withValues(
-                    alpha: 0.55,
+                    alpha: 0.65,
                   ),
                   theme.scaffoldBackgroundColor,
                 ],
               ),
             ),
+          ),
+        ),
+        Positioned(
+          top: -140,
+          left: -80,
+          child: _GlowBlob(
+            color: theme.colorScheme.primary.withValues(alpha: 0.18),
+            size: 260,
+          ),
+        ),
+        Positioned(
+          top: 120,
+          right: -120,
+          child: _GlowBlob(
+            color: theme.colorScheme.secondary.withValues(alpha: 0.18),
+            size: 300,
+          ),
+        ),
+        Positioned(
+          bottom: -120,
+          left: 40,
+          child: _GlowBlob(
+            color: theme.colorScheme.primary.withValues(alpha: 0.12),
+            size: 240,
           ),
         ),
         if (showCountryBanner)
@@ -66,6 +90,35 @@ class ThemedBackdrop extends ConsumerWidget {
           ),
         child,
       ],
+    );
+  }
+}
+
+class _GlowBlob extends StatelessWidget {
+  final Color color;
+  final double size;
+
+  const _GlowBlob({
+    required this.color,
+    required this.size,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return IgnorePointer(
+      child: Container(
+        height: size,
+        width: size,
+        decoration: BoxDecoration(
+          shape: BoxShape.circle,
+          gradient: RadialGradient(
+            colors: [
+              color,
+              color.withValues(alpha: 0.02),
+            ],
+          ),
+        ),
+      ),
     );
   }
 }

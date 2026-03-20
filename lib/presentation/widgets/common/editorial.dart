@@ -28,10 +28,10 @@ class SectionLabel extends StatelessWidget {
             padding: const EdgeInsets.symmetric(horizontal: 12),
             child: Text(
               text.toUpperCase(),
-              style: GoogleFonts.ibmPlexMono(
+              style: GoogleFonts.spaceGrotesk(
                 fontSize: 12,
-                fontWeight: FontWeight.w500,
-                letterSpacing: 1.6,
+                fontWeight: FontWeight.w600,
+                letterSpacing: 0.9,
                 color: theme.colorScheme.primary,
               ),
             ),
@@ -69,13 +69,13 @@ class EditorialCard extends StatelessWidget {
       margin: margin ?? const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
       decoration: BoxDecoration(
         color: theme.colorScheme.surface,
-        borderRadius: BorderRadius.circular(8),
+        borderRadius: BorderRadius.circular(16),
         border: Border.all(color: theme.colorScheme.outlineVariant),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withValues(alpha: 0.08),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
+            blurRadius: 18,
+            offset: const Offset(0, 8),
           ),
         ],
       ),
@@ -87,10 +87,12 @@ class EditorialCard extends StatelessWidget {
               height: 2,
               decoration: BoxDecoration(
                 color: theme.colorScheme.primary,
-                borderRadius: BorderRadius.vertical(top: Radius.circular(8)),
+                borderRadius: const BorderRadius.vertical(
+                  top: Radius.circular(16),
+                ),
               ),
             ),
-          Padding(padding: padding ?? const EdgeInsets.all(16), child: child),
+          Padding(padding: padding ?? const EdgeInsets.all(18), child: child),
         ],
       ),
     );
@@ -113,11 +115,11 @@ class DisplayNumber extends StatelessWidget {
   Widget build(BuildContext context) {
     return Text(
       value,
-      style: GoogleFonts.playfairDisplay(
+      style: GoogleFonts.fraunces(
         fontSize: size,
         height: 1.12,
         fontWeight: FontWeight.w600,
-        letterSpacing: -0.5,
+        letterSpacing: -0.4,
         color: color ?? Theme.of(context).colorScheme.onSurface,
       ),
     );

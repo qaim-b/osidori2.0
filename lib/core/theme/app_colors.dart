@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-/// Centralized design tokens for the Serif style system.
+  /// Centralized design tokens for the Editorial Luxe system.
 class AppColors {
   AppColors._();
 
@@ -23,37 +23,37 @@ class AppColors {
   static const Color soloAccent = Color(0xFF9CCB8A);
   static const Color soloBg = Color(0xFFEFF8F5);
 
-  // Serif design system tokens.
-  static const Color background = Color(0xFFFAFAF8); // ivory
-  static const Color foreground = Color(0xFF1A1A1A); // rich black
-  static const Color muted = Color(0xFFF5F3F0);
-  static const Color mutedForeground = Color(0xFF6B6B6B);
-  static const Color accent = Color(0xFFB8860B); // burnished gold
-  static const Color accentSecondary = Color(0xFFD4A84B);
+  // Editorial Luxe design system tokens.
+  static const Color background = Color(0xFFF6F2EB); // warm paper
+  static const Color foreground = Color(0xFF141416); // ink black
+  static const Color muted = Color(0xFFEFE7DD);
+  static const Color mutedForeground = Color(0xFF6B6357);
+  static const Color accent = Color(0xFF0E6B68); // deep teal
+  static const Color accentSecondary = Color(0xFF6BC4B3); // seafoam
   static const Color accentForeground = Color(0xFFFFFFFF);
-  static const Color border = Color(0xFFE8E4DF);
+  static const Color border = Color(0xFFE2D6C8);
   static const Color card = Color(0xFFFFFFFF);
   static const Color ring = accent;
 
   // Theme aliases used throughout the app.
   static const Color primary = accent;
   static const Color primaryLight = accentSecondary;
-  static const Color primaryDark = Color(0xFF8E6700);
-  static const Color secondary = Color(0xFF8A7A65);
-  static const Color secondaryLight = Color(0xFFA69884);
-  static const Color secondaryDark = Color(0xFF6F6251);
+  static const Color primaryDark = Color(0xFF09504E);
+  static const Color secondary = Color(0xFFB86A3E); // sunbaked clay
+  static const Color secondaryLight = Color(0xFFE1A07C);
+  static const Color secondaryDark = Color(0xFF8A4C28);
   static const Color surface = card;
   static const Color surfaceVariant = muted;
 
   // Decorative accents.
-  static const Color starYellow = Color(0xFFFFE066);
-  static const Color starGold = Color(0xFFFFD700);
-  static const Color cloudWhite = Color(0xFFF8F8FF);
+  static const Color starYellow = Color(0xFFFFE09A);
+  static const Color starGold = Color(0xFFF7C56A);
+  static const Color cloudWhite = Color(0xFFF9F7F3);
 
   // Text aliases.
   static const Color textPrimary = foreground;
   static const Color textSecondary = mutedForeground;
-  static const Color textHint = Color(0xFF9A938A);
+  static const Color textHint = Color(0xFF9E9386);
 
   // Semantic
   static const Color income = Color(0xFF4CAF50);
@@ -81,7 +81,7 @@ class AppColors {
   static const Color error = Color(0xFFE53935);
   static const Color success = Color(0xFF4CAF50);
   static const Color warning = Color(0xFFFF9800);
-  static const Color shadow = Color(0x14000000);
+  static const Color shadow = Color(0x1A000000);
 
   // Gradients
   static const LinearGradient stitchGradient = LinearGradient(
@@ -97,7 +97,7 @@ class AppColors {
   );
 
   static const LinearGradient soloGradient = LinearGradient(
-    colors: [Color(0xFF7AA37A), Color(0xFFA7C4A0)],
+    colors: [Color(0xFF4F8F7A), Color(0xFF8AC7B2)],
     begin: Alignment.topLeft,
     end: Alignment.bottomRight,
   );

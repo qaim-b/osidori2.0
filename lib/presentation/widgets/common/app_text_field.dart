@@ -49,10 +49,10 @@ class AppTextField extends StatelessWidget {
       validator: validator,
       onChanged: onChanged,
       autofocus: autofocus,
-      style: GoogleFonts.sourceSans3(
+      style: GoogleFonts.manrope(
         fontSize: isSmallScreen ? 15 : 16,
         height: 1.6,
-        letterSpacing: 0.12,
+        letterSpacing: 0.08,
         color: AppColors.foreground,
       ),
       scrollPadding: const EdgeInsets.only(bottom: 96),
@@ -60,7 +60,7 @@ class AppTextField extends StatelessWidget {
         hintText: hintText,
         labelText: labelText?.toUpperCase(),
         isDense: true,
-        constraints: const BoxConstraints(minHeight: 44),
+        constraints: const BoxConstraints(minHeight: 48),
         contentPadding: EdgeInsets.symmetric(
           horizontal: isSmallScreen ? 14 : 16,
           vertical: isSmallScreen ? 12 : 14,

@@ -28,19 +28,22 @@ class AppButton extends StatelessWidget {
     if (useGradient) {
       return Container(
         width: double.infinity,
-        constraints: const BoxConstraints(minHeight: 44),
+        constraints: const BoxConstraints(minHeight: 48),
         decoration: BoxDecoration(
           gradient: LinearGradient(
-            colors: [colorScheme.primary, colorScheme.secondary],
+            colors: [
+              colorScheme.primary,
+              colorScheme.secondary.withValues(alpha: 0.95),
+            ],
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
           ),
-          borderRadius: BorderRadius.circular(6),
+          borderRadius: BorderRadius.circular(14),
           boxShadow: [
             BoxShadow(
-              color: colorScheme.primary.withValues(alpha: 0.18),
-              blurRadius: 10,
-              offset: const Offset(0, 3),
+              color: colorScheme.primary.withValues(alpha: 0.2),
+              blurRadius: 16,
+              offset: const Offset(0, 6),
             ),
           ],
         ),
@@ -48,9 +51,9 @@ class AppButton extends StatelessWidget {
           color: Colors.transparent,
           child: InkWell(
             onTap: isLoading ? null : onPressed,
-            borderRadius: BorderRadius.circular(6),
+            borderRadius: BorderRadius.circular(14),
             child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+              padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 14),
               child: Center(child: _buildContent(AppColors.accentForeground)),
             ),
           ),
@@ -91,11 +94,11 @@ class AppButton extends StatelessWidget {
 
     final text = Text(
       label,
-      style: GoogleFonts.sourceSans3(
+      style: GoogleFonts.manrope(
         color: color,
         fontSize: 16,
-        fontWeight: FontWeight.w600,
-        letterSpacing: 0.35,
+        fontWeight: FontWeight.w700,
+        letterSpacing: 0.2,
       ),
     );
 

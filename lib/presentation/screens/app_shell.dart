@@ -21,19 +21,26 @@ class AppShell extends StatelessWidget {
       extendBody: true,
       body: navigationShell,
       bottomNavigationBar: ClipRRect(
-        borderRadius: const BorderRadius.vertical(top: Radius.circular(8)),
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(18)),
         child: BackdropFilter(
-          filter: ImageFilter.blur(sigmaX: 8, sigmaY: 8),
+          filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
           child: DecoratedBox(
             decoration: BoxDecoration(
-              color: scheme.surface.withValues(alpha: 0.95),
+              color: scheme.surface.withValues(alpha: 0.92),
               border: Border(
                 top: BorderSide(color: AppColors.border.withValues(alpha: 0.9)),
               ),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.08),
+                  blurRadius: 16,
+                  offset: const Offset(0, -4),
+                ),
+              ],
             ),
             child: SafeArea(
               top: false,
-              minimum: const EdgeInsets.fromLTRB(8, 6, 8, 8),
+              minimum: const EdgeInsets.fromLTRB(10, 8, 10, 10),
               child: Row(
                 children: [
                   Expanded(
@@ -94,31 +101,44 @@ class _NavItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
     return SizedBox(
-      height: 48,
+      height: 52,
       child: Material(
         color: Colors.transparent,
         child: InkWell(
           onTap: onTap,
-          borderRadius: BorderRadius.circular(6),
+          borderRadius: BorderRadius.circular(10),
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               Icon(
                 icon,
                 size: 20,
-                color: selected ? Theme.of(context).colorScheme.primary : AppColors.mutedForeground,
+                color: selected ? colorScheme.primary : AppColors.mutedForeground,
               ),
-              const SizedBox(height: 3),
+              const SizedBox(height: 4),
+              Container(
+                height: 3,
+                width: selected ? 16 : 6,
+                decoration: BoxDecoration(
+                  color: selected
+                      ? colorScheme.primary
+                      : AppColors.mutedForeground.withValues(alpha: 0.4),
+                  borderRadius: BorderRadius.circular(999),
+                ),
+              ),
+              const SizedBox(height: 4),
               Text(
                 label.toUpperCase(),
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
-                style: GoogleFonts.ibmPlexMono(
+                style: GoogleFonts.spaceGrotesk(
                   fontSize: 10,
-                  fontWeight: selected ? FontWeight.w600 : FontWeight.w500,
-                  letterSpacing: 1.1,
-                  color: selected ? Theme.of(context).colorScheme.primary : AppColors.mutedForeground,
+                  fontWeight: selected ? FontWeight.w700 : FontWeight.w600,
+                  letterSpacing: 0.7,
+                  color:
+                      selected ? colorScheme.primary : AppColors.mutedForeground,
                 ),
               ),
             ],
@@ -136,12 +156,15 @@ class _AddButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
     return SizedBox(
-      width: 52,
-      height: 52,
+      width: 56,
+      height: 56,
       child: Material(
-        color: Theme.of(context).colorScheme.primary,
+        color: colorScheme.primary,
         shape: const CircleBorder(),
+        elevation: 2,
+        shadowColor: colorScheme.primary.withValues(alpha: 0.4),
         child: InkWell(
           onTap: onTap,
           customBorder: const CircleBorder(),

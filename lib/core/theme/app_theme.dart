@@ -3,13 +3,13 @@ import 'package:google_fonts/google_fonts.dart';
 import 'app_colors.dart';
 import '../../presentation/providers/appearance_provider.dart';
 
-/// Editorial serif theme system.
+/// Editorial Luxe theme system.
 class AppTheme {
   AppTheme._();
 
   static ThemeData light(ThemePresetData preset) {
-    const radiusMd = Radius.circular(6);
-    const radiusLg = Radius.circular(8);
+    const radiusMd = Radius.circular(12);
+    const radiusLg = Radius.circular(16);
 
     final colorScheme = ColorScheme.light(
       primary: preset.primary,
@@ -27,7 +27,7 @@ class AppTheme {
       colorScheme: colorScheme,
       scaffoldBackgroundColor: preset.background,
       dividerColor: AppColors.border,
-      splashFactory: InkRipple.splashFactory,
+      splashFactory: InkSparkle.splashFactory,
     );
     final textTheme = _textTheme(base.textTheme, preset);
 
@@ -38,11 +38,11 @@ class AppTheme {
         foregroundColor: preset.primary,
         elevation: 0,
         centerTitle: true,
-        titleTextStyle: GoogleFonts.playfairDisplay(
+        titleTextStyle: GoogleFonts.fraunces(
           fontSize: 24,
-          fontWeight: FontWeight.w500,
+          fontWeight: FontWeight.w600,
           color: preset.primary,
-          letterSpacing: -0.2,
+          letterSpacing: -0.3,
         ),
       ),
       cardTheme: CardThemeData(
@@ -50,16 +50,16 @@ class AppTheme {
         elevation: 0,
         shape: RoundedRectangleBorder(
           borderRadius: const BorderRadius.all(radiusLg),
-          side: const BorderSide(color: AppColors.border),
+          side: BorderSide(color: AppColors.border.withValues(alpha: 0.7)),
         ),
         shadowColor: AppColors.shadow,
         margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
       ),
       elevatedButtonTheme: ElevatedButtonThemeData(
         style: ButtonStyle(
-          minimumSize: const WidgetStatePropertyAll(Size(44, 44)),
+          minimumSize: const WidgetStatePropertyAll(Size(48, 48)),
           padding: const WidgetStatePropertyAll(
-            EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+            EdgeInsets.symmetric(horizontal: 22, vertical: 14),
           ),
           elevation: const WidgetStatePropertyAll(0),
           shape: const WidgetStatePropertyAll(
@@ -82,19 +82,19 @@ class AppTheme {
             AppColors.accentForeground.withValues(alpha: 0.08),
           ),
           textStyle: WidgetStatePropertyAll(
-            GoogleFonts.sourceSans3(
+            GoogleFonts.manrope(
               fontSize: 16,
-              fontWeight: FontWeight.w600,
-              letterSpacing: 0.4,
+              fontWeight: FontWeight.w700,
+              letterSpacing: 0.2,
             ),
           ),
         ),
       ),
       outlinedButtonTheme: OutlinedButtonThemeData(
         style: ButtonStyle(
-          minimumSize: const WidgetStatePropertyAll(Size(44, 44)),
+          minimumSize: const WidgetStatePropertyAll(Size(48, 48)),
           padding: const WidgetStatePropertyAll(
-            EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+            EdgeInsets.symmetric(horizontal: 22, vertical: 14),
           ),
           side: WidgetStateProperty.resolveWith((states) {
             final color = states.contains(WidgetState.hovered)
@@ -110,24 +110,26 @@ class AppTheme {
             return AppColors.foreground;
           }),
           textStyle: WidgetStatePropertyAll(
-            GoogleFonts.sourceSans3(
+            GoogleFonts.manrope(
               fontSize: 16,
-              fontWeight: FontWeight.w600,
-              letterSpacing: 0.35,
+              fontWeight: FontWeight.w700,
+              letterSpacing: 0.2,
             ),
           ),
         ),
       ),
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
-        fillColor: Colors.transparent,
+        fillColor: preset.surfaceVariant.withValues(alpha: 0.6),
         border: OutlineInputBorder(
           borderRadius: const BorderRadius.all(radiusMd),
           borderSide: const BorderSide(color: AppColors.border),
         ),
         enabledBorder: OutlineInputBorder(
           borderRadius: const BorderRadius.all(radiusMd),
-          borderSide: const BorderSide(color: AppColors.border),
+          borderSide: BorderSide(
+            color: AppColors.border.withValues(alpha: 0.85),
+          ),
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: const BorderRadius.all(radiusMd),
@@ -145,16 +147,16 @@ class AppTheme {
           horizontal: 16,
           vertical: 14,
         ),
-        hintStyle: GoogleFonts.sourceSans3(
+        hintStyle: GoogleFonts.manrope(
           color: AppColors.mutedForeground.withValues(alpha: 0.7),
           fontSize: 16,
           letterSpacing: 0.1,
         ),
-        labelStyle: GoogleFonts.ibmPlexMono(
+        labelStyle: GoogleFonts.spaceGrotesk(
           color: AppColors.mutedForeground,
           fontSize: 12,
-          fontWeight: FontWeight.w500,
-          letterSpacing: 1.4,
+          fontWeight: FontWeight.w600,
+          letterSpacing: 0.9,
         ),
       ),
       floatingActionButtonTheme: const FloatingActionButtonThemeData(
@@ -177,7 +179,7 @@ class AppTheme {
       chipTheme: ChipThemeData(
         backgroundColor: preset.surfaceVariant,
         selectedColor: preset.primary.withValues(alpha: 0.12),
-        labelStyle: GoogleFonts.sourceSans3(
+        labelStyle: GoogleFonts.manrope(
           fontSize: 13,
           color: AppColors.foreground,
         ),
@@ -192,71 +194,71 @@ class AppTheme {
 
   static TextTheme _textTheme(TextTheme base, ThemePresetData preset) {
     return base.copyWith(
-      displayLarge: GoogleFonts.playfairDisplay(
-        fontSize: 46,
-        height: 1.1,
-        fontWeight: FontWeight.w500,
-        letterSpacing: -0.9,
+      displayLarge: GoogleFonts.fraunces(
+        fontSize: 44,
+        height: 1.08,
+        fontWeight: FontWeight.w600,
+        letterSpacing: -0.6,
         color: preset.primary,
       ),
-      displayMedium: GoogleFonts.playfairDisplay(
-        fontSize: 38,
-        height: 1.15,
-        fontWeight: FontWeight.w500,
-        letterSpacing: -0.5,
+      displayMedium: GoogleFonts.fraunces(
+        fontSize: 36,
+        height: 1.12,
+        fontWeight: FontWeight.w600,
+        letterSpacing: -0.45,
         color: preset.primary,
       ),
-      headlineLarge: GoogleFonts.playfairDisplay(
-        fontSize: 32,
-        height: 1.2,
-        fontWeight: FontWeight.w500,
+      headlineLarge: GoogleFonts.fraunces(
+        fontSize: 30,
+        height: 1.18,
+        fontWeight: FontWeight.w600,
         letterSpacing: -0.35,
         color: preset.primary,
       ),
-      headlineMedium: GoogleFonts.playfairDisplay(
-        fontSize: 28,
+      headlineMedium: GoogleFonts.fraunces(
+        fontSize: 26,
         height: 1.2,
-        fontWeight: FontWeight.w500,
-        letterSpacing: -0.25,
+        fontWeight: FontWeight.w600,
+        letterSpacing: -0.2,
         color: preset.primary,
       ),
-      titleLarge: GoogleFonts.playfairDisplay(
+      titleLarge: GoogleFonts.fraunces(
         fontSize: 22,
-        height: 1.3,
+        height: 1.28,
         fontWeight: FontWeight.w600,
         color: preset.primary,
       ),
-      titleMedium: GoogleFonts.sourceSans3(
+      titleMedium: GoogleFonts.manrope(
         fontSize: 16,
         height: 1.5,
-        fontWeight: FontWeight.w600,
-        letterSpacing: 0.35,
+        fontWeight: FontWeight.w700,
+        letterSpacing: 0.2,
         color: preset.primary,
       ),
-      bodyLarge: GoogleFonts.sourceSans3(
+      bodyLarge: GoogleFonts.manrope(
         fontSize: 17,
-        height: 1.75,
+        height: 1.7,
         fontWeight: FontWeight.w400,
-        letterSpacing: 0.16,
+        letterSpacing: 0.1,
         color: AppColors.foreground,
       ),
-      bodyMedium: GoogleFonts.sourceSans3(
+      bodyMedium: GoogleFonts.manrope(
         fontSize: 16,
-        height: 1.72,
+        height: 1.68,
         fontWeight: FontWeight.w400,
-        letterSpacing: 0.14,
+        letterSpacing: 0.08,
         color: AppColors.mutedForeground,
       ),
-      labelLarge: GoogleFonts.sourceSans3(
+      labelLarge: GoogleFonts.manrope(
         fontSize: 14,
-        fontWeight: FontWeight.w600,
-        letterSpacing: 0.6,
+        fontWeight: FontWeight.w700,
+        letterSpacing: 0.3,
         color: AppColors.accentForeground,
       ),
-      labelMedium: GoogleFonts.ibmPlexMono(
+      labelMedium: GoogleFonts.spaceGrotesk(
         fontSize: 12,
-        fontWeight: FontWeight.w500,
-        letterSpacing: 1.6,
+        fontWeight: FontWeight.w600,
+        letterSpacing: 0.9,
         color: AppColors.accent,
       ),
     );
