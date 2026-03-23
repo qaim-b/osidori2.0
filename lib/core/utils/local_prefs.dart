@@ -5,6 +5,10 @@ class LocalPrefs {
 
   static String themePresetKey(String userId) => 'prefs.theme_preset.$userId';
   static String activeGroupKey(String userId) => 'prefs.active_group.$userId';
+  static String travelModeEnabledKey(String userId) =>
+      'prefs.travel_mode.enabled.$userId';
+  static String travelModeDestinationKey(String userId) =>
+      'prefs.travel_mode.destination.$userId';
 
   static Future<String?> getString(String key) async {
     final prefs = await SharedPreferences.getInstance();

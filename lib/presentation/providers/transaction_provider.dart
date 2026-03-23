@@ -32,13 +32,16 @@ final hiddenExpenseCategoryIdsProvider = Provider<Set<String>>((ref) {
       .toSet();
 });
 
-final visibleMonthlyTransactionsProvider = Provider<List<TransactionModel>>((ref) {
+final visibleMonthlyTransactionsProvider = Provider<List<TransactionModel>>((
+  ref,
+) {
   final txns = ref.watch(monthlyTransactionsProvider).valueOrNull ?? [];
   final hiddenExpenseCategoryIds = ref.watch(hiddenExpenseCategoryIdsProvider);
   if (hiddenExpenseCategoryIds.isEmpty) return txns;
   return txns
       .where(
-        (t) => !(t.isExpense && hiddenExpenseCategoryIds.contains(t.categoryId)),
+        (t) =>
+            !(t.isExpense && hiddenExpenseCategoryIds.contains(t.categoryId)),
       )
       .toList();
 });
@@ -83,8 +86,7 @@ class TransactionsNotifier
     this._groupIds,
     this._displayCurrency,
     this._fxMode,
-  )
-    : super(const AsyncValue.loading()) {
+  ) : super(const AsyncValue.loading()) {
     if (_userId != null) load();
   }
 
@@ -104,6 +106,7 @@ class TransactionsNotifier
         groupIds: _groupIds,
         from: from,
         to: to,
+        pageSize: 10000,
       );
       final converted = await _convertForDisplay(txns);
       state = AsyncValue.data(converted);
@@ -118,7 +121,8 @@ class TransactionsNotifier
     final converted = await Future.wait(
       txns.map((txn) async {
         if (_fxMode == 'accounting' &&
-            txn.fxBaseCurrency?.toUpperCase() == _displayCurrency.toUpperCase() &&
+            txn.fxBaseCurrency?.toUpperCase() ==
+                _displayCurrency.toUpperCase() &&
             txn.baseAmountLocked != null) {
           return txn.copyWith(
             amount: txn.baseAmountLocked,

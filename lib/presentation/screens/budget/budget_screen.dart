@@ -4,6 +4,8 @@ import 'package:go_router/go_router.dart';
 
 import '../../../core/extensions/datetime_ext.dart';
 import '../../../core/theme/app_colors.dart';
+import '../../../core/theme/app_motion.dart';
+import '../../../core/utils/category_utils.dart';
 import '../../../core/utils/currency_formatter.dart';
 import '../../../domain/entities/category_entity.dart';
 import '../../providers/appearance_provider.dart';
@@ -11,6 +13,7 @@ import '../../providers/budget_limit_provider.dart';
 import '../../providers/category_provider.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/transaction_provider.dart';
+import '../../providers/travel_mode_provider.dart';
 import '../../widgets/charts/donut_chart.dart';
 import '../../widgets/common/editorial.dart';
 import '../../widgets/common/themed_backdrop.dart';
@@ -46,8 +49,9 @@ class _BudgetScreenState extends ConsumerState<BudgetScreen> {
       animation: _scrollController,
       child: child,
       builder: (context, child) {
-        final offset =
-            _scrollController.hasClients ? _scrollController.offset : 0.0;
+        final offset = _scrollController.hasClients
+            ? _scrollController.offset
+            : 0.0;
         final progress = ((offset - start) / 260).clamp(0.0, 1.0);
         return Opacity(
           opacity: (0.74 + (0.26 * progress)).clamp(0.0, 1.0),
@@ -117,47 +121,68 @@ class _BudgetScreenState extends ConsumerState<BudgetScreen> {
                           final isHidden = hiddenById[category.id] ?? false;
                           final isPending = pendingIds.contains(category.id);
                           final tileShade = baseColor.withValues(
-                            alpha: isHidden ? 0.07 : 0.12,
+                            alpha: isHidden ? 0.08 : 0.14,
                           );
-                          return SwitchListTile.adaptive(
-                            contentPadding: const EdgeInsets.symmetric(
-                              horizontal: 12,
-                              vertical: 2,
+                          return AnimatedContainer(
+                            duration: AppMotion.normal,
+                            curve: AppMotion.smooth,
+                            margin: const EdgeInsets.only(bottom: 8),
+                            padding: const EdgeInsets.symmetric(vertical: 2),
+                            decoration: BoxDecoration(
+                              gradient: LinearGradient(
+                                colors: [
+                                  tileShade,
+                                  baseColor.withValues(alpha: 0.05),
+                                ],
+                                begin: Alignment.centerLeft,
+                                end: Alignment.centerRight,
+                              ),
+                              borderRadius: BorderRadius.circular(14),
+                              border: Border.all(
+                                color: baseColor.withValues(alpha: 0.18),
+                              ),
                             ),
-                            value: isHidden,
-                            tileColor: tileShade,
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                            secondary: Container(
-                              width: 34,
-                              height: 34,
-                              alignment: Alignment.center,
-                              decoration: BoxDecoration(
-                                color: baseColor.withValues(alpha: 0.22),
-                                shape: BoxShape.circle,
-                                border: Border.all(
-                                  color: baseColor.withValues(alpha: 0.5),
+                            child: SwitchListTile.adaptive(
+                              contentPadding: const EdgeInsets.symmetric(
+                                horizontal: 12,
+                                vertical: 2,
+                              ),
+                              value: isHidden,
+                              tileColor: Colors.transparent,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              secondary: Container(
+                                width: 34,
+                                height: 34,
+                                alignment: Alignment.center,
+                                decoration: BoxDecoration(
+                                  color: baseColor.withValues(alpha: 0.22),
+                                  shape: BoxShape.circle,
+                                  border: Border.all(
+                                    color: baseColor.withValues(alpha: 0.5),
+                                  ),
+                                ),
+                                child: Text(
+                                  category.emoji,
+                                  style: const TextStyle(fontSize: 16),
                                 ),
                               ),
-                              child: Text(
-                                category.emoji,
-                                style: const TextStyle(fontSize: 16),
+                              title: Text(
+                                '${category.displayNumber}. ${category.name}',
                               ),
-                            ),
-                            title: Text(
-                              '${category.displayNumber}. ${category.name}',
-                            ),
-                            subtitle: Text(
-                              isHidden
-                                  ? 'Hidden from monthly spending views'
-                                  : 'Visible in monthly spending views',
-                            ),
-                            activeColor: baseColor,
-                            onChanged:
-                                isPending
-                                    ? null
-                                    : (value) {
+                              subtitle: Text(
+                                isHidden
+                                    ? 'Hidden from monthly spending views'
+                                    : 'Visible in monthly spending views',
+                              ),
+                              activeThumbColor: baseColor,
+                              activeTrackColor: baseColor.withValues(
+                                alpha: 0.35,
+                              ),
+                              onChanged: isPending
+                                  ? null
+                                  : (value) {
                                       setSheetState(() {
                                         hiddenById[category.id] = value;
                                         pendingIds.add(category.id);
@@ -165,21 +190,21 @@ class _BudgetScreenState extends ConsumerState<BudgetScreen> {
                                       () async {
                                         try {
                                           await ref
-                                              .read(
-                                                categoriesProvider.notifier,
-                                              )
+                                              .read(categoriesProvider.notifier)
                                               .toggleExpenseViewHidden(
                                                 category.id,
                                                 value,
                                               );
                                         } finally {
-                                          if (!context.mounted) return;
-                                          setSheetState(() {
-                                            pendingIds.remove(category.id);
-                                          });
+                                          if (context.mounted) {
+                                            setSheetState(() {
+                                              pendingIds.remove(category.id);
+                                            });
+                                          }
                                         }
                                       }();
                                     },
+                            ),
                           );
                         },
                       ),
@@ -213,10 +238,11 @@ class _BudgetScreenState extends ConsumerState<BudgetScreen> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final selectedMonth = ref.watch(selectedMonthProvider);
-    final categoryTotals = ref.watch(categoryTotalsProvider);
-    final txns = ref.watch(visibleMonthlyTransactionsProvider);
+    final travelMode = ref.watch(travelModeProvider);
+    final monthlyTxns =
+        ref.watch(monthlyTransactionsProvider).valueOrNull ?? [];
+    final visibleTxns = ref.watch(visibleMonthlyTransactionsProvider);
     final categories = ref.watch(categoriesProvider);
-    final totals = ref.watch(monthlyTotalsProvider);
     final currentCurrency = ref.watch(currentCurrencyProvider);
     final preset = ref.watch(activeThemePresetDataProvider);
     final budgetLimitMap = ref.watch(budgetLimitMapProvider);
@@ -225,10 +251,16 @@ class _BudgetScreenState extends ConsumerState<BudgetScreen> {
     if (latestCategories != null) {
       _cachedCategories = latestCategories;
     }
-    final hiddenExpenseCount =
-        allCategories
-            .where((c) => c.isExpense && c.isHiddenFromExpenseViews)
-            .length;
+    final hiddenExpenseCount = allCategories
+        .where((c) => c.isExpense && c.isHiddenFromExpenseViews)
+        .length;
+
+    final honeymoonCategory = findHoneymoonCategory(allCategories);
+    final honeymoonId = honeymoonCategory?.id;
+    final travelModeActive = travelMode.enabled && honeymoonId != null;
+    final txns = travelModeActive
+        ? monthlyTxns.where((t) => t.categoryId == honeymoonId).toList()
+        : visibleTxns;
 
     final catEntityMap = <String, CategoryEntity>{};
     final resolvedCategoryNameMap = <String, String>{};
@@ -266,6 +298,18 @@ class _BudgetScreenState extends ConsumerState<BudgetScreen> {
           resolvedCategoryEmojiMap[txn.categoryId] ?? '📦';
     }
 
+    final categoryTotals = <String, double>{};
+    double incomeTotal = 0;
+    double expenseTotal = 0;
+    for (final txn in txns) {
+      if (txn.isIncome) incomeTotal += txn.amount;
+      if (txn.isExpense) {
+        expenseTotal += txn.amount;
+        categoryTotals[txn.categoryId] =
+            (categoryTotals[txn.categoryId] ?? 0) + txn.amount;
+      }
+    }
+
     final breakdownTotals = <String, double>{};
     final breakdownNames = <String, String>{};
     for (final txn in txns) {
@@ -278,14 +322,16 @@ class _BudgetScreenState extends ConsumerState<BudgetScreen> {
     }
     final groupedRows = <String, _BudgetRowAggregate>{};
     final enabledExpenseCategories =
-        allCategories
-            .where(
-              (c) =>
-                  c.isExpense &&
-                  c.isEnabled &&
-                  !c.isHiddenFromExpenseViews,
-            )
-            .toList()
+        travelModeActive
+              ? [if (honeymoonCategory != null) honeymoonCategory]
+              : allCategories
+                    .where(
+                      (c) =>
+                          c.isExpense &&
+                          c.isEnabled &&
+                          !c.isHiddenFromExpenseViews,
+                    )
+                    .toList()
           ..sort((a, b) => a.sortOrder.compareTo(b.sortOrder));
 
     // Show all enabled expense categories, including zero-amount rows.
@@ -415,7 +461,7 @@ class _BudgetScreenState extends ConsumerState<BudgetScreen> {
                               const Spacer(),
                               Text(
                                 CurrencyFormatter.format(
-                                  (totals['income'] ?? 0.0).toDouble(),
+                                  incomeTotal,
                                   currency: currentCurrency,
                                 ),
                                 style: TextStyle(
@@ -450,7 +496,7 @@ class _BudgetScreenState extends ConsumerState<BudgetScreen> {
                               const SizedBox(height: 4),
                               DisplayNumber(
                                 value: CurrencyFormatter.format(
-                                  (totals['expense'] ?? 0.0).toDouble(),
+                                  expenseTotal,
                                   currency: currentCurrency,
                                 ),
                                 size: 34,
@@ -459,6 +505,119 @@ class _BudgetScreenState extends ConsumerState<BudgetScreen> {
                             ],
                           ),
                         ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+              SliverToBoxAdapter(
+                child: _scrollMotion(
+                  start: 90,
+                  child: EditorialCard(
+                    margin: const EdgeInsets.fromLTRB(16, 6, 16, 0),
+                    accentTop: false,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            Container(
+                              width: 34,
+                              height: 34,
+                              decoration: BoxDecoration(
+                                gradient: LinearGradient(
+                                  colors: [
+                                    preset.primary.withValues(alpha: 0.85),
+                                    preset.secondary.withValues(alpha: 0.85),
+                                  ],
+                                ),
+                                borderRadius: BorderRadius.circular(10),
+                              ),
+                              child: const Icon(
+                                Icons.flight_takeoff_rounded,
+                                color: Colors.white,
+                                size: 18,
+                              ),
+                            ),
+                            const SizedBox(width: 10),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    'Travel Mode',
+                                    style: theme.textTheme.titleMedium
+                                        ?.copyWith(fontWeight: FontWeight.w700),
+                                  ),
+                                  Text(
+                                    travelModeActive
+                                        ? 'Showing only Honeymoon expenses'
+                                        : 'Focus the budget on travel spending',
+                                    style: theme.textTheme.bodySmall?.copyWith(
+                                      color: theme.colorScheme.onSurface
+                                          .withValues(alpha: 0.6),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            Switch.adaptive(
+                              value: travelMode.enabled,
+                              onChanged: travelMode.isLoading
+                                  ? null
+                                  : (value) => ref
+                                        .read(travelModeProvider.notifier)
+                                        .setEnabled(value),
+                              activeTrackColor: preset.primary.withValues(
+                                alpha: 0.35,
+                              ),
+                              activeThumbColor: preset.primary,
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 10),
+                        if (travelMode.enabled && honeymoonCategory == null)
+                          Text(
+                            'Honeymoon category not found. Create it in Categories to use Travel Mode.',
+                            style: theme.textTheme.bodySmall?.copyWith(
+                              color: AppColors.expense,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          )
+                        else
+                          Row(
+                            children: [
+                              Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 12,
+                                  vertical: 6,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: preset.primary.withValues(alpha: 0.1),
+                                  borderRadius: BorderRadius.circular(999),
+                                ),
+                                child: Text(
+                                  travelMode.destination.trim().isEmpty
+                                      ? 'Set destination'
+                                      : travelMode.destination.trim(),
+                                  style: TextStyle(
+                                    color: preset.primary,
+                                    fontWeight: FontWeight.w700,
+                                    fontSize: 12.5,
+                                  ),
+                                ),
+                              ),
+                              const Spacer(),
+                              TextButton.icon(
+                                onPressed: () => _showTravelDestinationSheet(
+                                  context: context,
+                                  initial: travelMode.destination,
+                                ),
+                                icon: const Icon(Icons.edit_location_alt),
+                                label: const Text('Edit'),
+                              ),
+                            ],
+                          ),
                       ],
                     ),
                   ),
@@ -514,38 +673,47 @@ class _BudgetScreenState extends ConsumerState<BudgetScreen> {
                   start: 240,
                   child: Padding(
                     padding: const EdgeInsets.fromLTRB(20, 10, 20, 10),
-                    child: Row(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Expanded(
-                          child: Text(
-                            'By Category',
-                            style: Theme.of(context).textTheme.titleMedium
-                                ?.copyWith(
-                                  color: theme.colorScheme.onSurface,
-                                  fontWeight: FontWeight.w700,
-                                ),
-                          ),
+                        Text(
+                          travelModeActive
+                              ? 'Travel Categories'
+                              : 'By Category',
+                          style: Theme.of(context).textTheme.titleMedium
+                              ?.copyWith(
+                                color: theme.colorScheme.onSurface,
+                                fontWeight: FontWeight.w700,
+                              ),
                         ),
-                        TextButton.icon(
-                          onPressed:
-                              categories.isLoading
+                        const SizedBox(height: 10),
+                        Wrap(
+                          spacing: 8,
+                          runSpacing: 8,
+                          children: [
+                            TextButton.icon(
+                              onPressed: categories.isLoading
                                   ? null
                                   : () => _showHideCategoriesSheet(
-                                    context: context,
-                                    categories: allCategories,
-                                  ),
-                          icon: const Icon(Icons.visibility_off_rounded, size: 18),
-                          label: Text(
-                            hiddenExpenseCount == 0
-                                ? 'Hide Categories'
-                                : 'Hidden ($hiddenExpenseCount)',
-                          ),
-                        ),
-                        const SizedBox(width: 4),
-                        TextButton.icon(
-                          onPressed: () => context.push('/budget/planner'),
-                          icon: const Icon(Icons.tune_rounded, size: 18),
-                          label: const Text('All Budgets'),
+                                      context: context,
+                                      categories: allCategories,
+                                    ),
+                              icon: const Icon(
+                                Icons.visibility_off_rounded,
+                                size: 18,
+                              ),
+                              label: Text(
+                                hiddenExpenseCount == 0
+                                    ? 'Hide Categories'
+                                    : 'Hidden ($hiddenExpenseCount)',
+                              ),
+                            ),
+                            TextButton.icon(
+                              onPressed: () => context.push('/budget/planner'),
+                              icon: const Icon(Icons.tune_rounded, size: 18),
+                              label: const Text('All Budgets'),
+                            ),
+                          ],
                         ),
                       ],
                     ),
@@ -600,42 +768,19 @@ class _BudgetScreenState extends ConsumerState<BudgetScreen> {
                           ),
                           child: Padding(
                             padding: const EdgeInsets.all(12),
-                            child: Column(
-                              children: [
-                                Row(
-                                  children: [
-                                    Container(
-                                      width: 6,
-                                      height: 32,
-                                      decoration: BoxDecoration(
-                                        color: accentColor,
-                                        borderRadius: BorderRadius.circular(6),
-                                      ),
-                                    ),
-                                    const SizedBox(width: 10),
-                                    CircleAvatar(
-                                      backgroundColor: accentColor.withValues(
-                                        alpha: 0.18,
-                                      ),
-                                      child: Text(
-                                        cat?.emoji ?? entry.emoji,
-                                        style: const TextStyle(fontSize: 16),
-                                      ),
-                                    ),
-                                    const SizedBox(width: 10),
-                                    Expanded(
-                                      child: Text(
-                                        cat?.name ?? entry.name,
-                                        style: const TextStyle(
-                                          fontWeight: FontWeight.w600,
-                                          fontSize: 14,
-                                        ),
-                                      ),
-                                    ),
-                                    Container(
-                                      width: 128,
-                                      alignment: Alignment.center,
-                                      child: TweenAnimationBuilder<double>(
+                            child: LayoutBuilder(
+                              builder: (context, constraints) {
+                                final isCompact = constraints.maxWidth < 360;
+
+                                Widget amountSummary({
+                                  required CrossAxisAlignment alignment,
+                                  required MainAxisAlignment badgeAlignment,
+                                }) {
+                                  return Column(
+                                    crossAxisAlignment: alignment,
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      TweenAnimationBuilder<double>(
                                         tween: Tween<double>(end: entry.amount),
                                         duration: const Duration(
                                           milliseconds: 350,
@@ -647,7 +792,7 @@ class _BudgetScreenState extends ConsumerState<BudgetScreen> {
                                               value,
                                               currency: currentCurrency,
                                             ),
-                                            textAlign: TextAlign.center,
+                                            textAlign: TextAlign.right,
                                             style: const TextStyle(
                                               fontSize: 14.8,
                                               fontWeight: FontWeight.w700,
@@ -655,72 +800,155 @@ class _BudgetScreenState extends ConsumerState<BudgetScreen> {
                                           );
                                         },
                                       ),
-                                    ),
-                                    const SizedBox(width: 6),
-                                    Container(
-                                      constraints: const BoxConstraints(
-                                        minWidth: 64,
+                                      const SizedBox(height: 4),
+                                      Row(
+                                        mainAxisSize: MainAxisSize.min,
+                                        mainAxisAlignment: badgeAlignment,
+                                        children: [
+                                          Container(
+                                            constraints: const BoxConstraints(
+                                              minWidth: 64,
+                                            ),
+                                            padding: const EdgeInsets.symmetric(
+                                              horizontal: 8,
+                                              vertical: 4,
+                                            ),
+                                            decoration: BoxDecoration(
+                                              color: accentColor.withValues(
+                                                alpha: 0.12,
+                                              ),
+                                              borderRadius:
+                                                  BorderRadius.circular(999),
+                                            ),
+                                            child: Text(
+                                              '${pct.toStringAsFixed(1)}%',
+                                              textAlign: TextAlign.center,
+                                              style: TextStyle(
+                                                fontSize: 13.4,
+                                                fontWeight: FontWeight.w800,
+                                                color: accentColor,
+                                              ),
+                                            ),
+                                          ),
+                                        ],
                                       ),
-                                      padding: const EdgeInsets.symmetric(
-                                        horizontal: 8,
-                                        vertical: 4,
-                                      ),
-                                      decoration: BoxDecoration(
-                                        color: accentColor.withValues(
-                                          alpha: 0.12,
+                                    ],
+                                  );
+                                }
+
+                                return Column(
+                                  children: [
+                                    Row(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      children: [
+                                        Container(
+                                          width: 6,
+                                          height: isCompact ? 44 : 32,
+                                          decoration: BoxDecoration(
+                                            color: accentColor,
+                                            borderRadius: BorderRadius.circular(
+                                              6,
+                                            ),
+                                          ),
                                         ),
+                                        const SizedBox(width: 10),
+                                        CircleAvatar(
+                                          backgroundColor: accentColor
+                                              .withValues(alpha: 0.18),
+                                          child: Text(
+                                            cat?.emoji ?? entry.emoji,
+                                            style: const TextStyle(
+                                              fontSize: 16,
+                                            ),
+                                          ),
+                                        ),
+                                        const SizedBox(width: 10),
+                                        Expanded(
+                                          child: Column(
+                                            crossAxisAlignment:
+                                                CrossAxisAlignment.start,
+                                            children: [
+                                              Text(
+                                                cat?.name ?? entry.name,
+                                                maxLines: isCompact ? 2 : 1,
+                                                overflow: TextOverflow.ellipsis,
+                                                style: const TextStyle(
+                                                  fontWeight: FontWeight.w600,
+                                                  fontSize: 14,
+                                                ),
+                                              ),
+                                              if (isCompact) ...[
+                                                const SizedBox(height: 10),
+                                                amountSummary(
+                                                  alignment:
+                                                      CrossAxisAlignment.start,
+                                                  badgeAlignment:
+                                                      MainAxisAlignment.start,
+                                                ),
+                                              ],
+                                            ],
+                                          ),
+                                        ),
+                                        if (!isCompact) ...[
+                                          const SizedBox(width: 8),
+                                          amountSummary(
+                                            alignment: CrossAxisAlignment.end,
+                                            badgeAlignment:
+                                                MainAxisAlignment.end,
+                                          ),
+                                        ],
+                                        const SizedBox(width: 4),
+                                        Padding(
+                                          padding: EdgeInsets.only(
+                                            top: isCompact ? 2 : 8,
+                                          ),
+                                          child: Icon(
+                                            Icons.chevron_right,
+                                            color: preset.secondary,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                    if (budgetLimit != null) ...[
+                                      const SizedBox(height: 10),
+                                      ClipRRect(
                                         borderRadius: BorderRadius.circular(
                                           999,
                                         ),
-                                      ),
-                                      child: Text(
-                                        '${pct.toStringAsFixed(1)}%',
-                                        textAlign: TextAlign.center,
-                                        style: TextStyle(
-                                          fontSize: 13.4,
-                                          fontWeight: FontWeight.w800,
-                                          color: accentColor,
+                                        child: LinearProgressIndicator(
+                                          minHeight: 6,
+                                          value:
+                                              limitProgress?.clamp(0.0, 1.0) ??
+                                              0,
+                                          backgroundColor: theme
+                                              .colorScheme
+                                              .surfaceContainerHighest,
+                                          valueColor:
+                                              AlwaysStoppedAnimation<Color>(
+                                                (limitProgress ?? 0) <= 1
+                                                    ? preset.primary
+                                                    : AppColors.expense,
+                                              ),
                                         ),
                                       ),
-                                    ),
-                                    const SizedBox(width: 4),
-                                    Icon(
-                                      Icons.chevron_right,
-                                      color: preset.secondary,
-                                    ),
+                                      const SizedBox(height: 6),
+                                      Align(
+                                        alignment: isCompact
+                                            ? Alignment.centerLeft
+                                            : Alignment.centerRight,
+                                        child: Text(
+                                          'Budget ${CurrencyFormatter.format(budgetLimit, currency: currentCurrency)}',
+                                          style: const TextStyle(
+                                            fontSize: 11,
+                                            fontWeight: FontWeight.w600,
+                                          ),
+                                        ),
+                                      ),
+                                    ],
                                   ],
-                                ),
-                                if (budgetLimit != null) ...[
-                                  const SizedBox(height: 8),
-                                  ClipRRect(
-                                    borderRadius: BorderRadius.circular(999),
-                                    child: LinearProgressIndicator(
-                                      minHeight: 6,
-                                      value:
-                                          limitProgress?.clamp(0.0, 1.0) ?? 0,
-                                      backgroundColor: theme
-                                          .colorScheme
-                                          .surfaceContainerHighest,
-                                      valueColor: AlwaysStoppedAnimation<Color>(
-                                        (limitProgress ?? 0) <= 1
-                                            ? preset.primary
-                                            : AppColors.expense,
-                                      ),
-                                    ),
-                                  ),
-                                  const SizedBox(height: 4),
-                                  Align(
-                                    alignment: Alignment.centerRight,
-                                    child: Text(
-                                      'Budget ${CurrencyFormatter.format(budgetLimit, currency: currentCurrency)}',
-                                      style: const TextStyle(
-                                        fontSize: 11,
-                                        fontWeight: FontWeight.w600,
-                                      ),
-                                    ),
-                                  ),
-                                ],
-                              ],
+                                );
+                              },
                             ),
                           ),
                         ),
@@ -734,6 +962,61 @@ class _BudgetScreenState extends ConsumerState<BudgetScreen> {
           ),
         ),
       ),
+    );
+  }
+
+  Future<void> _showTravelDestinationSheet({
+    required BuildContext context,
+    required String initial,
+  }) async {
+    final controller = TextEditingController(text: initial);
+    await showModalBottomSheet<void>(
+      context: context,
+      showDragHandle: true,
+      isScrollControlled: true,
+      builder: (sheetContext) {
+        return Padding(
+          padding: EdgeInsets.fromLTRB(
+            16,
+            8,
+            16,
+            16 + MediaQuery.of(sheetContext).viewInsets.bottom,
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'Travel Destination',
+                style: Theme.of(
+                  sheetContext,
+                ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700),
+              ),
+              const SizedBox(height: 8),
+              TextField(
+                controller: controller,
+                decoration: const InputDecoration(
+                  hintText: 'e.g. Turkey, Seoul, Bali',
+                  prefixIcon: Icon(Icons.location_on_outlined),
+                ),
+              ),
+              const SizedBox(height: 12),
+              SizedBox(
+                width: double.infinity,
+                child: FilledButton(
+                  onPressed: () {
+                    ref
+                        .read(travelModeProvider.notifier)
+                        .setDestination(controller.text);
+                    Navigator.of(sheetContext).pop();
+                  },
+                  child: const Text('Save Destination'),
+                ),
+              ),
+            ],
+          ),
+        );
+      },
     );
   }
 }
@@ -770,4 +1053,3 @@ class _BudgetRowAggregate {
     );
   }
 }
-
