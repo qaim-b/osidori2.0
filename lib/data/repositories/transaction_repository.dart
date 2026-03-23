@@ -37,39 +37,66 @@ class TransactionRepository {
     int page = 0,
     int pageSize = AppConstants.defaultPageSize,
   }) async {
-    var query = _client
-        .from(AppSupabase.transactionsTable)
-        .select()
-        .eq('owner_user_id', userId)
-        .gte('date', from.toIso8601String())
-        .lte('date', to.toIso8601String())
-        .order('date', ascending: false)
-        .range(page * pageSize, (page + 1) * pageSize - 1);
-
-    final data = await query;
-    final personalTxns =
-        data.map((json) => TransactionModel.fromJson(json)).toList();
+    final personalTxns = await _fetchPagedTransactions(
+      page: page,
+      pageSize: pageSize,
+      buildQuery: (start, end) => _client
+          .from(AppSupabase.transactionsTable)
+          .select()
+          .eq('owner_user_id', userId)
+          .gte('date', from.toIso8601String())
+          .lte('date', to.toIso8601String())
+          .order('date', ascending: false)
+          .range(start, end),
+    );
 
     if (groupIds.isEmpty) return personalTxns;
 
     // Also fetch shared transactions from other group members
-    final sharedData = await _client
-        .from(AppSupabase.transactionsTable)
-        .select()
-        .inFilter('group_id', groupIds)
-        .neq('owner_user_id', userId)
-        .gte('date', from.toIso8601String())
-        .lte('date', to.toIso8601String())
-        .order('date', ascending: false)
-        .range(page * pageSize, (page + 1) * pageSize - 1);
-
-    final sharedTxns =
-        sharedData.map((json) => TransactionModel.fromJson(json)).toList();
+    final sharedTxns = await _fetchPagedTransactions(
+      page: page,
+      pageSize: pageSize,
+      buildQuery: (start, end) => _client
+          .from(AppSupabase.transactionsTable)
+          .select()
+          .inFilter('group_id', groupIds)
+          .neq('owner_user_id', userId)
+          .gte('date', from.toIso8601String())
+          .lte('date', to.toIso8601String())
+          .order('date', ascending: false)
+          .range(start, end),
+    );
 
     // Merge and sort by date descending
     final all = [...personalTxns, ...sharedTxns];
     all.sort((a, b) => b.date.compareTo(a.date));
     return all;
+  }
+
+  Future<List<TransactionModel>> _fetchPagedTransactions({
+    required int page,
+    required int pageSize,
+    required PostgrestTransformBuilder<PostgrestList> Function(
+      int start,
+      int end,
+    )
+    buildQuery,
+  }) async {
+    final results = <TransactionModel>[];
+    var currentPage = page;
+
+    while (true) {
+      final start = currentPage * pageSize;
+      final end = start + pageSize - 1;
+      final rows = await buildQuery(start, end);
+      results.addAll(rows.map((json) => TransactionModel.fromJson(json)));
+      if (rows.length < pageSize) {
+        break;
+      }
+      currentPage += 1;
+    }
+
+    return results;
   }
 
   /// Get all transactions for a month (for CSV export)
@@ -146,9 +173,7 @@ class TransactionRepository {
     if (visibility == 'shared' && groupId != null) {
       query = query.eq('group_id', groupId).eq('visibility', 'shared');
     } else if (visibility == 'personal') {
-      query = query
-          .eq('owner_user_id', userId)
-          .eq('visibility', 'personal');
+      query = query.eq('owner_user_id', userId).eq('visibility', 'personal');
     } else {
       // All visible transactions
       query = query.eq('owner_user_id', userId);
