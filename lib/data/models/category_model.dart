@@ -63,4 +63,34 @@ class CategoryModel extends CategoryEntity {
       createdAt: entity.createdAt,
     );
   }
+
+  @override
+  CategoryModel copyWith({
+    String? id,
+    int? displayNumber,
+    String? name,
+    String? emoji,
+    String? type,
+    String? parentId,
+    String? parentKey,
+    bool? isEnabled,
+    bool? isHiddenFromExpenseViews,
+    int? sortOrder,
+    DateTime? createdAt,
+  }) {
+    return CategoryModel(
+      id: id ?? this.id,
+      displayNumber: displayNumber ?? this.displayNumber,
+      name: name ?? this.name,
+      emoji: emoji ?? this.emoji,
+      type: type ?? this.type,
+      parentId: parentId ?? this.parentId,
+      parentKey: parentKey ?? this.parentKey,
+      isEnabled: isEnabled ?? this.isEnabled,
+      isHiddenFromExpenseViews:
+          isHiddenFromExpenseViews ?? this.isHiddenFromExpenseViews,
+      sortOrder: sortOrder ?? this.sortOrder,
+      createdAt: createdAt ?? this.createdAt,
+    );
+  }
 }

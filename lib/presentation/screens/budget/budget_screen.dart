@@ -93,6 +93,9 @@ class _BudgetScreenState extends ConsumerState<BudgetScreen> {
       builder: (sheetContext) {
         return StatefulBuilder(
           builder: (context, setSheetState) {
+            final hiddenCount = hiddenById.values
+                .where((hidden) => hidden)
+                .length;
             return SafeArea(
               child: Padding(
                 padding: const EdgeInsets.fromLTRB(16, 4, 16, 16),
@@ -100,15 +103,45 @@ class _BudgetScreenState extends ConsumerState<BudgetScreen> {
                   mainAxisSize: MainAxisSize.min,
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
-                      'Hide Categories',
-                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                        fontWeight: FontWeight.w700,
-                      ),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: Text(
+                            'Hide Categories',
+                            style: Theme.of(context).textTheme.titleMedium
+                                ?.copyWith(fontWeight: FontWeight.w700),
+                          ),
+                        ),
+                        AnimatedContainer(
+                          duration: AppMotion.normal,
+                          curve: AppMotion.smooth,
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 10,
+                            vertical: 6,
+                          ),
+                          decoration: BoxDecoration(
+                            color: AppColors.primary.withValues(alpha: 0.1),
+                            borderRadius: BorderRadius.circular(999),
+                          ),
+                          child: Text(
+                            '$hiddenCount hidden',
+                            style: TextStyle(
+                              color: AppColors.primary,
+                              fontWeight: FontWeight.w700,
+                              fontSize: 12,
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
                     const SizedBox(height: 6),
-                    const Text(
-                      'Hidden categories are removed from monthly spending totals and lists on the app screens.',
+                    Text(
+                      'Changes apply instantly to the budget page, totals, and category lists. No pull-to-refresh needed.',
+                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                        color: Theme.of(
+                          context,
+                        ).colorScheme.onSurface.withValues(alpha: 0.68),
+                      ),
                     ),
                     const SizedBox(height: 12),
                     Flexible(
@@ -152,33 +185,63 @@ class _BudgetScreenState extends ConsumerState<BudgetScreen> {
                               shape: RoundedRectangleBorder(
                                 borderRadius: BorderRadius.circular(12),
                               ),
-                              secondary: Container(
-                                width: 34,
-                                height: 34,
-                                alignment: Alignment.center,
-                                decoration: BoxDecoration(
-                                  color: baseColor.withValues(alpha: 0.22),
-                                  shape: BoxShape.circle,
-                                  border: Border.all(
-                                    color: baseColor.withValues(alpha: 0.5),
-                                  ),
-                                ),
-                                child: Text(
-                                  category.emoji,
-                                  style: const TextStyle(fontSize: 16),
-                                ),
-                              ),
                               title: Text(
                                 '${category.displayNumber}. ${category.name}',
                               ),
                               subtitle: Text(
-                                isHidden
-                                    ? 'Hidden from monthly spending views'
-                                    : 'Visible in monthly spending views',
+                                isPending
+                                    ? (isHidden
+                                          ? 'Hiding this category...'
+                                          : 'Showing this category...')
+                                    : (isHidden
+                                          ? 'Hidden from monthly spending views'
+                                          : 'Visible in monthly spending views'),
                               ),
                               activeThumbColor: baseColor,
                               activeTrackColor: baseColor.withValues(
                                 alpha: 0.35,
+                              ),
+                              secondary: AnimatedSwitcher(
+                                duration: AppMotion.fast,
+                                switchInCurve: AppMotion.smooth,
+                                switchOutCurve: AppMotion.dismiss,
+                                child: isPending
+                                    ? SizedBox(
+                                        key: ValueKey('pending-${category.id}'),
+                                        width: 34,
+                                        height: 34,
+                                        child: Padding(
+                                          padding: const EdgeInsets.all(7),
+                                          child: CircularProgressIndicator(
+                                            strokeWidth: 2.2,
+                                            valueColor:
+                                                AlwaysStoppedAnimation<Color>(
+                                                  baseColor,
+                                                ),
+                                          ),
+                                        ),
+                                      )
+                                    : Container(
+                                        key: ValueKey('emoji-${category.id}'),
+                                        width: 34,
+                                        height: 34,
+                                        alignment: Alignment.center,
+                                        decoration: BoxDecoration(
+                                          color: baseColor.withValues(
+                                            alpha: 0.22,
+                                          ),
+                                          shape: BoxShape.circle,
+                                          border: Border.all(
+                                            color: baseColor.withValues(
+                                              alpha: 0.5,
+                                            ),
+                                          ),
+                                        ),
+                                        child: Text(
+                                          category.emoji,
+                                          style: const TextStyle(fontSize: 16),
+                                        ),
+                                      ),
                               ),
                               onChanged: isPending
                                   ? null

@@ -40,13 +40,37 @@ class CategoriesNotifier
   }
 
   Future<void> toggleEnabled(String categoryId, bool enabled) async {
-    await _repo.toggleEnabled(categoryId, enabled);
-    await load();
+    final previous = state.valueOrNull;
+    if (previous == null) return;
+    state = AsyncValue.data(
+      previous.map((category) {
+        if (category.id != categoryId) return category;
+        return category.copyWith(isEnabled: enabled);
+      }).toList(),
+    );
+    try {
+      await _repo.toggleEnabled(categoryId, enabled);
+    } catch (e) {
+      state = AsyncValue.data(previous);
+      rethrow;
+    }
   }
 
   Future<void> toggleExpenseViewHidden(String categoryId, bool hidden) async {
-    await _repo.toggleExpenseViewHidden(categoryId, hidden);
-    await load();
+    final previous = state.valueOrNull;
+    if (previous == null) return;
+    state = AsyncValue.data(
+      previous.map((category) {
+        if (category.id != categoryId) return category;
+        return category.copyWith(isHiddenFromExpenseViews: hidden);
+      }).toList(),
+    );
+    try {
+      await _repo.toggleExpenseViewHidden(categoryId, hidden);
+    } catch (e) {
+      state = AsyncValue.data(previous);
+      rethrow;
+    }
   }
 
   Future<void> updateCategory(CategoryModel category) async {
