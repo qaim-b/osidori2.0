@@ -2,9 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_motion.dart';
+import '../../../core/utils/category_utils.dart';
 import '../../../core/utils/currency_formatter.dart';
 import '../../../core/utils/fx_converter.dart';
 import '../../../domain/enums/transaction_type.dart';
@@ -17,6 +19,7 @@ import '../../providers/category_provider.dart';
 import '../../providers/account_provider.dart';
 import '../../providers/group_provider.dart';
 import '../../providers/auth_provider.dart';
+import '../../providers/travel_mode_provider.dart';
 
 class AddTransactionScreen extends ConsumerStatefulWidget {
   const AddTransactionScreen({super.key});
@@ -93,6 +96,344 @@ class _AddTransactionScreenState extends ConsumerState<AddTransactionScreen> {
       },
     );
     if (picked != null) setState(() => _date = picked);
+  }
+
+  Future<void> _pickEntryCurrency(String appCurrency) async {
+    const options = <({String code, String label, String symbol, String vibe})>[
+      (
+        code: 'JPY',
+        label: 'Japanese Yen',
+        symbol: '\u00A5',
+        vibe: 'Tokyo ledger feel',
+      ),
+      (
+        code: 'MYR',
+        label: 'Malaysian Ringgit',
+        symbol: 'RM',
+        vibe: 'Kuala Lumpur cash flow',
+      ),
+    ];
+
+    final selected = await showModalBottomSheet<String>(
+      context: context,
+      showDragHandle: true,
+      backgroundColor: Colors.transparent,
+      builder: (sheetContext) {
+        return SafeArea(
+          child: Container(
+            margin: const EdgeInsets.fromLTRB(12, 0, 12, 12),
+            padding: const EdgeInsets.fromLTRB(16, 10, 16, 18),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(28),
+              gradient: LinearGradient(
+                colors: [
+                  Colors.white,
+                  AppColors.surfaceVariant.withValues(alpha: 0.82),
+                ],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              ),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.08),
+                  blurRadius: 24,
+                  offset: const Offset(0, 16),
+                ),
+              ],
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Choose entry currency',
+                  style: GoogleFonts.fraunces(
+                    fontSize: 24,
+                    fontWeight: FontWeight.w700,
+                    color: AppColors.textPrimary,
+                  ),
+                ),
+                const SizedBox(height: 6),
+                Text(
+                  'Your base stays in ${appCurrency.toUpperCase()}, but each entry can keep its own original currency.',
+                  style: GoogleFonts.manrope(
+                    fontSize: 13,
+                    height: 1.35,
+                    color: AppColors.textSecondary,
+                  ),
+                ),
+                const SizedBox(height: 14),
+                ...options.map((option) {
+                  final isSelected = _entryCurrency == option.code;
+                  final accent = option.code == 'JPY'
+                      ? AppColors.primary
+                      : AppColors.secondary;
+                  return AnimatedContainer(
+                    duration: AppMotion.normal,
+                    curve: AppMotion.smooth,
+                    margin: const EdgeInsets.only(bottom: 10),
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        colors: [
+                          accent.withValues(alpha: isSelected ? 0.18 : 0.08),
+                          Colors.white,
+                        ],
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                      ),
+                      borderRadius: BorderRadius.circular(20),
+                      border: Border.all(
+                        color: accent.withValues(
+                          alpha: isSelected ? 0.52 : 0.16,
+                        ),
+                        width: isSelected ? 1.6 : 1,
+                      ),
+                    ),
+                    child: InkWell(
+                      borderRadius: BorderRadius.circular(20),
+                      onTap: () => Navigator.of(sheetContext).pop(option.code),
+                      child: Padding(
+                        padding: const EdgeInsets.all(14),
+                        child: Row(
+                          children: [
+                            Container(
+                              width: 50,
+                              height: 50,
+                              alignment: Alignment.center,
+                              decoration: BoxDecoration(
+                                color: accent.withValues(alpha: 0.14),
+                                borderRadius: BorderRadius.circular(16),
+                              ),
+                              child: Text(
+                                option.symbol,
+                                style: GoogleFonts.spaceGrotesk(
+                                  fontSize: 22,
+                                  fontWeight: FontWeight.w700,
+                                  color: accent,
+                                ),
+                              ),
+                            ),
+                            const SizedBox(width: 14),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    option.code,
+                                    style: GoogleFonts.spaceGrotesk(
+                                      fontSize: 15,
+                                      fontWeight: FontWeight.w700,
+                                      letterSpacing: 0.6,
+                                      color: AppColors.textPrimary,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 2),
+                                  Text(
+                                    option.label,
+                                    style: GoogleFonts.manrope(
+                                      fontSize: 14,
+                                      fontWeight: FontWeight.w600,
+                                      color: AppColors.textPrimary,
+                                    ),
+                                  ),
+                                  Text(
+                                    option.vibe,
+                                    style: GoogleFonts.manrope(
+                                      fontSize: 12,
+                                      color: AppColors.textSecondary,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            Icon(
+                              isSelected
+                                  ? Icons.check_circle_rounded
+                                  : Icons.arrow_outward_rounded,
+                              color: accent,
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  );
+                }),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+
+    if (selected != null && mounted) {
+      setState(() => _entryCurrency = selected);
+    }
+  }
+
+  Widget _buildFxPreview({
+    required String appCurrency,
+    required String previewCurrency,
+  }) {
+    return ValueListenableBuilder<TextEditingValue>(
+      valueListenable: _amountController,
+      builder: (context, value, _) {
+        final amount = double.tryParse(value.text);
+        if (amount == null || amount <= 0) {
+          return AnimatedContainer(
+            duration: AppMotion.normal,
+            curve: AppMotion.smooth,
+            width: double.infinity,
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: Colors.white.withValues(alpha: 0.72),
+              borderRadius: BorderRadius.circular(20),
+              border: Border.all(
+                color: AppColors.border.withValues(alpha: 0.7),
+              ),
+            ),
+            child: Text(
+              'Enter an amount to preview how it lands in $previewCurrency.',
+              style: GoogleFonts.manrope(
+                fontSize: 13,
+                color: AppColors.textSecondary,
+              ),
+            ),
+          );
+        }
+
+        return FutureBuilder<({double rate, double converted})>(
+          future: () async {
+            final rate = await FxConverter.getRate(
+              fromCurrency: _entryCurrency,
+              toCurrency: previewCurrency,
+            );
+            return (rate: rate, converted: amount * rate);
+          }(),
+          builder: (context, snapshot) {
+            final converted = snapshot.data?.converted;
+            final rate = snapshot.data?.rate;
+            final accent = previewCurrency == appCurrency.toUpperCase()
+                ? AppColors.primary
+                : AppColors.secondary;
+
+            return AnimatedSwitcher(
+              duration: AppMotion.reveal,
+              switchInCurve: AppMotion.smooth,
+              switchOutCurve: AppMotion.dismiss,
+              child: Container(
+                key: ValueKey(
+                  '${_entryCurrency}_${value.text}_$previewCurrency',
+                ),
+                width: double.infinity,
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: [
+                      accent.withValues(alpha: 0.18),
+                      accent.withValues(alpha: 0.07),
+                      Colors.white.withValues(alpha: 0.92),
+                    ],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                  ),
+                  borderRadius: BorderRadius.circular(24),
+                  border: Border.all(color: accent.withValues(alpha: 0.24)),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 10,
+                            vertical: 6,
+                          ),
+                          decoration: BoxDecoration(
+                            color: Colors.white.withValues(alpha: 0.72),
+                            borderRadius: BorderRadius.circular(999),
+                          ),
+                          child: Text(
+                            previewCurrency == appCurrency.toUpperCase()
+                                ? 'Base Preview'
+                                : 'Live Compare',
+                            style: GoogleFonts.spaceGrotesk(
+                              fontSize: 11,
+                              letterSpacing: 0.7,
+                              fontWeight: FontWeight.w700,
+                              color: accent,
+                            ),
+                          ),
+                        ),
+                        const Spacer(),
+                        Text(
+                          '${_entryCurrency.toUpperCase()} -> $previewCurrency',
+                          style: GoogleFonts.manrope(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w700,
+                            color: AppColors.textSecondary,
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 14),
+                    Text(
+                      converted == null
+                          ? 'Converting...'
+                          : CurrencyFormatter.format(
+                              converted,
+                              currency: previewCurrency,
+                            ),
+                      style: GoogleFonts.spaceGrotesk(
+                        fontSize: 34,
+                        height: 1,
+                        fontWeight: FontWeight.w700,
+                        color: AppColors.textPrimary,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      converted == null
+                          ? 'Pulling the latest available rate'
+                          : 'At this moment, ${CurrencyFormatter.format(amount, currency: _entryCurrency)} becomes about ${CurrencyFormatter.format(converted, currency: previewCurrency)}.',
+                      style: GoogleFonts.manrope(
+                        fontSize: 13,
+                        height: 1.4,
+                        color: AppColors.textSecondary,
+                      ),
+                    ),
+                    if (rate != null) ...[
+                      const SizedBox(height: 12),
+                      Container(
+                        width: double.infinity,
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 12,
+                          vertical: 10,
+                        ),
+                        decoration: BoxDecoration(
+                          color: Colors.white.withValues(alpha: 0.66),
+                          borderRadius: BorderRadius.circular(16),
+                        ),
+                        child: Text(
+                          '1 ${_entryCurrency.toUpperCase()} = ${rate.toStringAsFixed(4)} $previewCurrency',
+                          style: GoogleFonts.spaceGrotesk(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w700,
+                            letterSpacing: 0.35,
+                            color: accent,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ],
+                ),
+              ),
+            );
+          },
+        );
+      },
+    );
   }
 
   Future<void> _save() async {
@@ -210,9 +551,25 @@ class _AddTransactionScreenState extends ConsumerState<AddTransactionScreen> {
     final counterCurrency = _entryCurrency.toUpperCase() == 'JPY'
         ? 'MYR'
         : 'JPY';
+    final previewCurrency =
+        _entryCurrency.toUpperCase() == appCurrency.toUpperCase()
+        ? counterCurrency
+        : appCurrency.toUpperCase();
+    final travelMode = ref.watch(travelModeProvider);
 
     final categories = categoriesAsync.valueOrNull ?? [];
     final accounts = accountsAsync.valueOrNull ?? [];
+    final honeymoonCategory = findHoneymoonCategory(categories);
+    final travelModeActive =
+        travelMode.enabled &&
+        _type == TransactionType.expense &&
+        honeymoonCategory != null;
+    if (travelModeActive && _selectedCategoryId != honeymoonCategory!.id) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) return;
+        setState(() => _selectedCategoryId = honeymoonCategory.id);
+      });
+    }
 
     // Filter categories by transaction type
     final filteredCategories =
@@ -342,9 +699,10 @@ class _AddTransactionScreenState extends ConsumerState<AddTransactionScreen> {
                     ),
                     child: Text(
                       CurrencyFormatter.symbolFor(_entryCurrency),
-                      style: const TextStyle(
+                      style: GoogleFonts.spaceGrotesk(
                         fontSize: 18,
                         fontWeight: FontWeight.w700,
+                        letterSpacing: 0.4,
                       ),
                     ),
                   ),
@@ -359,9 +717,11 @@ class _AddTransactionScreenState extends ConsumerState<AddTransactionScreen> {
                       ),
                     ],
                     textAlign: TextAlign.center,
-                    style: const TextStyle(
+                    style: GoogleFonts.spaceGrotesk(
                       fontSize: 40,
                       fontWeight: FontWeight.w700,
+                      letterSpacing: -1.4,
+                      color: AppColors.textPrimary,
                     ),
                     decoration: const InputDecoration(
                       hintText: '0',
@@ -372,115 +732,44 @@ class _AddTransactionScreenState extends ConsumerState<AddTransactionScreen> {
                     ),
                     autofocus: true,
                   ),
-                  const SizedBox(height: 8),
-                  Row(
+                  const SizedBox(height: 14),
+                  Wrap(
+                    spacing: 10,
+                    runSpacing: 10,
                     children: [
-                      OutlinedButton.icon(
-                        onPressed: () async {
-                          final selected = await showDialog<String>(
-                            context: context,
-                            builder: (ctx) => AlertDialog(
-                              title: const Text('Entry Currency'),
-                              content: Column(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  ListTile(
-                                    leading: Icon(
-                                      _entryCurrency == 'JPY'
-                                          ? Icons.radio_button_checked
-                                          : Icons.radio_button_off,
-                                    ),
-                                    title: const Text('JPY (Japanese Yen)'),
-                                    onTap: () => Navigator.pop(ctx, 'JPY'),
-                                  ),
-                                  ListTile(
-                                    leading: Icon(
-                                      _entryCurrency == 'MYR'
-                                          ? Icons.radio_button_checked
-                                          : Icons.radio_button_off,
-                                    ),
-                                    title: const Text(
-                                      'MYR (RM Malaysian Ringgit)',
-                                    ),
-                                    onTap: () => Navigator.pop(ctx, 'MYR'),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          );
-                          if (selected != null) {
-                            setState(() => _entryCurrency = selected);
-                          }
-                        },
+                      FilledButton.tonalIcon(
+                        onPressed: () => _pickEntryCurrency(appCurrency),
                         icon: const Icon(Icons.currency_exchange_rounded),
                         label: Text('Entry: $_entryCurrency'),
                       ),
-                      const Spacer(),
-                      ValueListenableBuilder<TextEditingValue>(
-                        valueListenable: _amountController,
-                        builder: (context, value, _) {
-                          final amount = double.tryParse(value.text);
-                          if (amount == null || amount <= 0) {
-                            return Text(
-                              'Base: ${appCurrency.toUpperCase()}',
-                              style: const TextStyle(
-                                fontSize: 12,
-                                color: AppColors.textSecondary,
-                              ),
-                            );
-                          }
-                          return FutureBuilder<double>(
-                            future: FxConverter.convert(
-                              amount: amount,
-                              fromCurrency: _entryCurrency,
-                              toCurrency: counterCurrency,
-                            ),
-                            builder: (context, snapshot) {
-                              final converted = snapshot.data;
-                              final display = converted == null
-                                  ? 'Converting...'
-                                  : CurrencyFormatter.format(
-                                      converted,
-                                      currency: counterCurrency,
-                                    );
-                              return Column(
-                                crossAxisAlignment: CrossAxisAlignment.end,
-                                children: [
-                                  Container(
-                                    padding: const EdgeInsets.symmetric(
-                                      horizontal: 12,
-                                      vertical: 6,
-                                    ),
-                                    decoration: BoxDecoration(
-                                      color: AppColors.surfaceVariant,
-                                      borderRadius: BorderRadius.circular(12),
-                                    ),
-                                    child: Text(
-                                      '~ $display',
-                                      style: const TextStyle(
-                                        fontSize: 36,
-                                        height: 1.0,
-                                        fontWeight: FontWeight.w800,
-                                        color: AppColors.textPrimary,
-                                      ),
-                                    ),
-                                  ),
-                                  const SizedBox(height: 2),
-                                  Text(
-                                    '${_entryCurrency.toUpperCase()} -> $counterCurrency',
-                                    style: const TextStyle(
-                                      fontSize: 11,
-                                      color: AppColors.textSecondary,
-                                      fontWeight: FontWeight.w600,
-                                    ),
-                                  ),
-                                ],
-                              );
-                            },
-                          );
-                        },
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 12,
+                          vertical: 11,
+                        ),
+                        decoration: BoxDecoration(
+                          color: Colors.white.withValues(alpha: 0.68),
+                          borderRadius: BorderRadius.circular(999),
+                          border: Border.all(
+                            color: AppColors.border.withValues(alpha: 0.8),
+                          ),
+                        ),
+                        child: Text(
+                          'Base ledger: ${appCurrency.toUpperCase()}',
+                          style: GoogleFonts.spaceGrotesk(
+                            fontSize: 11.5,
+                            letterSpacing: 0.5,
+                            fontWeight: FontWeight.w700,
+                            color: AppColors.textSecondary,
+                          ),
+                        ),
                       ),
                     ],
+                  ),
+                  const SizedBox(height: 14),
+                  _buildFxPreview(
+                    appCurrency: appCurrency,
+                    previewCurrency: previewCurrency,
                   ),
                   const SizedBox(height: 8),
                   Align(
@@ -536,25 +825,91 @@ class _AddTransactionScreenState extends ConsumerState<AddTransactionScreen> {
             // Category selector (not for transfers)
             if (_type != TransactionType.transfer) ...[
               const SizedBox(height: 16),
-              _SectionLabel(
-                label:
-                    '${_type == TransactionType.expense ? 'Expense' : 'Income'} Category',
-              ),
-              const SizedBox(height: 8),
-              TextField(
-                onChanged: (value) => setState(() => _categoryQuery = value),
-                decoration: const InputDecoration(
-                  hintText: 'Search category (name / number / emoji)',
-                  prefixIcon: Icon(Icons.search, size: 20),
+              if (travelMode.enabled && honeymoonCategory == null)
+                Container(
+                  margin: const EdgeInsets.only(bottom: 8),
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: AppColors.expense.withValues(alpha: 0.08),
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(
+                      color: AppColors.expense.withValues(alpha: 0.25),
+                    ),
+                  ),
+                  child: const Text(
+                    'Travel Mode is on, but no Honeymoon category was found. Create it in Categories to lock travel expenses.',
+                    style: TextStyle(
+                      fontSize: 12.5,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
                 ),
+              _SectionLabel(
+                label: travelModeActive
+                    ? 'Travel Mode Category'
+                    : '${_type == TransactionType.expense ? 'Expense' : 'Income'} Category',
               ),
               const SizedBox(height: 8),
-              _CategoryPicker(
-                categories: visibleCategories,
-                selectedId: _selectedCategoryId,
-                onSelect: (id) => setState(() => _selectedCategoryId = id),
-                searchQuery: _categoryQuery,
-              ),
+              if (travelModeActive)
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(14),
+                  decoration: BoxDecoration(
+                    color: AppColors.primary.withValues(alpha: 0.08),
+                    borderRadius: BorderRadius.circular(14),
+                    border: Border.all(
+                      color: AppColors.primary.withValues(alpha: 0.25),
+                    ),
+                  ),
+                  child: Row(
+                    children: [
+                      Container(
+                        width: 32,
+                        height: 32,
+                        alignment: Alignment.center,
+                        decoration: BoxDecoration(
+                          color: AppColors.primary.withValues(alpha: 0.18),
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        child: Text(
+                          honeymoonCategory?.emoji ?? '✈️',
+                          style: const TextStyle(fontSize: 16),
+                        ),
+                      ),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: Text(
+                          '${honeymoonCategory?.displayLabel ?? 'Honeymoon'} (locked)',
+                          style: const TextStyle(
+                            fontWeight: FontWeight.w700,
+                            fontSize: 13.5,
+                          ),
+                        ),
+                      ),
+                      const Icon(
+                        Icons.lock_rounded,
+                        size: 18,
+                        color: AppColors.textSecondary,
+                      ),
+                    ],
+                  ),
+                )
+              else ...[
+                TextField(
+                  onChanged: (value) => setState(() => _categoryQuery = value),
+                  decoration: const InputDecoration(
+                    hintText: 'Search category (name / number / emoji)',
+                    prefixIcon: Icon(Icons.search, size: 20),
+                  ),
+                ),
+                const SizedBox(height: 8),
+                _CategoryPicker(
+                  categories: visibleCategories,
+                  selectedId: _selectedCategoryId,
+                  onSelect: (id) => setState(() => _selectedCategoryId = id),
+                  searchQuery: _categoryQuery,
+                ),
+              ],
             ],
 
             const SizedBox(height: 16),
