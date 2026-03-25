@@ -1,25 +1,42 @@
 import 'dart:convert';
 
 import 'package:http/http.dart' as http;
+import 'package:intl/intl.dart';
 
 import 'local_data_cache.dart';
+
+class FxQuote {
+  final double rate;
+  final DateTime quotedAt;
+  final bool isFallback;
+
+  const FxQuote({
+    required this.rate,
+    required this.quotedAt,
+    this.isFallback = false,
+  });
+}
 
 class FxConverter {
   FxConverter._();
 
-  static final Map<String, double> _rateCache = <String, double>{};
-  static final Map<String, Future<double>> _pending =
-      <String, Future<double>>{};
+  static final Map<String, FxQuote> _rateCache = <String, FxQuote>{};
+  static final Map<String, Future<FxQuote>> _pending =
+      <String, Future<FxQuote>>{};
 
-  static Future<double> getRate({
+  static Future<FxQuote> getQuote({
     required String fromCurrency,
     required String toCurrency,
+    DateTime? forDate,
   }) {
     final from = fromCurrency.toUpperCase();
     final to = toCurrency.toUpperCase();
-    if (from == to) return Future.value(1.0);
+    final targetDate = (forDate ?? DateTime.now()).toUtc();
+    final day = DateFormat('yyyy-MM-dd').format(targetDate);
+    if (from == to) {
+      return Future.value(FxQuote(rate: 1.0, quotedAt: targetDate));
+    }
 
-    final day = DateTime.now().toUtc().toIso8601String().substring(0, 10);
     final key = '$day|$from|$to';
     final cached = _rateCache[key];
     if (cached != null) return Future.value(cached);
@@ -27,31 +44,51 @@ class FxConverter {
     final inFlight = _pending[key];
     if (inFlight != null) return inFlight;
 
-    final future = _getRateWithCache(day: day, from: from, to: to, key: key);
+    final future = _getQuoteWithCache(
+      day: day,
+      from: from,
+      to: to,
+      key: key,
+      targetDate: targetDate,
+    );
 
     _pending[key] = future;
     return future;
+  }
+
+  static Future<double> getRate({
+    required String fromCurrency,
+    required String toCurrency,
+    DateTime? forDate,
+  }) async {
+    final quote = await getQuote(
+      fromCurrency: fromCurrency,
+      toCurrency: toCurrency,
+      forDate: forDate,
+    );
+    return quote.rate;
   }
 
   static Future<double> convert({
     required double amount,
     required String fromCurrency,
     required String toCurrency,
+    DateTime? forDate,
   }) async {
-    final rate = await getRate(
+    final quote = await getQuote(
       fromCurrency: fromCurrency,
       toCurrency: toCurrency,
+      forDate: forDate,
     );
-    return amount * rate;
+    return amount * quote.rate;
   }
 
-  static Future<double> _fetchRate({
+  static Future<FxQuote> _fetchQuote({
     required String from,
     required String to,
+    required String day,
   }) async {
-    final uri = Uri.parse(
-      'https://api.frankfurter.app/latest?from=$from&to=$to',
-    );
+    final uri = Uri.parse('https://api.frankfurter.app/$day?from=$from&to=$to');
     final response = await http.get(uri).timeout(const Duration(seconds: 8));
     if (response.statusCode != 200) {
       throw Exception('FX API request failed (${response.statusCode})');
@@ -61,65 +98,92 @@ class FxConverter {
     final rates = decoded['rates'] as Map<String, dynamic>?;
     final value = rates?[to];
     if (value is num && value > 0) {
-      return value.toDouble();
+      final quoteDateRaw = decoded['date'] as String? ?? day;
+      return FxQuote(
+        rate: value.toDouble(),
+        quotedAt: DateTime.parse(quoteDateRaw).toUtc(),
+      );
     }
     throw Exception('FX API missing rate for $from->$to');
   }
 
-  static Future<double> _getRateWithCache({
+  static Future<FxQuote> _getQuoteWithCache({
     required String day,
     required String from,
     required String to,
     required String key,
+    required DateTime targetDate,
   }) async {
     try {
       final storedForDay = await LocalDataCache.getJsonObject(
         LocalDataCache.fxRateKey(from: from, to: to, day: day),
       );
       final storedRate = (storedForDay?['rate'] as num?)?.toDouble();
-      if (storedRate != null && storedRate > 0) {
-        _rateCache[key] = storedRate;
+      final storedDay = storedForDay?['day'] as String?;
+      if (storedRate != null && storedRate > 0 && storedDay != null) {
+        final quote = FxQuote(
+          rate: storedRate,
+          quotedAt: DateTime.parse(storedDay).toUtc(),
+        );
+        _rateCache[key] = quote;
         _pending.remove(key);
-        return storedRate;
+        return quote;
       }
 
-      final rate = await _fetchRate(from: from, to: to);
-      _rateCache[key] = rate;
+      final quote = await _fetchQuote(from: from, to: to, day: day);
+      _rateCache[key] = quote;
       await LocalDataCache.setJsonObject(
         LocalDataCache.fxRateKey(from: from, to: to, day: day),
-        {'rate': rate, 'day': day, 'from': from, 'to': to},
+        {
+          'rate': quote.rate,
+          'day': DateFormat('yyyy-MM-dd').format(quote.quotedAt),
+          'from': from,
+          'to': to,
+        },
       );
       await LocalDataCache.setJsonObject(
         LocalDataCache.latestFxRateKey(from: from, to: to),
         {
-          'rate': rate,
-          'day': day,
+          'rate': quote.rate,
+          'day': DateFormat('yyyy-MM-dd').format(quote.quotedAt),
           'from': from,
           'to': to,
           'saved_at': DateTime.now().toUtc().toIso8601String(),
         },
       );
       _pending.remove(key);
-      return rate;
+      return quote;
     } catch (_) {
       final latestStored = await LocalDataCache.getJsonObject(
         LocalDataCache.latestFxRateKey(from: from, to: to),
       );
       final latestRate = (latestStored?['rate'] as num?)?.toDouble();
-      if (latestRate != null && latestRate > 0) {
-        _rateCache[key] = latestRate;
+      final latestDay = latestStored?['day'] as String?;
+      if (latestRate != null && latestRate > 0 && latestDay != null) {
+        final quote = FxQuote(
+          rate: latestRate,
+          quotedAt: DateTime.parse(latestDay).toUtc(),
+          isFallback: true,
+        );
+        _rateCache[key] = quote;
         _pending.remove(key);
-        return latestRate;
+        return quote;
       }
       _pending.remove(key);
-      return _fallbackRate(from: from, to: to);
+      return _fallbackQuote(from: from, to: to, targetDate: targetDate);
     }
   }
 
-  static double _fallbackRate({required String from, required String to}) {
-    if (from == to) return 1.0;
+  static FxQuote _fallbackQuote({
+    required String from,
+    required String to,
+    required DateTime targetDate,
+  }) {
+    if (from == to) {
+      return FxQuote(rate: 1.0, quotedAt: targetDate, isFallback: true);
+    }
 
     // Safe fallback: no conversion.
-    return 1.0;
+    return FxQuote(rate: 1.0, quotedAt: targetDate, isFallback: true);
   }
 }

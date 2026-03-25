@@ -302,17 +302,27 @@ class _AddTransactionScreenState extends ConsumerState<AddTransactionScreen> {
           );
         }
 
-        return FutureBuilder<({double rate, double converted})>(
+        return FutureBuilder<
+          ({double rate, double converted, DateTime quotedAt, bool isFallback})
+        >(
           future: () async {
-            final rate = await FxConverter.getRate(
+            final quote = await FxConverter.getQuote(
               fromCurrency: _entryCurrency,
               toCurrency: previewCurrency,
+              forDate: _date,
             );
-            return (rate: rate, converted: amount * rate);
+            return (
+              rate: quote.rate,
+              converted: amount * quote.rate,
+              quotedAt: quote.quotedAt,
+              isFallback: quote.isFallback,
+            );
           }(),
           builder: (context, snapshot) {
             final converted = snapshot.data?.converted;
             final rate = snapshot.data?.rate;
+            final quotedAt = snapshot.data?.quotedAt;
+            final isFallback = snapshot.data?.isFallback ?? false;
             final accent = previewCurrency == appCurrency.toUpperCase()
                 ? AppColors.primary
                 : AppColors.secondary;
@@ -396,7 +406,7 @@ class _AddTransactionScreenState extends ConsumerState<AddTransactionScreen> {
                     Text(
                       converted == null
                           ? 'Pulling the latest available rate'
-                          : 'At this moment, ${CurrencyFormatter.format(amount, currency: _entryCurrency)} becomes about ${CurrencyFormatter.format(converted, currency: previewCurrency)}.',
+                          : 'At ${CurrencyFormatter.format(amount, currency: _entryCurrency)}, the rate on ${DateFormat('MMMM d, yyyy').format(quotedAt ?? _date)} gives about ${CurrencyFormatter.format(converted, currency: previewCurrency)}.',
                       style: GoogleFonts.inter(
                         fontSize: 13,
                         height: 1.4,
@@ -416,7 +426,7 @@ class _AddTransactionScreenState extends ConsumerState<AddTransactionScreen> {
                           borderRadius: BorderRadius.circular(16),
                         ),
                         child: Text(
-                          '1 ${_entryCurrency.toUpperCase()} = ${rate.toStringAsFixed(4)} $previewCurrency',
+                          '1 ${_entryCurrency.toUpperCase()} = ${rate.toStringAsFixed(4)} $previewCurrency on ${DateFormat('MMMM d, yyyy').format(quotedAt ?? _date)}${isFallback ? ' (cached)' : ''}',
                           style: GoogleFonts.inter(
                             fontSize: 12,
                             fontWeight: FontWeight.w700,
@@ -468,11 +478,12 @@ class _AddTransactionScreenState extends ConsumerState<AddTransactionScreen> {
     try {
       final appCurrency = ref.read(currentCurrencyProvider).toUpperCase();
       final entryCurrency = _entryCurrency.toUpperCase();
-      final fxRate = await FxConverter.getRate(
+      final fxQuote = await FxConverter.getQuote(
         fromCurrency: entryCurrency,
         toCurrency: appCurrency,
+        forDate: _date,
       );
-      final lockedBase = amount * fxRate;
+      final lockedBase = amount * fxQuote.rate;
 
       final categories = ref.read(categoriesProvider).valueOrNull ?? [];
       CategoryEntity? selectedCategory;
@@ -491,10 +502,10 @@ class _AddTransactionScreenState extends ConsumerState<AddTransactionScreen> {
             currency: entryCurrency,
             originalAmount: amount,
             originalCurrency: entryCurrency,
-            fxRateToBase: fxRate,
+            fxRateToBase: fxQuote.rate,
             fxBaseCurrency: appCurrency,
             baseAmountLocked: lockedBase,
-            fxRateDate: DateTime.now().toUtc(),
+            fxRateDate: fxQuote.quotedAt,
             date: _date,
             categoryId: _selectedCategoryId!,
             categoryNameSnapshot: selectedCategory?.name,
@@ -872,14 +883,14 @@ class _AddTransactionScreenState extends ConsumerState<AddTransactionScreen> {
                           borderRadius: BorderRadius.circular(10),
                         ),
                         child: Text(
-                          honeymoonCategory?.emoji ?? '✈️',
+                          honeymoonCategory.emoji,
                           style: const TextStyle(fontSize: 16),
                         ),
                       ),
                       const SizedBox(width: 10),
                       Expanded(
                         child: Text(
-                          '${honeymoonCategory?.displayLabel ?? 'Honeymoon'} (locked)',
+                          '${honeymoonCategory.displayLabel} (locked)',
                           style: const TextStyle(
                             fontWeight: FontWeight.w700,
                             fontSize: 13.5,
