@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/utils/currency_formatter.dart';
+import '../../../data/models/transaction_model.dart';
 import '../../../domain/entities/category_entity.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/category_provider.dart';
@@ -16,7 +17,9 @@ class CategoryTransactionsScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final categories = ref.watch(categoriesProvider);
-    final transactions = ref.watch(visibleMonthlyTransactionsProvider);
+    final List<TransactionModel> transactions =
+        ref.watch(monthlyTransactionsProvider).valueOrNull ??
+        const <TransactionModel>[];
     final currentCurrency = ref.watch(currentCurrencyProvider);
 
     final categoryList = categories.valueOrNull ?? <CategoryEntity>[];
