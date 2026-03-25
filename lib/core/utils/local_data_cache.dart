@@ -42,6 +42,11 @@ class LocalDataCache {
     await prefs.setString(key, jsonEncode(value));
   }
 
+  static Future<void> remove(String key) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.remove(key);
+  }
+
   static String categoriesKey(String userId) => 'cache.categories.$userId';
 
   static String monthlyTransactionsKey({

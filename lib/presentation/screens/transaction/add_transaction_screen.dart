@@ -104,13 +104,13 @@ class _AddTransactionScreenState extends ConsumerState<AddTransactionScreen> {
         code: 'JPY',
         label: 'Japanese Yen',
         symbol: '\u00A5',
-        vibe: 'Tokyo ledger feel',
+        vibe: 'Japan money',
       ),
       (
         code: 'MYR',
         label: 'Malaysian Ringgit',
         symbol: 'RM',
-        vibe: 'Kuala Lumpur cash flow',
+        vibe: 'Malaysia money',
       ),
     ];
 
@@ -156,7 +156,7 @@ class _AddTransactionScreenState extends ConsumerState<AddTransactionScreen> {
                 ),
                 const SizedBox(height: 6),
                 Text(
-                  'Your base stays in ${appCurrency.toUpperCase()}, but each entry can keep its own original currency.',
+                  'Your main currency stays ${appCurrency.toUpperCase()}, but each entry can keep its original currency.',
                   style: GoogleFonts.inter(
                     fontSize: 13,
                     height: 1.35,
@@ -366,8 +366,8 @@ class _AddTransactionScreenState extends ConsumerState<AddTransactionScreen> {
                           ),
                           child: Text(
                             previewCurrency == appCurrency.toUpperCase()
-                                ? 'Base Preview'
-                                : 'Live Compare',
+                                ? 'Main Amount'
+                                : 'Rate Preview',
                             style: GoogleFonts.inter(
                               fontSize: 11,
                               letterSpacing: 0.7,
@@ -766,7 +766,7 @@ class _AddTransactionScreenState extends ConsumerState<AddTransactionScreen> {
                           ),
                         ),
                         child: Text(
-                          'Base ledger: ${appCurrency.toUpperCase()}',
+                          'Main currency: ${appCurrency.toUpperCase()}',
                           style: GoogleFonts.inter(
                             fontSize: 11.5,
                             letterSpacing: 0.5,

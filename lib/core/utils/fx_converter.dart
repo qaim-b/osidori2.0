@@ -88,22 +88,31 @@ class FxConverter {
     required String to,
     required String day,
   }) async {
-    final uri = Uri.parse('https://api.frankfurter.app/$day?from=$from&to=$to');
-    final response = await http.get(uri).timeout(const Duration(seconds: 8));
-    if (response.statusCode != 200) {
-      throw Exception('FX API request failed (${response.statusCode})');
+    final dayUri = Uri.parse(
+      'https://$day.currency-api.pages.dev/v1/currencies/${from.toLowerCase()}.min.json',
+    );
+    final latestUri = Uri.parse(
+      'https://latest.currency-api.pages.dev/v1/currencies/${from.toLowerCase()}.min.json',
+    );
+
+    for (final uri in [dayUri, latestUri]) {
+      final response = await http.get(uri).timeout(const Duration(seconds: 8));
+      if (response.statusCode != 200) {
+        continue;
+      }
+
+      final decoded = jsonDecode(response.body) as Map<String, dynamic>;
+      final rates = decoded[from.toLowerCase()] as Map<String, dynamic>?;
+      final value = rates?[to.toLowerCase()];
+      if (value is num && value > 0) {
+        final quoteDateRaw = decoded['date'] as String? ?? day;
+        return FxQuote(
+          rate: value.toDouble(),
+          quotedAt: DateTime.parse(quoteDateRaw).toUtc(),
+        );
+      }
     }
 
-    final decoded = jsonDecode(response.body) as Map<String, dynamic>;
-    final rates = decoded['rates'] as Map<String, dynamic>?;
-    final value = rates?[to];
-    if (value is num && value > 0) {
-      final quoteDateRaw = decoded['date'] as String? ?? day;
-      return FxQuote(
-        rate: value.toDouble(),
-        quotedAt: DateTime.parse(quoteDateRaw).toUtc(),
-      );
-    }
     throw Exception('FX API missing rate for $from->$to');
   }
 
@@ -114,64 +123,72 @@ class FxConverter {
     required String key,
     required DateTime targetDate,
   }) async {
+    final dayCacheKey = LocalDataCache.fxRateKey(from: from, to: to, day: day);
+    final latestCacheKey = LocalDataCache.latestFxRateKey(from: from, to: to);
     try {
-      final storedForDay = await LocalDataCache.getJsonObject(
-        LocalDataCache.fxRateKey(from: from, to: to, day: day),
-      );
+      final storedForDay = await LocalDataCache.getJsonObject(dayCacheKey);
       final storedRate = (storedForDay?['rate'] as num?)?.toDouble();
       final storedDay = storedForDay?['day'] as String?;
-      if (storedRate != null && storedRate > 0 && storedDay != null) {
+      if (_isUsableRate(from: from, to: to, rate: storedRate) &&
+          storedDay != null) {
         final quote = FxQuote(
-          rate: storedRate,
+          rate: storedRate!,
           quotedAt: DateTime.parse(storedDay).toUtc(),
         );
         _rateCache[key] = quote;
         _pending.remove(key);
         return quote;
+      } else if (storedForDay != null) {
+        await LocalDataCache.remove(dayCacheKey);
       }
 
       final quote = await _fetchQuote(from: from, to: to, day: day);
       _rateCache[key] = quote;
-      await LocalDataCache.setJsonObject(
-        LocalDataCache.fxRateKey(from: from, to: to, day: day),
-        {
-          'rate': quote.rate,
-          'day': DateFormat('yyyy-MM-dd').format(quote.quotedAt),
-          'from': from,
-          'to': to,
-        },
-      );
-      await LocalDataCache.setJsonObject(
-        LocalDataCache.latestFxRateKey(from: from, to: to),
-        {
-          'rate': quote.rate,
-          'day': DateFormat('yyyy-MM-dd').format(quote.quotedAt),
-          'from': from,
-          'to': to,
-          'saved_at': DateTime.now().toUtc().toIso8601String(),
-        },
-      );
+      await LocalDataCache.setJsonObject(dayCacheKey, {
+        'rate': quote.rate,
+        'day': DateFormat('yyyy-MM-dd').format(quote.quotedAt),
+        'from': from,
+        'to': to,
+      });
+      await LocalDataCache.setJsonObject(latestCacheKey, {
+        'rate': quote.rate,
+        'day': DateFormat('yyyy-MM-dd').format(quote.quotedAt),
+        'from': from,
+        'to': to,
+        'saved_at': DateTime.now().toUtc().toIso8601String(),
+      });
       _pending.remove(key);
       return quote;
     } catch (_) {
-      final latestStored = await LocalDataCache.getJsonObject(
-        LocalDataCache.latestFxRateKey(from: from, to: to),
-      );
+      final latestStored = await LocalDataCache.getJsonObject(latestCacheKey);
       final latestRate = (latestStored?['rate'] as num?)?.toDouble();
       final latestDay = latestStored?['day'] as String?;
-      if (latestRate != null && latestRate > 0 && latestDay != null) {
+      if (_isUsableRate(from: from, to: to, rate: latestRate) &&
+          latestDay != null) {
         final quote = FxQuote(
-          rate: latestRate,
+          rate: latestRate!,
           quotedAt: DateTime.parse(latestDay).toUtc(),
           isFallback: true,
         );
         _rateCache[key] = quote;
         _pending.remove(key);
         return quote;
+      } else if (latestStored != null) {
+        await LocalDataCache.remove(latestCacheKey);
       }
       _pending.remove(key);
       return _fallbackQuote(from: from, to: to, targetDate: targetDate);
     }
+  }
+
+  static bool _isUsableRate({
+    required String from,
+    required String to,
+    required double? rate,
+  }) {
+    if (rate == null || rate <= 0) return false;
+    if (from != to && rate == 1.0) return false;
+    return true;
   }
 
   static FxQuote _fallbackQuote({

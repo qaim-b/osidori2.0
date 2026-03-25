@@ -81,16 +81,13 @@
     }
 
     #boot-mark {
-      width: 64px;
-      height: 64px;
+      width: 88px;
+      height: 88px;
       margin: 0 auto 16px;
-      border-radius: 20px;
-      display: grid;
-      place-items: center;
-      background: linear-gradient(135deg, #0E6B68, #6BC4B3);
-      color: white;
-      font-size: 28px;
-      font-weight: 700;
+      border-radius: 24px;
+      object-fit: cover;
+      display: block;
+      box-shadow: 0 14px 28px rgba(14, 107, 104, 0.16);
     }
 
     #boot-title {
@@ -111,9 +108,9 @@
 <body>
   <div id="boot-shell">
     <div id="boot-card">
-      <div id="boot-mark">O</div>
+      <img id="boot-mark" src="assets/images/stitch.png" alt="Osidori logo">
       <h1 id="boot-title">Opening Osidori</h1>
-      <p id="boot-copy">If you saved this to your iPhone Home Screen, Osidori can reopen with your latest cached data and rates even when the connection is weak.</p>
+      <p id="boot-copy">Loading your latest shared money view and updates.</p>
     </div>
   </div>
   <script src="flutter_bootstrap.js" async></script>
