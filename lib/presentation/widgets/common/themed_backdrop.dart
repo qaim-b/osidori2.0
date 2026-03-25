@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 
@@ -23,6 +24,7 @@ class ThemedBackdrop extends ConsumerWidget {
         ? 'assets/images/banner_malaysia.svg'
         : 'assets/images/banner_japan.svg';
     final bannerTint = theme.colorScheme.primary.withValues(alpha: 0.75);
+    final showLightBackdrop = kIsWeb;
 
     return Stack(
       children: [
@@ -46,24 +48,30 @@ class ThemedBackdrop extends ConsumerWidget {
           top: -140,
           left: -80,
           child: _GlowBlob(
-            color: theme.colorScheme.primary.withValues(alpha: 0.18),
-            size: 260,
+            color: theme.colorScheme.primary.withValues(
+              alpha: showLightBackdrop ? 0.11 : 0.18,
+            ),
+            size: showLightBackdrop ? 220 : 260,
           ),
         ),
         Positioned(
           top: 120,
           right: -120,
           child: _GlowBlob(
-            color: theme.colorScheme.secondary.withValues(alpha: 0.18),
-            size: 300,
+            color: theme.colorScheme.secondary.withValues(
+              alpha: showLightBackdrop ? 0.11 : 0.18,
+            ),
+            size: showLightBackdrop ? 240 : 300,
           ),
         ),
         Positioned(
           bottom: -120,
           left: 40,
           child: _GlowBlob(
-            color: theme.colorScheme.primary.withValues(alpha: 0.12),
-            size: 240,
+            color: theme.colorScheme.primary.withValues(
+              alpha: showLightBackdrop ? 0.08 : 0.12,
+            ),
+            size: showLightBackdrop ? 190 : 240,
           ),
         ),
         if (showCountryBanner)
@@ -73,9 +81,9 @@ class ThemedBackdrop extends ConsumerWidget {
             right: 0,
             child: IgnorePointer(
               child: Opacity(
-                opacity: 0.32,
+                opacity: showLightBackdrop ? 0.2 : 0.32,
                 child: SizedBox(
-                  height: 220,
+                  height: showLightBackdrop ? 180 : 220,
                   child: SvgPicture.asset(
                     bannerAsset,
                     fit: BoxFit.fitWidth,
@@ -98,24 +106,19 @@ class _GlowBlob extends StatelessWidget {
   final Color color;
   final double size;
 
-  const _GlowBlob({
-    required this.color,
-    required this.size,
-  });
+  const _GlowBlob({required this.color, required this.size});
 
   @override
   Widget build(BuildContext context) {
+    final colors = [color, color.withValues(alpha: 0.02)];
     return IgnorePointer(
-      child: Container(
+      child: SizedBox(
         height: size,
         width: size,
-        decoration: BoxDecoration(
-          shape: BoxShape.circle,
-          gradient: RadialGradient(
-            colors: [
-              color,
-              color.withValues(alpha: 0.02),
-            ],
+        child: DecoratedBox(
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            gradient: RadialGradient(colors: colors),
           ),
         ),
       ),

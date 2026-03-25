@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
@@ -45,6 +46,7 @@ class _BudgetScreenState extends ConsumerState<BudgetScreen> {
     required double start,
     double distance = 22,
   }) {
+    if (kIsWeb) return child;
     return AnimatedBuilder(
       animation: _scrollController,
       child: child,
@@ -386,7 +388,7 @@ class _BudgetScreenState extends ConsumerState<BudgetScreen> {
     final groupedRows = <String, _BudgetRowAggregate>{};
     final enabledExpenseCategories =
         travelModeActive
-              ? [if (honeymoonCategory != null) honeymoonCategory]
+              ? [honeymoonCategory].nonNulls.toList()
               : allCategories
                     .where(
                       (c) =>
@@ -719,6 +721,9 @@ class _BudgetScreenState extends ConsumerState<BudgetScreen> {
                               );
                             }
                             return CategoryDonutChart(
+                              key: ValueKey(
+                                '${selectedMonth.year}-${selectedMonth.month}-$travelModeActive-${breakdownTotals.length}-$total',
+                              ),
                               categoryTotals: breakdownTotals,
                               categoryNames: breakdownNames,
                               currency: currentCurrency,

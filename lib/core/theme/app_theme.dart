@@ -7,6 +7,22 @@ import '../../presentation/providers/appearance_provider.dart';
 class AppTheme {
   AppTheme._();
 
+  static TextStyle _font({
+    double? fontSize,
+    double? height,
+    FontWeight? fontWeight,
+    double? letterSpacing,
+    Color? color,
+  }) {
+    return GoogleFonts.manrope(
+      fontSize: fontSize,
+      height: height,
+      fontWeight: fontWeight,
+      letterSpacing: letterSpacing,
+      color: color,
+    );
+  }
+
   static ThemeData light(ThemePresetData preset) {
     const radiusMd = Radius.circular(12);
     const radiusLg = Radius.circular(16);
@@ -27,7 +43,7 @@ class AppTheme {
       colorScheme: colorScheme,
       scaffoldBackgroundColor: preset.background,
       dividerColor: AppColors.border,
-      splashFactory: InkSparkle.splashFactory,
+      splashFactory: InkRipple.splashFactory,
     );
     final textTheme = _textTheme(base.textTheme, preset);
 
@@ -38,11 +54,11 @@ class AppTheme {
         foregroundColor: preset.primary,
         elevation: 0,
         centerTitle: true,
-        titleTextStyle: GoogleFonts.inter(
-          fontSize: 24,
-          fontWeight: FontWeight.w700,
+        titleTextStyle: _font(
+          fontSize: 22,
+          fontWeight: FontWeight.w800,
           color: preset.primary,
-          letterSpacing: -0.2,
+          letterSpacing: -0.35,
         ),
       ),
       cardTheme: CardThemeData(
@@ -82,10 +98,10 @@ class AppTheme {
             AppColors.accentForeground.withValues(alpha: 0.08),
           ),
           textStyle: WidgetStatePropertyAll(
-            GoogleFonts.inter(
-              fontSize: 16,
+            _font(
+              fontSize: 15,
               fontWeight: FontWeight.w700,
-              letterSpacing: 0.2,
+              letterSpacing: -0.1,
             ),
           ),
         ),
@@ -110,10 +126,10 @@ class AppTheme {
             return AppColors.foreground;
           }),
           textStyle: WidgetStatePropertyAll(
-            GoogleFonts.inter(
-              fontSize: 16,
+            _font(
+              fontSize: 15,
               fontWeight: FontWeight.w700,
-              letterSpacing: 0.2,
+              letterSpacing: -0.1,
             ),
           ),
         ),
@@ -147,16 +163,16 @@ class AppTheme {
           horizontal: 16,
           vertical: 14,
         ),
-        hintStyle: GoogleFonts.inter(
+        hintStyle: _font(
           color: AppColors.mutedForeground.withValues(alpha: 0.7),
-          fontSize: 16,
-          letterSpacing: 0.1,
+          fontSize: 15,
+          letterSpacing: -0.05,
         ),
-        labelStyle: GoogleFonts.inter(
+        labelStyle: _font(
           color: AppColors.mutedForeground,
-          fontSize: 12,
+          fontSize: 11,
           fontWeight: FontWeight.w600,
-          letterSpacing: 0.3,
+          letterSpacing: 0.1,
         ),
       ),
       floatingActionButtonTheme: const FloatingActionButtonThemeData(
@@ -179,8 +195,10 @@ class AppTheme {
       chipTheme: ChipThemeData(
         backgroundColor: preset.surfaceVariant,
         selectedColor: preset.primary.withValues(alpha: 0.12),
-        labelStyle: GoogleFonts.inter(
-          fontSize: 13,
+        labelStyle: _font(
+          fontSize: 12,
+          fontWeight: FontWeight.w700,
+          letterSpacing: -0.05,
           color: AppColors.foreground,
         ),
         shape: RoundedRectangleBorder(
@@ -194,71 +212,72 @@ class AppTheme {
 
   static TextTheme _textTheme(TextTheme base, ThemePresetData preset) {
     return base.copyWith(
-      displayLarge: GoogleFonts.inter(
-        fontSize: 44,
-        height: 1.08,
+      displayLarge: _font(
+        fontSize: 42,
+        height: 1.02,
+        fontWeight: FontWeight.w800,
+        letterSpacing: -0.9,
+        color: preset.primary,
+      ),
+      displayMedium: _font(
+        fontSize: 34,
+        height: 1.06,
+        fontWeight: FontWeight.w800,
+        letterSpacing: -0.75,
+        color: preset.primary,
+      ),
+      headlineLarge: _font(
+        fontSize: 28,
+        height: 1.1,
         fontWeight: FontWeight.w800,
         letterSpacing: -0.6,
         color: preset.primary,
       ),
-      displayMedium: GoogleFonts.inter(
-        fontSize: 36,
+      headlineMedium: _font(
+        fontSize: 24,
         height: 1.12,
         fontWeight: FontWeight.w800,
         letterSpacing: -0.45,
         color: preset.primary,
       ),
-      headlineLarge: GoogleFonts.inter(
-        fontSize: 30,
+      titleLarge: _font(
+        fontSize: 20,
         height: 1.18,
         fontWeight: FontWeight.w800,
-        letterSpacing: -0.35,
+        letterSpacing: -0.3,
         color: preset.primary,
       ),
-      headlineMedium: GoogleFonts.inter(
-        fontSize: 26,
-        height: 1.2,
-        fontWeight: FontWeight.w700,
-        letterSpacing: -0.2,
-        color: preset.primary,
-      ),
-      titleLarge: GoogleFonts.inter(
-        fontSize: 22,
+      titleMedium: _font(
+        fontSize: 15,
         height: 1.28,
         fontWeight: FontWeight.w700,
+        letterSpacing: -0.08,
         color: preset.primary,
       ),
-      titleMedium: GoogleFonts.inter(
-        fontSize: 16,
-        height: 1.5,
-        fontWeight: FontWeight.w700,
-        letterSpacing: 0.2,
-        color: preset.primary,
-      ),
-      bodyLarge: GoogleFonts.inter(
-        fontSize: 17,
-        height: 1.7,
-        fontWeight: FontWeight.w400,
-        letterSpacing: 0.1,
+      bodyLarge: _font(
+        fontSize: 15,
+        height: 1.4,
+        fontWeight: FontWeight.w500,
+        letterSpacing: -0.05,
         color: AppColors.foreground,
       ),
-      bodyMedium: GoogleFonts.inter(
-        fontSize: 16,
-        height: 1.68,
-        fontWeight: FontWeight.w400,
-        letterSpacing: 0.08,
+      bodyMedium: _font(
+        fontSize: 14,
+        height: 1.38,
+        fontWeight: FontWeight.w500,
+        letterSpacing: -0.03,
         color: AppColors.mutedForeground,
       ),
-      labelLarge: GoogleFonts.inter(
-        fontSize: 14,
+      labelLarge: _font(
+        fontSize: 13,
         fontWeight: FontWeight.w700,
-        letterSpacing: 0.3,
+        letterSpacing: -0.05,
         color: AppColors.accentForeground,
       ),
-      labelMedium: GoogleFonts.inter(
-        fontSize: 12,
+      labelMedium: _font(
+        fontSize: 11,
         fontWeight: FontWeight.w600,
-        letterSpacing: 0.3,
+        letterSpacing: 0,
         color: AppColors.accent,
       ),
     );
