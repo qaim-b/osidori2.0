@@ -1,5 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:uuid/uuid.dart';
+import '../../core/utils/local_data_cache.dart';
 import '../../data/repositories/category_repository.dart';
 import '../../data/models/category_model.dart';
 import 'auth_provider.dart';
@@ -33,8 +34,19 @@ class CategoriesNotifier
     state = const AsyncValue.loading();
     try {
       final categories = await _repo.getAll(_userId);
+      await LocalDataCache.setJsonList(
+        LocalDataCache.categoriesKey(_userId),
+        categories.map((category) => category.toJson()).toList(),
+      );
       state = AsyncValue.data(categories);
     } catch (e, st) {
+      final cached = await LocalDataCache.getJsonList(
+        LocalDataCache.categoriesKey(_userId),
+      );
+      if (cached != null && cached.isNotEmpty) {
+        state = AsyncValue.data(cached.map(CategoryModel.fromJson).toList());
+        return;
+      }
       state = AsyncValue.error(e, st);
     }
   }

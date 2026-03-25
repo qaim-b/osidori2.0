@@ -28,10 +28,10 @@ class SectionLabel extends StatelessWidget {
             padding: const EdgeInsets.symmetric(horizontal: 12),
             child: Text(
               text.toUpperCase(),
-              style: GoogleFonts.spaceGrotesk(
+              style: GoogleFonts.inter(
                 fontSize: 12,
                 fontWeight: FontWeight.w600,
-                letterSpacing: 0.9,
+                letterSpacing: 0.3,
                 color: theme.colorScheme.primary,
               ),
             ),
@@ -115,10 +115,10 @@ class DisplayNumber extends StatelessWidget {
   Widget build(BuildContext context) {
     return Text(
       value,
-      style: GoogleFonts.fraunces(
+      style: GoogleFonts.inter(
         fontSize: size,
         height: 1.12,
-        fontWeight: FontWeight.w600,
+        fontWeight: FontWeight.w700,
         letterSpacing: -0.4,
         color: color ?? Theme.of(context).colorScheme.onSurface,
       ),

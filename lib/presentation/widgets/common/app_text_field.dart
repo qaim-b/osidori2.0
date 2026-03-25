@@ -49,7 +49,7 @@ class AppTextField extends StatelessWidget {
       validator: validator,
       onChanged: onChanged,
       autofocus: autofocus,
-      style: GoogleFonts.manrope(
+      style: GoogleFonts.inter(
         fontSize: isSmallScreen ? 15 : 16,
         height: 1.6,
         letterSpacing: 0.08,

@@ -38,11 +38,11 @@ class AppTheme {
         foregroundColor: preset.primary,
         elevation: 0,
         centerTitle: true,
-        titleTextStyle: GoogleFonts.fraunces(
+        titleTextStyle: GoogleFonts.inter(
           fontSize: 24,
-          fontWeight: FontWeight.w600,
+          fontWeight: FontWeight.w700,
           color: preset.primary,
-          letterSpacing: -0.3,
+          letterSpacing: -0.2,
         ),
       ),
       cardTheme: CardThemeData(
@@ -82,7 +82,7 @@ class AppTheme {
             AppColors.accentForeground.withValues(alpha: 0.08),
           ),
           textStyle: WidgetStatePropertyAll(
-            GoogleFonts.manrope(
+            GoogleFonts.inter(
               fontSize: 16,
               fontWeight: FontWeight.w700,
               letterSpacing: 0.2,
@@ -110,7 +110,7 @@ class AppTheme {
             return AppColors.foreground;
           }),
           textStyle: WidgetStatePropertyAll(
-            GoogleFonts.manrope(
+            GoogleFonts.inter(
               fontSize: 16,
               fontWeight: FontWeight.w700,
               letterSpacing: 0.2,
@@ -147,16 +147,16 @@ class AppTheme {
           horizontal: 16,
           vertical: 14,
         ),
-        hintStyle: GoogleFonts.manrope(
+        hintStyle: GoogleFonts.inter(
           color: AppColors.mutedForeground.withValues(alpha: 0.7),
           fontSize: 16,
           letterSpacing: 0.1,
         ),
-        labelStyle: GoogleFonts.spaceGrotesk(
+        labelStyle: GoogleFonts.inter(
           color: AppColors.mutedForeground,
           fontSize: 12,
           fontWeight: FontWeight.w600,
-          letterSpacing: 0.9,
+          letterSpacing: 0.3,
         ),
       ),
       floatingActionButtonTheme: const FloatingActionButtonThemeData(
@@ -179,7 +179,7 @@ class AppTheme {
       chipTheme: ChipThemeData(
         backgroundColor: preset.surfaceVariant,
         selectedColor: preset.primary.withValues(alpha: 0.12),
-        labelStyle: GoogleFonts.manrope(
+        labelStyle: GoogleFonts.inter(
           fontSize: 13,
           color: AppColors.foreground,
         ),
@@ -194,71 +194,71 @@ class AppTheme {
 
   static TextTheme _textTheme(TextTheme base, ThemePresetData preset) {
     return base.copyWith(
-      displayLarge: GoogleFonts.fraunces(
+      displayLarge: GoogleFonts.inter(
         fontSize: 44,
         height: 1.08,
-        fontWeight: FontWeight.w600,
+        fontWeight: FontWeight.w800,
         letterSpacing: -0.6,
         color: preset.primary,
       ),
-      displayMedium: GoogleFonts.fraunces(
+      displayMedium: GoogleFonts.inter(
         fontSize: 36,
         height: 1.12,
-        fontWeight: FontWeight.w600,
+        fontWeight: FontWeight.w800,
         letterSpacing: -0.45,
         color: preset.primary,
       ),
-      headlineLarge: GoogleFonts.fraunces(
+      headlineLarge: GoogleFonts.inter(
         fontSize: 30,
         height: 1.18,
-        fontWeight: FontWeight.w600,
+        fontWeight: FontWeight.w800,
         letterSpacing: -0.35,
         color: preset.primary,
       ),
-      headlineMedium: GoogleFonts.fraunces(
+      headlineMedium: GoogleFonts.inter(
         fontSize: 26,
         height: 1.2,
-        fontWeight: FontWeight.w600,
+        fontWeight: FontWeight.w700,
         letterSpacing: -0.2,
         color: preset.primary,
       ),
-      titleLarge: GoogleFonts.fraunces(
+      titleLarge: GoogleFonts.inter(
         fontSize: 22,
         height: 1.28,
-        fontWeight: FontWeight.w600,
+        fontWeight: FontWeight.w700,
         color: preset.primary,
       ),
-      titleMedium: GoogleFonts.manrope(
+      titleMedium: GoogleFonts.inter(
         fontSize: 16,
         height: 1.5,
         fontWeight: FontWeight.w700,
         letterSpacing: 0.2,
         color: preset.primary,
       ),
-      bodyLarge: GoogleFonts.manrope(
+      bodyLarge: GoogleFonts.inter(
         fontSize: 17,
         height: 1.7,
         fontWeight: FontWeight.w400,
         letterSpacing: 0.1,
         color: AppColors.foreground,
       ),
-      bodyMedium: GoogleFonts.manrope(
+      bodyMedium: GoogleFonts.inter(
         fontSize: 16,
         height: 1.68,
         fontWeight: FontWeight.w400,
         letterSpacing: 0.08,
         color: AppColors.mutedForeground,
       ),
-      labelLarge: GoogleFonts.manrope(
+      labelLarge: GoogleFonts.inter(
         fontSize: 14,
         fontWeight: FontWeight.w700,
         letterSpacing: 0.3,
         color: AppColors.accentForeground,
       ),
-      labelMedium: GoogleFonts.spaceGrotesk(
+      labelMedium: GoogleFonts.inter(
         fontSize: 12,
         fontWeight: FontWeight.w600,
-        letterSpacing: 0.9,
+        letterSpacing: 0.3,
         color: AppColors.accent,
       ),
     );

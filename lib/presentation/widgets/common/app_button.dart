@@ -94,7 +94,7 @@ class AppButton extends StatelessWidget {
 
     final text = Text(
       label,
-      style: GoogleFonts.manrope(
+      style: GoogleFonts.inter(
         color: color,
         fontSize: 16,
         fontWeight: FontWeight.w700,

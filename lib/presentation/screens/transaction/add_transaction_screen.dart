@@ -148,7 +148,7 @@ class _AddTransactionScreenState extends ConsumerState<AddTransactionScreen> {
               children: [
                 Text(
                   'Choose entry currency',
-                  style: GoogleFonts.fraunces(
+                  style: GoogleFonts.inter(
                     fontSize: 24,
                     fontWeight: FontWeight.w700,
                     color: AppColors.textPrimary,
@@ -157,7 +157,7 @@ class _AddTransactionScreenState extends ConsumerState<AddTransactionScreen> {
                 const SizedBox(height: 6),
                 Text(
                   'Your base stays in ${appCurrency.toUpperCase()}, but each entry can keep its own original currency.',
-                  style: GoogleFonts.manrope(
+                  style: GoogleFonts.inter(
                     fontSize: 13,
                     height: 1.35,
                     color: AppColors.textSecondary,
@@ -207,7 +207,7 @@ class _AddTransactionScreenState extends ConsumerState<AddTransactionScreen> {
                               ),
                               child: Text(
                                 option.symbol,
-                                style: GoogleFonts.spaceGrotesk(
+                                style: GoogleFonts.inter(
                                   fontSize: 22,
                                   fontWeight: FontWeight.w700,
                                   color: accent,
@@ -221,7 +221,7 @@ class _AddTransactionScreenState extends ConsumerState<AddTransactionScreen> {
                                 children: [
                                   Text(
                                     option.code,
-                                    style: GoogleFonts.spaceGrotesk(
+                                    style: GoogleFonts.inter(
                                       fontSize: 15,
                                       fontWeight: FontWeight.w700,
                                       letterSpacing: 0.6,
@@ -231,7 +231,7 @@ class _AddTransactionScreenState extends ConsumerState<AddTransactionScreen> {
                                   const SizedBox(height: 2),
                                   Text(
                                     option.label,
-                                    style: GoogleFonts.manrope(
+                                    style: GoogleFonts.inter(
                                       fontSize: 14,
                                       fontWeight: FontWeight.w600,
                                       color: AppColors.textPrimary,
@@ -239,7 +239,7 @@ class _AddTransactionScreenState extends ConsumerState<AddTransactionScreen> {
                                   ),
                                   Text(
                                     option.vibe,
-                                    style: GoogleFonts.manrope(
+                                    style: GoogleFonts.inter(
                                       fontSize: 12,
                                       color: AppColors.textSecondary,
                                     ),
@@ -294,7 +294,7 @@ class _AddTransactionScreenState extends ConsumerState<AddTransactionScreen> {
             ),
             child: Text(
               'Enter an amount to preview how it lands in $previewCurrency.',
-              style: GoogleFonts.manrope(
+              style: GoogleFonts.inter(
                 fontSize: 13,
                 color: AppColors.textSecondary,
               ),
@@ -358,7 +358,7 @@ class _AddTransactionScreenState extends ConsumerState<AddTransactionScreen> {
                             previewCurrency == appCurrency.toUpperCase()
                                 ? 'Base Preview'
                                 : 'Live Compare',
-                            style: GoogleFonts.spaceGrotesk(
+                            style: GoogleFonts.inter(
                               fontSize: 11,
                               letterSpacing: 0.7,
                               fontWeight: FontWeight.w700,
@@ -369,7 +369,7 @@ class _AddTransactionScreenState extends ConsumerState<AddTransactionScreen> {
                         const Spacer(),
                         Text(
                           '${_entryCurrency.toUpperCase()} -> $previewCurrency',
-                          style: GoogleFonts.manrope(
+                          style: GoogleFonts.inter(
                             fontSize: 12,
                             fontWeight: FontWeight.w700,
                             color: AppColors.textSecondary,
@@ -385,7 +385,7 @@ class _AddTransactionScreenState extends ConsumerState<AddTransactionScreen> {
                               converted,
                               currency: previewCurrency,
                             ),
-                      style: GoogleFonts.spaceGrotesk(
+                      style: GoogleFonts.inter(
                         fontSize: 34,
                         height: 1,
                         fontWeight: FontWeight.w700,
@@ -397,7 +397,7 @@ class _AddTransactionScreenState extends ConsumerState<AddTransactionScreen> {
                       converted == null
                           ? 'Pulling the latest available rate'
                           : 'At this moment, ${CurrencyFormatter.format(amount, currency: _entryCurrency)} becomes about ${CurrencyFormatter.format(converted, currency: previewCurrency)}.',
-                      style: GoogleFonts.manrope(
+                      style: GoogleFonts.inter(
                         fontSize: 13,
                         height: 1.4,
                         color: AppColors.textSecondary,
@@ -417,7 +417,7 @@ class _AddTransactionScreenState extends ConsumerState<AddTransactionScreen> {
                         ),
                         child: Text(
                           '1 ${_entryCurrency.toUpperCase()} = ${rate.toStringAsFixed(4)} $previewCurrency',
-                          style: GoogleFonts.spaceGrotesk(
+                          style: GoogleFonts.inter(
                             fontSize: 12,
                             fontWeight: FontWeight.w700,
                             letterSpacing: 0.35,
@@ -564,7 +564,7 @@ class _AddTransactionScreenState extends ConsumerState<AddTransactionScreen> {
         travelMode.enabled &&
         _type == TransactionType.expense &&
         honeymoonCategory != null;
-    if (travelModeActive && _selectedCategoryId != honeymoonCategory!.id) {
+    if (travelModeActive && _selectedCategoryId != honeymoonCategory.id) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (!mounted) return;
         setState(() => _selectedCategoryId = honeymoonCategory.id);
@@ -699,7 +699,7 @@ class _AddTransactionScreenState extends ConsumerState<AddTransactionScreen> {
                     ),
                     child: Text(
                       CurrencyFormatter.symbolFor(_entryCurrency),
-                      style: GoogleFonts.spaceGrotesk(
+                      style: GoogleFonts.inter(
                         fontSize: 18,
                         fontWeight: FontWeight.w700,
                         letterSpacing: 0.4,
@@ -717,7 +717,7 @@ class _AddTransactionScreenState extends ConsumerState<AddTransactionScreen> {
                       ),
                     ],
                     textAlign: TextAlign.center,
-                    style: GoogleFonts.spaceGrotesk(
+                    style: GoogleFonts.inter(
                       fontSize: 40,
                       fontWeight: FontWeight.w700,
                       letterSpacing: -1.4,
@@ -756,7 +756,7 @@ class _AddTransactionScreenState extends ConsumerState<AddTransactionScreen> {
                         ),
                         child: Text(
                           'Base ledger: ${appCurrency.toUpperCase()}',
-                          style: GoogleFonts.spaceGrotesk(
+                          style: GoogleFonts.inter(
                             fontSize: 11.5,
                             letterSpacing: 0.5,
                             fontWeight: FontWeight.w700,

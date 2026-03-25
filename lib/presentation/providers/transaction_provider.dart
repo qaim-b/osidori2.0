@@ -4,6 +4,7 @@ import '../../data/repositories/recurring_rule_repository.dart';
 import '../../data/repositories/transaction_repository.dart';
 import '../../data/models/transaction_model.dart';
 import '../../core/utils/fx_converter.dart';
+import '../../core/utils/local_data_cache.dart';
 import '../../domain/enums/transaction_type.dart';
 import '../../domain/enums/visibility_type.dart';
 import '../../domain/enums/transaction_source.dart';
@@ -108,9 +109,31 @@ class TransactionsNotifier
         to: to,
         pageSize: 10000,
       );
+      await LocalDataCache.setJsonList(
+        LocalDataCache.monthlyTransactionsKey(
+          userId: _userId,
+          year: _month.year,
+          month: _month.month,
+        ),
+        txns.map((txn) => txn.toJson()).toList(),
+      );
       final converted = await _convertForDisplay(txns);
       state = AsyncValue.data(converted);
     } catch (e, st) {
+      final cached = await LocalDataCache.getJsonList(
+        LocalDataCache.monthlyTransactionsKey(
+          userId: _userId,
+          year: _month.year,
+          month: _month.month,
+        ),
+      );
+      if (cached != null && cached.isNotEmpty) {
+        final converted = await _convertForDisplay(
+          cached.map(TransactionModel.fromJson).toList(),
+        );
+        state = AsyncValue.data(converted);
+        return;
+      }
       state = AsyncValue.error(e, st);
     }
   }

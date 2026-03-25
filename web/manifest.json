@@ -1,8 +1,11 @@
 {
     "name": "Osidori 2.0",
+    "id": "/",
     "short_name": "Osidori",
-    "start_url": ".",
+    "start_url": "./",
+    "scope": "./",
     "display": "standalone",
+    "display_override": ["standalone", "minimal-ui", "browser"],
     "background_color": "#F3F8FF",
     "theme_color": "#F3F8FF",
     "description": "Couples finance and life management app.",

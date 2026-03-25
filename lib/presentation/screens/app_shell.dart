@@ -115,7 +115,9 @@ class _NavItem extends StatelessWidget {
               Icon(
                 icon,
                 size: 20,
-                color: selected ? colorScheme.primary : AppColors.mutedForeground,
+                color: selected
+                    ? colorScheme.primary
+                    : AppColors.mutedForeground,
               ),
               const SizedBox(height: 4),
               Container(
@@ -133,12 +135,13 @@ class _NavItem extends StatelessWidget {
                 label.toUpperCase(),
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
-                style: GoogleFonts.spaceGrotesk(
+                style: GoogleFonts.inter(
                   fontSize: 10,
                   fontWeight: selected ? FontWeight.w700 : FontWeight.w600,
-                  letterSpacing: 0.7,
-                  color:
-                      selected ? colorScheme.primary : AppColors.mutedForeground,
+                  letterSpacing: 0.2,
+                  color: selected
+                      ? colorScheme.primary
+                      : AppColors.mutedForeground,
                 ),
               ),
             ],
