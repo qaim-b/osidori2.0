@@ -18,7 +18,7 @@ class CategoryTransactionsScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final categories = ref.watch(categoriesProvider);
     final List<TransactionModel> transactions =
-        ref.watch(monthlyTransactionsProvider).valueOrNull ??
+        ref.watch(visibleMonthlyTransactionsProvider) ??
         const <TransactionModel>[];
     final currentCurrency = ref.watch(currentCurrencyProvider);
 
@@ -42,7 +42,9 @@ class CategoryTransactionsScreen extends ConsumerWidget {
         builder: (context) {
           final txns = transactions;
           final filtered =
-              txns.where((t) => t.categoryId == categoryId).toList()
+              txns
+                  .where((t) => t.isExpense && t.categoryId == categoryId)
+                  .toList()
                 ..sort((a, b) => b.date.compareTo(a.date));
           final total = filtered.fold<double>(0, (sum, t) => sum + t.amount);
           final snapshotName = filtered.isNotEmpty

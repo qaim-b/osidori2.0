@@ -401,9 +401,8 @@ class _BudgetScreenState extends ConsumerState<BudgetScreen> {
 
     // Show all enabled expense categories, including zero-amount rows.
     for (final cat in enabledExpenseCategories) {
-      final groupKey = '${cat.emoji}::${cat.name}';
-      groupedRows[groupKey] = _BudgetRowAggregate(
-        representativeCategoryId: cat.id,
+      groupedRows[cat.id] = _BudgetRowAggregate(
+        categoryId: cat.id,
         name: cat.name,
         emoji: cat.emoji,
         amount: categoryTotals[cat.id] ?? 0,
@@ -422,24 +421,20 @@ class _BudgetScreenState extends ConsumerState<BudgetScreen> {
           resolvedCategoryEmojiMap[categoryId] ??
           catSnapshotEmojiMap[categoryId] ??
           '📦';
-      final groupKey = '$emoji::$name';
-      final current = groupedRows[groupKey];
+      final current = groupedRows[categoryId];
       final budgetLimit = budgetLimitMap[categoryId] ?? 0;
       if (current == null) {
-        groupedRows[groupKey] = _BudgetRowAggregate(
-          representativeCategoryId: categoryId,
+        groupedRows[categoryId] = _BudgetRowAggregate(
+          categoryId: categoryId,
           name: name,
           emoji: emoji,
           amount: entry.value,
           budgetLimit: budgetLimit,
         );
       } else {
-        final mergedAmount = current.representativeCategoryId == categoryId
-            ? current.amount
-            : current.amount + entry.value;
-        groupedRows[groupKey] = current.copyWith(
-          amount: mergedAmount,
-          budgetLimit: current.budgetLimit + budgetLimit,
+        groupedRows[categoryId] = current.copyWith(
+          amount: entry.value,
+          budgetLimit: budgetLimit,
         );
       }
     }
@@ -809,7 +804,7 @@ class _BudgetScreenState extends ConsumerState<BudgetScreen> {
                   return SliverList(
                     delegate: SliverChildBuilderDelegate((context, index) {
                       final entry = sorted[index];
-                      final cat = catEntityMap[entry.representativeCategoryId];
+                      final cat = catEntityMap[entry.categoryId];
                       final pct = total > 0
                           ? (entry.amount / total * 100)
                           : 0.0;
@@ -818,7 +813,7 @@ class _BudgetScreenState extends ConsumerState<BudgetScreen> {
                           : null;
                       final accentColor = _categoryAccentForRow(
                         cat,
-                        entry.representativeCategoryId,
+                        entry.categoryId,
                       );
                       final limitProgress = budgetLimit != null
                           ? (entry.amount / budgetLimit).clamp(0.0, 1.5)
@@ -832,7 +827,7 @@ class _BudgetScreenState extends ConsumerState<BudgetScreen> {
                         child: InkWell(
                           borderRadius: BorderRadius.circular(12),
                           onTap: () => context.push(
-                            '/budget/category/${entry.representativeCategoryId}',
+                            '/budget/category/${entry.categoryId}',
                           ),
                           child: Padding(
                             padding: const EdgeInsets.all(12),
@@ -1090,14 +1085,14 @@ class _BudgetScreenState extends ConsumerState<BudgetScreen> {
 }
 
 class _BudgetRowAggregate {
-  final String representativeCategoryId;
+  final String categoryId;
   final String name;
   final String emoji;
   final double amount;
   final double budgetLimit;
 
   const _BudgetRowAggregate({
-    required this.representativeCategoryId,
+    required this.categoryId,
     required this.name,
     required this.emoji,
     required this.amount,
@@ -1105,15 +1100,14 @@ class _BudgetRowAggregate {
   });
 
   _BudgetRowAggregate copyWith({
-    String? representativeCategoryId,
+    String? categoryId,
     String? name,
     String? emoji,
     double? amount,
     double? budgetLimit,
   }) {
     return _BudgetRowAggregate(
-      representativeCategoryId:
-          representativeCategoryId ?? this.representativeCategoryId,
+      categoryId: categoryId ?? this.categoryId,
       name: name ?? this.name,
       emoji: emoji ?? this.emoji,
       amount: amount ?? this.amount,

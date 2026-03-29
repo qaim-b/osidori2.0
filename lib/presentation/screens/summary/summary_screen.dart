@@ -49,7 +49,10 @@ class _SummaryScreenState extends ConsumerState<SummaryScreen> {
     _SheetColumn(label: 'Clothing', nameHints: ['clothing']),
     _SheetColumn(label: 'Household Goods', nameHints: ['household']),
     _SheetColumn(label: 'Gadgets', nameHints: ['gadgets', 'gadget']),
-    _SheetColumn(label: 'Public Transport', nameHints: ['public transport', 'transport']),
+    _SheetColumn(
+      label: 'Public Transport',
+      nameHints: ['public transport', 'transport'],
+    ),
     _SheetColumn(label: 'Dating', nameHints: ['dating']),
     _SheetColumn(label: 'Dining Out', nameHints: ['dining', 'dining out']),
     _SheetColumn(label: 'Social Mami', nameHints: ['social mami']),
@@ -67,14 +70,20 @@ class _SummaryScreenState extends ConsumerState<SummaryScreen> {
     _SheetColumn(label: 'Meds', nameHints: ['med', 'medicine']),
     _SheetColumn(label: 'Charity', nameHints: ['charity']),
     _SheetColumn(label: 'Gifts', nameHints: ['gift']),
-    _SheetColumn(label: 'Furniture/Appliances', nameHints: ['furniture', 'appliance']),
+    _SheetColumn(
+      label: 'Furniture/Appliances',
+      nameHints: ['furniture', 'appliance'],
+    ),
     _SheetColumn(label: 'Moving', nameHints: ['moving']),
     _SheetColumn(label: 'Miscellaneous', nameHints: ['misc']),
     _SheetColumn(label: 'Hari Raya Angpao', nameHints: ['hari raya', 'angpao']),
     _SheetColumn(label: 'Qaim Account', nameHints: ['qaim account']),
     _SheetColumn(label: 'Mami Account', nameHints: ['mami account']),
     _SheetColumn(label: 'Qaim Sadaqah', nameHints: ['qaim sadaqah']),
-    _SheetColumn(label: 'Mami Family Sadaqah', nameHints: ['mami family', 'family sadaqah']),
+    _SheetColumn(
+      label: 'Mami Family Sadaqah',
+      nameHints: ['mami family', 'family sadaqah'],
+    ),
     _SheetColumn(
       label: 'Mami Aunty & Uncle Sadaqah',
       nameHints: ['aunty', 'uncle', 'sadaqah'],
@@ -126,9 +135,8 @@ class _SummaryScreenState extends ConsumerState<SummaryScreen> {
                         Expanded(
                           child: Text(
                             'Choose Month',
-                            style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                                  fontWeight: FontWeight.w700,
-                                ),
+                            style: Theme.of(context).textTheme.titleMedium
+                                ?.copyWith(fontWeight: FontWeight.w700),
                           ),
                         ),
                         IconButton(
@@ -138,9 +146,8 @@ class _SummaryScreenState extends ConsumerState<SummaryScreen> {
                         ),
                         Text(
                           '$displayYear',
-                          style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                                fontWeight: FontWeight.w700,
-                              ),
+                          style: Theme.of(context).textTheme.titleSmall
+                              ?.copyWith(fontWeight: FontWeight.w700),
                         ),
                         IconButton(
                           onPressed: () =>
@@ -156,31 +163,29 @@ class _SummaryScreenState extends ConsumerState<SummaryScreen> {
                       physics: const NeverScrollableScrollPhysics(),
                       gridDelegate:
                           const SliverGridDelegateWithFixedCrossAxisCount(
-                        crossAxisCount: 4,
-                        crossAxisSpacing: 8,
-                        mainAxisSpacing: 8,
-                        childAspectRatio: 2.2,
-                      ),
+                            crossAxisCount: 4,
+                            crossAxisSpacing: 8,
+                            mainAxisSpacing: 8,
+                            childAspectRatio: 2.2,
+                          ),
                       itemBuilder: (context, index) {
                         final month = index + 1;
                         final isSelected =
                             initialMonth.year == displayYear &&
-                                initialMonth.month == month;
+                            initialMonth.month == month;
                         return InkWell(
                           borderRadius: BorderRadius.circular(12),
-                          onTap: () => Navigator.of(context).pop(
-                            DateTime(displayYear, month, 1),
-                          ),
+                          onTap: () => Navigator.of(
+                            context,
+                          ).pop(DateTime(displayYear, month, 1)),
                           child: Container(
                             decoration: BoxDecoration(
                               color: isSelected
-                                  ? Theme.of(context)
-                                      .colorScheme
-                                      .primary
-                                      .withValues(alpha: 0.15)
-                                  : Theme.of(context)
-                                      .colorScheme
-                                      .surfaceContainerHighest,
+                                  ? Theme.of(context).colorScheme.primary
+                                        .withValues(alpha: 0.15)
+                                  : Theme.of(
+                                      context,
+                                    ).colorScheme.surfaceContainerHighest,
                               borderRadius: BorderRadius.circular(12),
                               border: Border.all(
                                 color: isSelected
@@ -192,8 +197,9 @@ class _SummaryScreenState extends ConsumerState<SummaryScreen> {
                             child: Text(
                               monthNames[index],
                               style: TextStyle(
-                                fontWeight:
-                                    isSelected ? FontWeight.w700 : FontWeight.w500,
+                                fontWeight: isSelected
+                                    ? FontWeight.w700
+                                    : FontWeight.w500,
                                 color: isSelected
                                     ? Theme.of(context).colorScheme.primary
                                     : Theme.of(context).colorScheme.onSurface,
@@ -254,7 +260,8 @@ class _SummaryScreenState extends ConsumerState<SummaryScreen> {
                   leading: const Icon(Icons.auto_awesome_motion_rounded),
                   title: const Text('Export all months individually'),
                   subtitle: const Text('One file per month'),
-                  onTap: () => Navigator.of(context).pop(_ExportScope.allMonths),
+                  onTap: () =>
+                      Navigator.of(context).pop(_ExportScope.allMonths),
                 ),
               ],
             ),
@@ -283,7 +290,8 @@ class _SummaryScreenState extends ConsumerState<SummaryScreen> {
     return Future.wait(
       raw.map((txn) async {
         if (fxMode == 'accounting' &&
-            txn.fxBaseCurrency?.toUpperCase() == displayCurrency.toUpperCase() &&
+            txn.fxBaseCurrency?.toUpperCase() ==
+                displayCurrency.toUpperCase() &&
             txn.baseAmountLocked != null) {
           return txn.copyWith(
             amount: txn.baseAmountLocked,
@@ -342,7 +350,9 @@ class _SummaryScreenState extends ConsumerState<SummaryScreen> {
     if (scope == _ExportScope.current || scope == _ExportScope.picked) {
       final exportMonth = scope == _ExportScope.current
           ? DateTime(selectedMonth.year, selectedMonth.month, 1)
-          : await _pickExportMonth(DateTime(selectedMonth.year, selectedMonth.month, 1));
+          : await _pickExportMonth(
+              DateTime(selectedMonth.year, selectedMonth.month, 1),
+            );
       if (exportMonth == null) return;
       final exportTxns = await _loadTransactionsForExport(
         exportMonth: exportMonth,
@@ -359,12 +369,16 @@ class _SummaryScreenState extends ConsumerState<SummaryScreen> {
       await CsvExporter.shareFile(path);
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Planning summary exported (${exportMonth.monthYear})')),
+        SnackBar(
+          content: Text('Planning summary exported (${exportMonth.monthYear})'),
+        ),
       );
       return;
     }
 
-    if (kIsWeb && scope != _ExportScope.current && scope != _ExportScope.picked) {
+    if (kIsWeb &&
+        scope != _ExportScope.current &&
+        scope != _ExportScope.picked) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
@@ -389,7 +403,9 @@ class _SummaryScreenState extends ConsumerState<SummaryScreen> {
     }
     if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('Exporting ${exportMonths.length} month files...')),
+      SnackBar(
+        content: Text('Exporting ${exportMonths.length} month files...'),
+      ),
     );
     final paths = <String>[];
     for (final month in exportMonths) {
@@ -431,7 +447,9 @@ class _SummaryScreenState extends ConsumerState<SummaryScreen> {
     if (scope == _ExportScope.current || scope == _ExportScope.picked) {
       final exportMonth = scope == _ExportScope.current
           ? DateTime(selectedMonth.year, selectedMonth.month, 1)
-          : await _pickExportMonth(DateTime(selectedMonth.year, selectedMonth.month, 1));
+          : await _pickExportMonth(
+              DateTime(selectedMonth.year, selectedMonth.month, 1),
+            );
       if (exportMonth == null) return;
       final exportTxns = await _loadTransactionsForExport(
         exportMonth: exportMonth,
@@ -447,12 +465,16 @@ class _SummaryScreenState extends ConsumerState<SummaryScreen> {
       await CsvExporter.shareFile(path);
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Transactions exported (${exportMonth.monthYear})')),
+        SnackBar(
+          content: Text('Transactions exported (${exportMonth.monthYear})'),
+        ),
       );
       return;
     }
 
-    if (kIsWeb && scope != _ExportScope.current && scope != _ExportScope.picked) {
+    if (kIsWeb &&
+        scope != _ExportScope.current &&
+        scope != _ExportScope.picked) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
@@ -477,7 +499,9 @@ class _SummaryScreenState extends ConsumerState<SummaryScreen> {
     }
     if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('Exporting ${exportMonths.length} month files...')),
+      SnackBar(
+        content: Text('Exporting ${exportMonths.length} month files...'),
+      ),
     );
     final paths = <String>[];
     for (final month in exportMonths) {
@@ -500,7 +524,9 @@ class _SummaryScreenState extends ConsumerState<SummaryScreen> {
     if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text('Exported ${exportMonths.length} monthly transaction files'),
+        content: Text(
+          'Exported ${exportMonths.length} monthly transaction files',
+        ),
       ),
     );
   }
@@ -557,10 +583,9 @@ class _SummaryScreenState extends ConsumerState<SummaryScreen> {
     await Clipboard.setData(ClipboardData(text: tsv));
     if (!mounted) return;
     final unmatchedNames = unmatched.keys.toList()..sort();
-    final suffix =
-        unmatchedNames.isEmpty
-            ? ''
-            : ' Unmatched: ${unmatchedNames.take(3).join(', ')}'
+    final suffix = unmatchedNames.isEmpty
+        ? ''
+        : ' Unmatched: ${unmatchedNames.take(3).join(', ')}'
               '${unmatchedNames.length > 3 ? '…' : ''}';
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
@@ -580,10 +605,7 @@ class _SummaryScreenState extends ConsumerState<SummaryScreen> {
   }
 
   String _normalizeSheetKey(String input) {
-    return input
-        .toLowerCase()
-        .replaceAll(RegExp(r'[^a-z0-9]+'), ' ')
-        .trim();
+    return input.toLowerCase().replaceAll(RegExp(r'[^a-z0-9]+'), ' ').trim();
   }
 
   String _formatSheetValue(double value) {
@@ -634,9 +656,19 @@ class _SummaryScreenState extends ConsumerState<SummaryScreen> {
       ..sort((a, b) => b.value.compareTo(a.value));
     final top3Sliced = top3.take(3).toList();
 
+    final now = DateTime.now();
+    final daysInSelectedMonth = DateTime(
+      selectedMonth.year,
+      selectedMonth.month + 1,
+      0,
+    ).day;
+    final elapsedDays =
+        selectedMonth.year == now.year && selectedMonth.month == now.month
+        ? now.day.clamp(1, daysInSelectedMonth)
+        : daysInSelectedMonth;
     final dailyAverage =
         txns.where((t) => t.isExpense).fold<double>(0, (s, t) => s + t.amount) /
-        (DateTime.now().day.clamp(1, 31));
+        elapsedDays;
 
     return Scaffold(
       backgroundColor: Colors.transparent,
@@ -670,11 +702,13 @@ class _SummaryScreenState extends ConsumerState<SummaryScreen> {
                       IconButton(
                         icon: const Icon(Icons.chevron_left),
                         onPressed: () {
-                          ref.read(selectedMonthProvider.notifier).state = DateTime(
-                                selectedMonth.year,
-                                selectedMonth.month - 1,
-                                1,
-                              );
+                          ref
+                              .read(selectedMonthProvider.notifier)
+                              .state = DateTime(
+                            selectedMonth.year,
+                            selectedMonth.month - 1,
+                            1,
+                          );
                         },
                       ),
                       Text(
@@ -687,11 +721,13 @@ class _SummaryScreenState extends ConsumerState<SummaryScreen> {
                       IconButton(
                         icon: const Icon(Icons.chevron_right),
                         onPressed: () {
-                          ref.read(selectedMonthProvider.notifier).state = DateTime(
-                                selectedMonth.year,
-                                selectedMonth.month + 1,
-                                1,
-                              );
+                          ref
+                              .read(selectedMonthProvider.notifier)
+                              .state = DateTime(
+                            selectedMonth.year,
+                            selectedMonth.month + 1,
+                            1,
+                          );
                         },
                       ),
                     ],
@@ -840,8 +876,8 @@ class _SummaryScreenState extends ConsumerState<SummaryScreen> {
                                             .surfaceContainerHighest,
                                         valueColor:
                                             AlwaysStoppedAnimation<Color>(
-                                          barColor,
-                                        ),
+                                              barColor,
+                                            ),
                                       ),
                                     ),
                                   ],
@@ -1009,7 +1045,9 @@ class _SummaryScreenState extends ConsumerState<SummaryScreen> {
                         ListTile(
                           contentPadding: EdgeInsets.zero,
                           leading: const Icon(Icons.download_rounded),
-                          title: const Text('Export Standard Transactions XLSX'),
+                          title: const Text(
+                            'Export Standard Transactions XLSX',
+                          ),
                           subtitle: const Text(
                             'Current month, specific month, or all months individually',
                           ),
