@@ -23,7 +23,6 @@ class ThemedBackdrop extends ConsumerWidget {
     final bannerAsset = currency == 'MYR'
         ? 'assets/images/banner_malaysia.svg'
         : 'assets/images/banner_japan.svg';
-    final bannerTint = theme.colorScheme.primary.withValues(alpha: 0.75);
     final showLightBackdrop = kIsWeb;
 
     return Stack(
@@ -81,16 +80,15 @@ class ThemedBackdrop extends ConsumerWidget {
             right: 0,
             child: IgnorePointer(
               child: Opacity(
-                opacity: showLightBackdrop ? 0.2 : 0.32,
+                opacity: isMalaysia
+                    ? (showLightBackdrop ? 0.42 : 0.56)
+                    : (showLightBackdrop ? 0.2 : 0.32),
                 child: SizedBox(
                   height: showLightBackdrop ? 180 : 220,
                   child: SvgPicture.asset(
                     bannerAsset,
                     fit: BoxFit.fitWidth,
                     alignment: Alignment.topCenter,
-                    colorFilter: isMalaysia
-                        ? ColorFilter.mode(bannerTint, BlendMode.modulate)
-                        : null,
                   ),
                 ),
               ),

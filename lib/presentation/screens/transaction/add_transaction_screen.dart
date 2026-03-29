@@ -69,6 +69,44 @@ class _AddTransactionScreenState extends ConsumerState<AddTransactionScreen> {
     );
   }
 
+  void _syncHiddenAccountSelection(List<AccountEntity> accounts) {
+    if (accounts.isEmpty) return;
+
+    final firstAccountId = accounts.first.id;
+    final fallbackToId = accounts
+        .where((a) => a.id != (_selectedFromAccountId ?? firstAccountId))
+        .map((a) => a.id)
+        .firstOrNull;
+
+    if (_type == TransactionType.transfer) {
+      if (_selectedFromAccountId == null ||
+          !accounts.any((a) => a.id == _selectedFromAccountId)) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (!mounted) return;
+          setState(() => _selectedFromAccountId = firstAccountId);
+        });
+      }
+      if (fallbackToId != null &&
+          (_selectedToAccountId == null ||
+              _selectedToAccountId == _selectedFromAccountId ||
+              !accounts.any((a) => a.id == _selectedToAccountId))) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (!mounted) return;
+          setState(() => _selectedToAccountId = fallbackToId);
+        });
+      }
+      return;
+    }
+
+    if (_selectedFromAccountId == null ||
+        !accounts.any((a) => a.id == _selectedFromAccountId)) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) return;
+        setState(() => _selectedFromAccountId = firstAccountId);
+      });
+    }
+  }
+
   @override
   void dispose() {
     _amountController.dispose();
@@ -461,9 +499,9 @@ class _AddTransactionScreenState extends ConsumerState<AddTransactionScreen> {
       return;
     }
     if (_selectedFromAccountId == null) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text('Select an account')));
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('No account is available for saving yet')),
+      );
       return;
     }
     if (_type == TransactionType.transfer && _selectedToAccountId == null) {
@@ -570,6 +608,7 @@ class _AddTransactionScreenState extends ConsumerState<AddTransactionScreen> {
 
     final categories = categoriesAsync.valueOrNull ?? [];
     final accounts = accountsAsync.valueOrNull ?? [];
+    _syncHiddenAccountSelection(accounts);
     final honeymoonCategory = findHoneymoonCategory(categories);
     final travelModeActive =
         travelMode.enabled &&
@@ -806,21 +845,14 @@ class _AddTransactionScreenState extends ConsumerState<AddTransactionScreen> {
 
             const SizedBox(height: 12),
 
-            // Account selector
-            _SectionLabel(
-              label: _type == TransactionType.transfer
-                  ? 'From Account'
-                  : 'Account',
-            ),
-            const SizedBox(height: 8),
-            _AccountPicker(
-              accounts: accounts,
-              selectedId: _selectedFromAccountId,
-              onSelect: (id) => setState(() => _selectedFromAccountId = id),
-            ),
-
-            // To account (transfer only)
             if (_type == TransactionType.transfer) ...[
+              _SectionLabel(label: 'From Account'),
+              const SizedBox(height: 8),
+              _AccountPicker(
+                accounts: accounts,
+                selectedId: _selectedFromAccountId,
+                onSelect: (id) => setState(() => _selectedFromAccountId = id),
+              ),
               const SizedBox(height: 16),
               _SectionLabel(label: 'To Account'),
               const SizedBox(height: 8),
@@ -830,6 +862,26 @@ class _AddTransactionScreenState extends ConsumerState<AddTransactionScreen> {
                     .toList(),
                 selectedId: _selectedToAccountId,
                 onSelect: (id) => setState(() => _selectedToAccountId = id),
+              ),
+            ] else ...[
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: AppColors.surfaceVariant.withValues(alpha: 0.78),
+                  borderRadius: BorderRadius.circular(14),
+                  border: Border.all(
+                    color: AppColors.border.withValues(alpha: 0.7),
+                  ),
+                ),
+                child: const Text(
+                  'Account selection is hidden for now, so you can log this month more quickly.',
+                  style: TextStyle(
+                    fontSize: 12.5,
+                    fontWeight: FontWeight.w600,
+                    color: AppColors.textSecondary,
+                  ),
+                ),
               ),
             ],
 

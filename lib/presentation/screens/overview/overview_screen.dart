@@ -204,8 +204,8 @@ class _OverviewScreenState extends ConsumerState<OverviewScreen> {
         final fallbackName = txn.categoryNameSnapshot?.trim().isNotEmpty == true
             ? txn.categoryNameSnapshot!.trim()
             : (txn.categoryDisplayNumberSnapshot != null
-                ? 'Category #${txn.categoryDisplayNumberSnapshot}'
-                : 'Other');
+                  ? 'Category #${txn.categoryDisplayNumberSnapshot}'
+                  : 'Other');
         final fallbackEmoji =
             txn.categoryEmojiSnapshot?.trim().isNotEmpty == true
             ? txn.categoryEmojiSnapshot!.trim()
@@ -693,20 +693,12 @@ class _CountryModePill extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
     final isMalaysia = currency.toUpperCase() == 'MYR';
     final label = isMalaysia ? 'Malaysia' : 'Japan';
     final code = isMalaysia ? 'MY' : 'JP';
     final banner = isMalaysia
         ? 'assets/images/banner_malaysia.svg'
         : 'assets/images/banner_japan.svg';
-    final previewColorFilter = isMalaysia
-        ? ColorFilter.mode(
-            theme.colorScheme.primary.withValues(alpha: 0.75),
-            BlendMode.modulate,
-          )
-        : null;
-
     return Material(
       color: Colors.transparent,
       child: InkWell(
@@ -744,11 +736,7 @@ class _CountryModePill extends StatelessWidget {
                 child: SizedBox(
                   width: 56,
                   height: 22,
-                  child: SvgPicture.asset(
-                    banner,
-                    fit: BoxFit.cover,
-                    colorFilter: previewColorFilter,
-                  ),
+                  child: SvgPicture.asset(banner, fit: BoxFit.cover),
                 ),
               ),
               const SizedBox(width: 6),
@@ -783,14 +771,6 @@ class _CountryOptionTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final isMalaysia = bannerAsset.contains('malaysia');
-    final previewColorFilter = isMalaysia
-        ? ColorFilter.mode(
-            theme.colorScheme.primary.withValues(alpha: 0.75),
-            BlendMode.modulate,
-          )
-        : null;
     return Material(
       color: Colors.transparent,
       child: InkWell(
@@ -815,11 +795,7 @@ class _CountryOptionTile extends StatelessWidget {
                 child: SizedBox(
                   width: 88,
                   height: 48,
-                  child: SvgPicture.asset(
-                    bannerAsset,
-                    fit: BoxFit.cover,
-                    colorFilter: previewColorFilter,
-                  ),
+                  child: SvgPicture.asset(bannerAsset, fit: BoxFit.cover),
                 ),
               ),
               const SizedBox(width: 12),
