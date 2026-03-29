@@ -299,6 +299,10 @@ class _BudgetScreenState extends ConsumerState<BudgetScreen> {
     return palette[index];
   }
 
+  String _budgetGroupKey({required int displayNumber, required String name}) {
+    return '${displayNumber.toString().padLeft(4, '0')}::${name.trim().toLowerCase()}';
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -401,13 +405,28 @@ class _BudgetScreenState extends ConsumerState<BudgetScreen> {
 
     // Show all enabled expense categories, including zero-amount rows.
     for (final cat in enabledExpenseCategories) {
-      groupedRows[cat.id] = _BudgetRowAggregate(
-        categoryId: cat.id,
+      final groupKey = _budgetGroupKey(
+        displayNumber: cat.displayNumber,
         name: cat.name,
-        emoji: cat.emoji,
-        amount: categoryTotals[cat.id] ?? 0,
-        budgetLimit: budgetLimitMap[cat.id] ?? 0,
       );
+      final current = groupedRows[groupKey];
+      if (current == null) {
+        groupedRows[groupKey] = _BudgetRowAggregate(
+          categoryIds: <String>{cat.id},
+          representativeCategoryId: cat.id,
+          sortOrder: cat.sortOrder,
+          name: cat.name,
+          emoji: cat.emoji,
+          amount: categoryTotals[cat.id] ?? 0,
+          budgetLimit: budgetLimitMap[cat.id] ?? 0,
+        );
+      } else {
+        groupedRows[groupKey] = current.copyWith(
+          categoryIds: {...current.categoryIds, cat.id},
+          amount: current.amount + (categoryTotals[cat.id] ?? 0),
+          budgetLimit: current.budgetLimit + (budgetLimitMap[cat.id] ?? 0),
+        );
+      }
     }
 
     // Merge any transaction-only categories not present in current enabled list.
@@ -421,20 +440,33 @@ class _BudgetScreenState extends ConsumerState<BudgetScreen> {
           resolvedCategoryEmojiMap[categoryId] ??
           catSnapshotEmojiMap[categoryId] ??
           '📦';
-      final current = groupedRows[categoryId];
+      final categoryMeta = allCategories
+          .where((c) => c.id == categoryId)
+          .firstOrNull;
+      final displayNumber =
+          categoryMeta?.displayNumber ?? categoryId.hashCode.abs() % 100000;
+      final sortOrder = categoryMeta?.sortOrder ?? displayNumber;
+      final groupKey = _budgetGroupKey(
+        displayNumber: displayNumber,
+        name: name,
+      );
+      final current = groupedRows[groupKey];
       final budgetLimit = budgetLimitMap[categoryId] ?? 0;
       if (current == null) {
-        groupedRows[categoryId] = _BudgetRowAggregate(
-          categoryId: categoryId,
+        groupedRows[groupKey] = _BudgetRowAggregate(
+          categoryIds: <String>{categoryId},
+          representativeCategoryId: categoryId,
+          sortOrder: sortOrder,
           name: name,
           emoji: emoji,
           amount: entry.value,
           budgetLimit: budgetLimit,
         );
-      } else {
-        groupedRows[categoryId] = current.copyWith(
-          amount: entry.value,
-          budgetLimit: budgetLimit,
+      } else if (!current.categoryIds.contains(categoryId)) {
+        groupedRows[groupKey] = current.copyWith(
+          categoryIds: {...current.categoryIds, categoryId},
+          amount: current.amount + entry.value,
+          budgetLimit: current.budgetLimit + budgetLimit,
         );
       }
     }
@@ -790,7 +822,11 @@ class _BudgetScreenState extends ConsumerState<BudgetScreen> {
                     (sum, v) => sum + v.amount,
                   );
                   final sorted = groupedRows.values.toList()
-                    ..sort((a, b) => b.amount.compareTo(a.amount));
+                    ..sort((a, b) {
+                      final byAmount = b.amount.compareTo(a.amount);
+                      if (byAmount != 0) return byAmount;
+                      return a.sortOrder.compareTo(b.sortOrder);
+                    });
 
                   if (sorted.isEmpty) {
                     return const SliverToBoxAdapter(
@@ -804,7 +840,7 @@ class _BudgetScreenState extends ConsumerState<BudgetScreen> {
                   return SliverList(
                     delegate: SliverChildBuilderDelegate((context, index) {
                       final entry = sorted[index];
-                      final cat = catEntityMap[entry.categoryId];
+                      final cat = catEntityMap[entry.representativeCategoryId];
                       final pct = total > 0
                           ? (entry.amount / total * 100)
                           : 0.0;
@@ -813,7 +849,7 @@ class _BudgetScreenState extends ConsumerState<BudgetScreen> {
                           : null;
                       final accentColor = _categoryAccentForRow(
                         cat,
-                        entry.categoryId,
+                        entry.representativeCategoryId,
                       );
                       final limitProgress = budgetLimit != null
                           ? (entry.amount / budgetLimit).clamp(0.0, 1.5)
@@ -826,9 +862,12 @@ class _BudgetScreenState extends ConsumerState<BudgetScreen> {
                         ),
                         child: InkWell(
                           borderRadius: BorderRadius.circular(12),
-                          onTap: () => context.push(
-                            '/budget/category/${entry.categoryId}',
-                          ),
+                          onTap: () {
+                            final ids = entry.categoryIds.toList()..sort();
+                            context.push(
+                              '/budget/category/${entry.representativeCategoryId}?ids=${ids.join(",")}',
+                            );
+                          },
                           child: Padding(
                             padding: const EdgeInsets.all(12),
                             child: LayoutBuilder(
@@ -1085,14 +1124,18 @@ class _BudgetScreenState extends ConsumerState<BudgetScreen> {
 }
 
 class _BudgetRowAggregate {
-  final String categoryId;
+  final Set<String> categoryIds;
+  final String representativeCategoryId;
+  final int sortOrder;
   final String name;
   final String emoji;
   final double amount;
   final double budgetLimit;
 
   const _BudgetRowAggregate({
-    required this.categoryId,
+    required this.categoryIds,
+    required this.representativeCategoryId,
+    required this.sortOrder,
     required this.name,
     required this.emoji,
     required this.amount,
@@ -1100,14 +1143,19 @@ class _BudgetRowAggregate {
   });
 
   _BudgetRowAggregate copyWith({
-    String? categoryId,
+    Set<String>? categoryIds,
+    String? representativeCategoryId,
+    int? sortOrder,
     String? name,
     String? emoji,
     double? amount,
     double? budgetLimit,
   }) {
     return _BudgetRowAggregate(
-      categoryId: categoryId ?? this.categoryId,
+      categoryIds: categoryIds ?? this.categoryIds,
+      representativeCategoryId:
+          representativeCategoryId ?? this.representativeCategoryId,
+      sortOrder: sortOrder ?? this.sortOrder,
       name: name ?? this.name,
       emoji: emoji ?? this.emoji,
       amount: amount ?? this.amount,

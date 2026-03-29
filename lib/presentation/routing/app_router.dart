@@ -146,7 +146,18 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         path: '/budget/category/:categoryId',
         builder: (context, state) {
           final categoryId = state.pathParameters['categoryId']!;
-          return CategoryTransactionsScreen(categoryId: categoryId);
+          final idsParam = state.uri.queryParameters['ids'];
+          final categoryIds = idsParam == null || idsParam.trim().isEmpty
+              ? <String>{}
+              : idsParam
+                    .split(',')
+                    .map((id) => id.trim())
+                    .where((id) => id.isNotEmpty)
+                    .toSet();
+          return CategoryTransactionsScreen(
+            categoryId: categoryId,
+            categoryIds: categoryIds,
+          );
         },
       ),
       GoRoute(

@@ -11,8 +11,13 @@ import '../../widgets/transaction/transaction_tile.dart';
 
 class CategoryTransactionsScreen extends ConsumerWidget {
   final String categoryId;
+  final Set<String> categoryIds;
 
-  const CategoryTransactionsScreen({super.key, required this.categoryId});
+  const CategoryTransactionsScreen({
+    super.key,
+    required this.categoryId,
+    Set<String>? categoryIds,
+  }) : categoryIds = categoryIds ?? const <String>{};
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -43,7 +48,13 @@ class CategoryTransactionsScreen extends ConsumerWidget {
           final txns = transactions;
           final filtered =
               txns
-                  .where((t) => t.isExpense && t.categoryId == categoryId)
+                  .where(
+                    (t) =>
+                        t.isExpense &&
+                        (categoryIds.isEmpty
+                            ? t.categoryId == categoryId
+                            : categoryIds.contains(t.categoryId)),
+                  )
                   .toList()
                 ..sort((a, b) => b.date.compareTo(a.date));
           final total = filtered.fold<double>(0, (sum, t) => sum + t.amount);
