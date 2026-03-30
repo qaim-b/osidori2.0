@@ -863,6 +863,43 @@ class _AddTransactionScreenState extends ConsumerState<AddTransactionScreen> {
                 selectedId: _selectedToAccountId,
                 onSelect: (id) => setState(() => _selectedToAccountId = id),
               ),
+            ] else if (accounts.isEmpty) ...[
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(14),
+                decoration: BoxDecoration(
+                  color: AppColors.expense.withValues(alpha: 0.08),
+                  borderRadius: BorderRadius.circular(14),
+                  border: Border.all(
+                    color: AppColors.expense.withValues(alpha: 0.24),
+                  ),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      'You still need one account in the background before saving.',
+                      style: TextStyle(
+                        fontSize: 12.5,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                    const SizedBox(height: 6),
+                    const Text(
+                      'The picker is hidden for normal entries now, but Osidori still needs one account internally.',
+                      style: TextStyle(
+                        fontSize: 12.5,
+                        color: AppColors.textSecondary,
+                      ),
+                    ),
+                    const SizedBox(height: 10),
+                    FilledButton.tonal(
+                      onPressed: () => context.push('/accounts/add'),
+                      child: const Text('Create Background Account'),
+                    ),
+                  ],
+                ),
+              ),
             ] else ...[
               Container(
                 width: double.infinity,

@@ -34,9 +34,14 @@ class ThemedBackdrop extends ConsumerWidget {
                 begin: Alignment.topCenter,
                 end: Alignment.bottomCenter,
                 colors: [
-                  theme.colorScheme.surfaceContainerHighest.withValues(
-                    alpha: 0.65,
-                  ),
+                  isMalaysia
+                      ? const Color(0xFFE3FFF8)
+                      : theme.colorScheme.surfaceContainerHighest.withValues(
+                          alpha: 0.65,
+                        ),
+                  isMalaysia
+                      ? const Color(0xFFF9FFF1)
+                      : theme.scaffoldBackgroundColor,
                   theme.scaffoldBackgroundColor,
                 ],
               ),

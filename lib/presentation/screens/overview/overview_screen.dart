@@ -706,9 +706,22 @@ class _CountryModePill extends StatelessWidget {
         borderRadius: BorderRadius.circular(999),
         child: Ink(
           decoration: BoxDecoration(
-            color: Colors.white.withValues(alpha: 0.9),
+            gradient: isMalaysia
+                ? const LinearGradient(
+                    colors: [
+                      Color(0xFFF6FFBF),
+                      Color(0xFFE4FFF7),
+                      Color(0xFFE0F7FF),
+                    ],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                  )
+                : null,
+            color: isMalaysia ? null : Colors.white.withValues(alpha: 0.9),
             borderRadius: BorderRadius.circular(999),
-            border: Border.all(color: AppColors.border),
+            border: Border.all(
+              color: isMalaysia ? const Color(0xFF7DD3A6) : AppColors.border,
+            ),
           ),
           child: Row(
             mainAxisSize: MainAxisSize.min,
@@ -716,18 +729,20 @@ class _CountryModePill extends StatelessWidget {
               const SizedBox(width: 10),
               Text(
                 code,
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 12,
                   fontWeight: FontWeight.w800,
                   letterSpacing: 0.8,
+                  color: isMalaysia ? const Color(0xFF14876A) : null,
                 ),
               ),
               const SizedBox(width: 6),
               Text(
                 label,
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 12,
                   fontWeight: FontWeight.w700,
+                  color: isMalaysia ? const Color(0xFF0F6D79) : null,
                 ),
               ),
               const SizedBox(width: 8),
@@ -771,6 +786,7 @@ class _CountryOptionTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isMalaysia = bannerAsset.contains('malaysia');
     return Material(
       color: Colors.transparent,
       child: InkWell(
@@ -779,12 +795,23 @@ class _CountryOptionTile extends StatelessWidget {
         child: Ink(
           padding: const EdgeInsets.all(10),
           decoration: BoxDecoration(
-            color: Colors.white,
+            gradient: isMalaysia
+                ? const LinearGradient(
+                    colors: [
+                      Color(0xFFFFF8BC),
+                      Color(0xFFE7FFF4),
+                      Color(0xFFE5F7FF),
+                    ],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                  )
+                : null,
+            color: isMalaysia ? null : Colors.white,
             borderRadius: BorderRadius.circular(16),
             border: Border.all(
               color: selected
                   ? Theme.of(context).colorScheme.primary
-                  : AppColors.border,
+                  : (isMalaysia ? const Color(0xFFBDE8BE) : AppColors.border),
               width: selected ? 1.6 : 1,
             ),
           ),
