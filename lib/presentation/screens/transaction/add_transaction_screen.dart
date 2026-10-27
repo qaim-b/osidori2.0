@@ -1,9 +1,15 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
+import 'package:image_picker/image_picker.dart';
+import '../../../core/utils/local_prefs.dart';
+import '../../../data/repositories/receipt_scanner.dart';
+import '../../widgets/transaction/quick_purchase_form.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_motion.dart';
 import '../../../core/utils/category_utils.dart';
@@ -41,11 +47,123 @@ class _AddTransactionScreenState extends ConsumerState<AddTransactionScreen> {
   String? _selectedToAccountId;
   String _entryCurrency = 'JPY';
   bool _isSaving = false;
+  bool _showAdvanced = false;
+  bool _isScanning = false;
+  List<String> _recentCategoryIds = [];
+  Uint8List? _receiptImage;
+  String? _receiptMessage;
 
   @override
   void initState() {
     super.initState();
     _entryCurrency = ref.read(currentCurrencyProvider);
+    _loadRecentCategories();
+  }
+
+  Future<void> _loadRecentCategories() async {
+    final userId = ref.read(currentUserIdProvider);
+    if (userId == null) return;
+    try {
+      final raw = await LocalPrefs.getString('prefs.quick_categories.$userId');
+      if (mounted && raw != null) {
+        setState(
+          () => _recentCategoryIds = (jsonDecode(raw) as List)
+              .whereType<String>()
+              .toList(),
+        );
+      }
+    } catch (_) {
+      // Preferences must never prevent purchase entry.
+    }
+  }
+
+  void _selectQuickCategory(String id) {
+    FocusManager.instance.primaryFocus?.unfocus();
+    HapticFeedback.selectionClick();
+    setState(() => _selectedCategoryId = id);
+  }
+
+  Future<void> _scanReceipt(ImageSource source) async {
+    if (_isSaving || _isScanning) return;
+    final enabledCategories =
+        ref
+            .read(categoriesProvider)
+            .valueOrNull
+            ?.where((category) => category.isEnabled && category.isExpense)
+            .toList() ??
+        [];
+    if (enabledCategories.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+            'Load or enable your expense categories before scanning.',
+          ),
+        ),
+      );
+      return;
+    }
+    setState(() => _isScanning = true);
+    try {
+      final photo = await ImagePicker().pickImage(
+        source: source,
+        maxWidth: 1800,
+        maxHeight: 2400,
+        imageQuality: 85,
+      );
+      if (photo == null || !mounted) return;
+      final bytes = await photo.readAsBytes();
+      final scan = await ReceiptScanner().scan(bytes);
+      if (!mounted) return;
+      final categories = ref.read(categoriesProvider).valueOrNull ?? [];
+      final category = categories
+          .where((c) => c.id == scan.categoryId && c.isEnabled && c.isExpense)
+          .firstOrNull;
+      final travel = ref.read(travelModeProvider);
+      final travelCategory = travel.enabled
+          ? findHoneymoonCategory(categories)
+          : null;
+      final resolvedId = travelCategory?.id ?? category?.id;
+      final complete =
+          scan.amount != null &&
+          scan.date != null &&
+          resolvedId != null &&
+          scan.merchant != null &&
+          scan.merchant!.trim().isNotEmpty;
+      final autoSave =
+          !scan.needsReview &&
+          complete &&
+          !(travel.enabled && travelCategory == null) &&
+          (travelCategory == null || travelCategory.id == category?.id);
+      setState(() {
+        _type = TransactionType.expense;
+        _selectedCategoryId = resolvedId;
+        _entryCurrency = scan.currency;
+        _amountController.text = scan.amount == null
+            ? ''
+            : scan.amount!.toStringAsFixed(scan.currency == 'JPY' ? 0 : 2);
+        _date = scan.date ?? DateTime.now();
+        _noteController.text = scan.merchant?.trim() ?? '';
+        _receiptImage = bytes;
+        _receiptMessage = autoSave
+            ? 'Receipt read. Saving purchase…'
+            : '${scan.reviewReason ?? 'Please check the receipt details before saving.'}'
+                  '${scan.date == null ? ' Date unreadable; today is selected.' : ''}'
+                  '${category == null ? ' Choose the correct category.' : ''}';
+        _isScanning = false;
+      });
+      if (autoSave) await _save();
+    } catch (error) {
+      if (mounted) {
+        final message = error is FormatException
+            ? error.message
+            : 'Could not read this photo. Try again or enter the purchase manually.';
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(message)));
+      }
+    } finally {
+      if (mounted) setState(() => _isScanning = false);
+    }
   }
 
   void _appendDoubleZero() {
@@ -485,8 +603,9 @@ class _AddTransactionScreenState extends ConsumerState<AddTransactionScreen> {
   }
 
   Future<void> _save() async {
+    if (_isSaving) return;
     final amount = double.tryParse(_amountController.text);
-    if (amount == null || amount <= 0) {
+    if (amount == null || !amount.isFinite || amount <= 0) {
       ScaffoldMessenger.of(
         context,
       ).showSnackBar(const SnackBar(content: Text('Enter a valid amount')));
@@ -551,11 +670,30 @@ class _AddTransactionScreenState extends ConsumerState<AddTransactionScreen> {
             categoryDisplayNumberSnapshot: selectedCategory?.displayNumber,
             fromAccountId: _selectedFromAccountId!,
             toAccountId: _selectedToAccountId,
-            note: _noteController.text.isNotEmpty ? _noteController.text : null,
+            note: _noteController.text.trim().isNotEmpty
+                ? _noteController.text.trim()
+                : null,
             visibility: _visibility,
             groupId: activeGroupId,
           );
 
+      // Remember only successfully saved selections, scoped to this user.
+      if (!mounted) return;
+      final userId = ref.read(currentUserIdProvider);
+      if (userId != null && _selectedCategoryId != null) {
+        final recent = [
+          _selectedCategoryId!,
+          ..._recentCategoryIds.where((id) => id != _selectedCategoryId),
+        ].take(12).toList();
+        try {
+          await LocalPrefs.setString(
+            'prefs.quick_categories.$userId',
+            jsonEncode(recent),
+          );
+        } catch (_) {
+          // A preference failure must not turn a saved purchase into a retry.
+        }
+      }
       if (mounted) {
         // Show cute success feedback
         ScaffoldMessenger.of(context).showSnackBar(
@@ -643,9 +781,66 @@ class _AddTransactionScreenState extends ConsumerState<AddTransactionScreen> {
                 c.displayNumber.toString().contains(q);
           }).toList();
 
+    if (!_showAdvanced) {
+      final txns = [...?ref.watch(monthlyTransactionsProvider).valueOrNull]
+        ..sort((a, b) => b.createdAt.compareTo(a.createdAt));
+      return QuickPurchaseForm(
+        categories: [
+          if (travelModeActive &&
+              !filteredCategories.any((c) => c.id == honeymoonCategory.id))
+            honeymoonCategory,
+          ...filteredCategories,
+        ],
+        recentIds: [
+          ..._recentCategoryIds,
+          ...txns.where((t) => t.isExpense).map((t) => t.categoryId),
+        ],
+        selectedId: _selectedCategoryId,
+        onSelect: _selectQuickCategory,
+        amountController: _amountController,
+        noteController: _noteController,
+        date: _date,
+        currency: _entryCurrency,
+        onDate: _pickDate,
+        onCurrency: () => _pickEntryCurrency(appCurrency),
+        onSave: _save,
+        onCamera: () => _scanReceipt(ImageSource.camera),
+        onGallery: () => _scanReceipt(ImageSource.gallery),
+        onAdvanced: () => setState(() => _showAdvanced = true),
+        onClose: () => context.pop(),
+        onRetryCategories: () => ref.read(categoriesProvider.notifier).load(),
+        onCreateAccount: () => context.push('/accounts/add'),
+        loading: categoriesAsync.isLoading,
+        categoryError: categoriesAsync.hasError,
+        accountLoading: accountsAsync.isLoading,
+        hasAccount: accounts.isNotEmpty,
+        saving: _isSaving,
+        scanning: _isScanning,
+        categoryLocked: travelModeActive,
+        receiptImage: _receiptImage,
+        receiptMessage: _receiptMessage,
+      );
+    }
+
     return Scaffold(
       appBar: AppBar(
         title: const Text('Add Transaction'),
+        actions: [
+          TextButton(
+            onPressed: _isSaving
+                ? null
+                : () => setState(() {
+                    _type = TransactionType.expense;
+                    if (!filteredCategories.any(
+                      (c) => c.id == _selectedCategoryId && c.isExpense,
+                    )) {
+                      _selectedCategoryId = null;
+                    }
+                    _showAdvanced = false;
+                  }),
+            child: const Text('Quick entry'),
+          ),
+        ],
         leading: IconButton(
           icon: const Icon(Icons.close),
           onPressed: () => context.pop(),
