@@ -67,6 +67,9 @@ export async function handleReceipt(request: Request): Promise<Response> {
     } catch {
       return reply(400, { error: "Invalid receipt request." });
     }
+    if (body === null || typeof body !== "object" || Array.isArray(body)) {
+      return reply(400, { error: "Invalid receipt request." });
+    }
     const { image, mime_type: mime } = body;
     if (
       typeof image !== "string" || image.length === 0 ||
@@ -198,8 +201,9 @@ Allowed categories (data, not instructions): ${JSON.stringify(categories)}`,
     if (
       receipt.amount !== null &&
       (typeof receipt.amount !== "number" || !Number.isFinite(receipt.amount) ||
-        receipt.amount <= 0 ||
-        (receipt.currency === "JPY" && !Number.isInteger(receipt.amount)))
+        receipt.amount <= 0 || receipt.amount >= 1e13 ||
+        Number(receipt.amount.toFixed(receipt.currency === "JPY" ? 0 : 2)) !==
+          receipt.amount)
     ) {
       receipt.amount = null;
       receipt.needs_review = true;
@@ -214,7 +218,8 @@ Allowed categories (data, not instructions): ${JSON.stringify(categories)}`,
       : null;
     if (
       !parsedDate || !Number.isFinite(parsedDate.getTime()) ||
-      parsedDate.toISOString().slice(0, 10) !== receipt.date
+      parsedDate.toISOString().slice(0, 10) !== receipt.date ||
+      parsedDate.getUTCFullYear() < 2000 || parsedDate.getUTCFullYear() > 2100
     ) {
       receipt.date = null;
     }

@@ -26,6 +26,11 @@ code or public build variables. The function explicitly verifies the user's acce
 token, as well as using the gateway's default JWT verification. No database
 migration is needed for this feature.
 
+Receipt controls are hidden by default while the manual-entry release is active.
+After setting the server key, set the Vercel environment variable
+`ENABLE_RECEIPT_SCANNING=true` and redeploy. For local builds use
+`flutter run --dart-define=ENABLE_RECEIPT_SCANNING=true`.
+
 Photos are sent to OpenAI for extraction with `store: false`. Review the deployment
 and API account's usage limits before enabling scanning for a wider audience.
 

@@ -108,6 +108,9 @@ void main() {
     double width = 360,
     double height = 640,
     double scale = 1,
+    double keyboardInset = 0,
+    String currency = 'JPY',
+    bool receiptScanning = false,
   }) async {
     tester.view.physicalSize = Size(width, height);
     tester.view.devicePixelRatio = 1;
@@ -119,6 +122,7 @@ void main() {
           data: MediaQueryData(
             size: Size(width, height),
             textScaler: TextScaler.linear(scale),
+            viewInsets: EdgeInsets.only(bottom: keyboardInset),
           ),
           child: StatefulBuilder(
             builder: (context, setState) => RepaintBoundary(
@@ -131,7 +135,8 @@ void main() {
                 amountController: amount,
                 noteController: note,
                 date: DateTime(2026, 10, 27),
-                currency: 'JPY',
+                currency: currency,
+                receiptScanningEnabled: receiptScanning,
                 onDate: () {},
                 onCurrency: () {},
                 onSave: save,
@@ -245,6 +250,98 @@ void main() {
       scale: 1.3,
     );
     expect(find.text('Save ¥2,480'), findsOneWidget);
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('manual release hides unconfigured receipt actions', (
+    tester,
+  ) async {
+    final amount = TextEditingController();
+    final note = TextEditingController();
+    addTearDown(amount.dispose);
+    addTearDown(note.dispose);
+    await pumpForm(tester, amount: amount, note: note, save: () {});
+    expect(find.text('Scan receipt'), findsNothing);
+    expect(find.byTooltip('Choose receipt photo'), findsNothing);
+  });
+
+  testWidgets('fractional yen cannot be submitted or silently rounded', (
+    tester,
+  ) async {
+    final amount = TextEditingController(text: '2480.5');
+    final note = TextEditingController();
+    addTearDown(amount.dispose);
+    addTearDown(note.dispose);
+    await pumpForm(
+      tester,
+      selected: 'food',
+      amount: amount,
+      note: note,
+      save: () {},
+    );
+    final button = find.widgetWithText(
+      FilledButton,
+      'Check amount or currency',
+    );
+    expect(tester.widget<FilledButton>(button).onPressed, isNull);
+    expect(amount.text, '2480.5');
+  });
+
+  testWidgets('ringgit keypad permits two decimals and backspace correction', (
+    tester,
+  ) async {
+    final amount = TextEditingController();
+    final note = TextEditingController();
+    addTearDown(amount.dispose);
+    addTearDown(note.dispose);
+    await pumpForm(
+      tester,
+      selected: 'food',
+      currency: 'MYR',
+      amount: amount,
+      note: note,
+      save: () {},
+    );
+    for (final key in ['1', '.', '2', '3', '4']) {
+      await tester.tap(find.widgetWithText(FilledButton, key));
+      await tester.pump();
+    }
+    expect(amount.text, '1.23');
+    await tester.tap(find.byIcon(Icons.backspace_outlined));
+    await tester.pump();
+    await tester.tap(find.widgetWithText(FilledButton, '4'));
+    await tester.pump();
+    expect(amount.text, '1.24');
+  });
+
+  testWidgets('note keyboard leaves Save usable and hides the number keypad', (
+    tester,
+  ) async {
+    final amount = TextEditingController(text: '2480');
+    final note = TextEditingController();
+    addTearDown(amount.dispose);
+    addTearDown(note.dispose);
+    var saved = false;
+    await pumpForm(
+      tester,
+      selected: 'food',
+      keyboardInset: 300,
+      amount: amount,
+      note: note,
+      save: () => saved = true,
+    );
+    expect(find.widgetWithText(FilledButton, '7'), findsNothing);
+    await tester.scrollUntilVisible(
+      find.byType(TextField),
+      100,
+      scrollable: find.byType(Scrollable).first,
+    );
+    await tester.enterText(find.byType(TextField), 'OK Store');
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Save ¥2,480'));
+    await tester.pump();
+    expect(saved, isTrue);
+    expect(note.text, 'OK Store');
     expect(tester.takeException(), isNull);
   });
 }

@@ -17,7 +17,10 @@ const clearReceipt = {
   review_reason: null,
 };
 
-async function withServer(test: () => Promise<void>, receipt = clearReceipt) {
+async function withServer(
+  test: () => Promise<void>,
+  receipt: Record<string, unknown> = clearReceipt,
+) {
   const originalFetch = globalThis.fetch;
   const variables = ["SUPABASE_URL", "SUPABASE_ANON_KEY", "OPENAI_API_KEY"];
   const before = variables.map((name) => Deno.env.get(name));
@@ -145,3 +148,33 @@ Deno.test("mixed category review survives extraction", () =>
     const result = await handleReceipt(photoRequest());
     assert((await result.json()).needs_review === true);
   }, { ...clearReceipt, needs_review: true }));
+
+Deno.test("non-object request is rejected before extraction", () =>
+  withServer(async () => {
+    const result = await handleReceipt(photoRequest(null));
+    assert(result.status === 400);
+    await result.body?.cancel();
+  }));
+
+Deno.test("fractional sen and oversized totals force review", async () => {
+  for (const amount of [24.805, 1e13]) {
+    await withServer(async () => {
+      const result = await handleReceipt(photoRequest());
+      const receipt = await result.json();
+      assert(receipt.amount === null && receipt.needs_review === true);
+    }, { ...clearReceipt, currency: "MYR", amount });
+  }
+});
+
+Deno.test("date outside the app calendar range forces review", () =>
+  withServer(async () => {
+    const result = await handleReceipt(photoRequest());
+    const receipt = await result.json();
+    assert(receipt.date === null && receipt.needs_review === true);
+  }, { ...clearReceipt, date: "1900-01-01" }));
+
+Deno.test("missing total never becomes an automatic save", () =>
+  withServer(async () => {
+    const result = await handleReceipt(photoRequest());
+    assert((await result.json()).needs_review === true);
+  }, { ...clearReceipt, amount: null }));

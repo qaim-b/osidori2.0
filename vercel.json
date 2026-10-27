@@ -1,6 +1,6 @@
 {
   "version": 2,
-  "buildCommand": "if [ ! -d $HOME/flutter ]; then git clone https://github.com/flutter/flutter.git --depth 1 -b stable $HOME/flutter; fi && export PATH=$PATH:$HOME/flutter/bin && flutter config --enable-web && flutter pub get && flutter build web --release",
+  "buildCommand": "if [ ! -d $HOME/flutter ]; then git clone https://github.com/flutter/flutter.git --depth 1 -b stable $HOME/flutter; fi && export PATH=$PATH:$HOME/flutter/bin && flutter config --enable-web && flutter pub get && flutter build web --release --dart-define=ENABLE_RECEIPT_SCANNING=${ENABLE_RECEIPT_SCANNING:-false}",
   "outputDirectory": "build/web",
   "rewrites": [
     {

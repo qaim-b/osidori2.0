@@ -8,6 +8,8 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
 import 'package:image_picker/image_picker.dart';
 import '../../../core/utils/local_prefs.dart';
+import '../../../core/utils/purchase_amount.dart';
+import '../../../core/constants/app_constants.dart';
 import '../../../data/repositories/receipt_scanner.dart';
 import '../../widgets/transaction/quick_purchase_form.dart';
 import '../../../core/theme/app_colors.dart';
@@ -145,7 +147,7 @@ class _AddTransactionScreenState extends ConsumerState<AddTransactionScreen> {
         _noteController.text = scan.merchant?.trim() ?? '';
         _receiptImage = bytes;
         _receiptMessage = autoSave
-            ? 'Receipt read. Saving purchase…'
+            ? 'Receipt details filled in.'
             : '${scan.reviewReason ?? 'Please check the receipt details before saving.'}'
                   '${scan.date == null ? ' Date unreadable; today is selected.' : ''}'
                   '${category == null ? ' Choose the correct category.' : ''}';
@@ -605,10 +607,16 @@ class _AddTransactionScreenState extends ConsumerState<AddTransactionScreen> {
   Future<void> _save() async {
     if (_isSaving) return;
     final amount = double.tryParse(_amountController.text);
-    if (amount == null || !amount.isFinite || amount <= 0) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text('Enter a valid amount')));
+    if (!isValidPurchaseAmount(amount, _entryCurrency)) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            _entryCurrency == 'JPY'
+                ? 'Enter a positive whole-yen amount'
+                : 'Enter a positive amount with up to two decimal places',
+          ),
+        ),
+      );
       return;
     }
     if (_selectedCategoryId == null) {
@@ -640,7 +648,7 @@ class _AddTransactionScreenState extends ConsumerState<AddTransactionScreen> {
         toCurrency: appCurrency,
         forDate: _date,
       );
-      final lockedBase = amount * fxQuote.rate;
+      final lockedBase = amount! * fxQuote.rate;
 
       final categories = ref.read(categoriesProvider).valueOrNull ?? [];
       CategoryEntity? selectedCategory;
@@ -785,6 +793,7 @@ class _AddTransactionScreenState extends ConsumerState<AddTransactionScreen> {
       final txns = [...?ref.watch(monthlyTransactionsProvider).valueOrNull]
         ..sort((a, b) => b.createdAt.compareTo(a.createdAt));
       return QuickPurchaseForm(
+        receiptScanningEnabled: AppConstants.receiptScanningEnabled,
         categories: [
           if (travelModeActive &&
               !filteredCategories.any((c) => c.id == honeymoonCategory.id))

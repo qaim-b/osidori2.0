@@ -4,6 +4,7 @@ import 'dart:typed_data';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../datasources/supabase_client.dart';
+import '../../core/utils/purchase_amount.dart';
 
 class ReceiptScan {
   final double? amount;
@@ -36,11 +37,17 @@ class ReceiptScan {
         'This receipt currency is not supported yet.',
       );
     }
+    if (amount != null && !isValidPurchaseAmount(amount, currency)) {
+      throw const FormatException('Check the receipt total and currency.');
+    }
     final rawDate = json['date'] as String?;
     DateTime? date;
     if (rawDate != null) {
       date = DateTime.tryParse(rawDate);
-      if (date == null || date.toIso8601String().substring(0, 10) != rawDate) {
+      if (date == null ||
+          date.year < 2000 ||
+          date.year > 2100 ||
+          date.toIso8601String().substring(0, 10) != rawDate) {
         throw const FormatException('The receipt date could not be read.');
       }
     }

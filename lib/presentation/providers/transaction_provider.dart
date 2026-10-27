@@ -5,6 +5,7 @@ import '../../data/repositories/transaction_repository.dart';
 import '../../data/models/transaction_model.dart';
 import '../../core/utils/fx_converter.dart';
 import '../../core/utils/local_data_cache.dart';
+import '../../core/utils/purchase_amount.dart';
 import '../../domain/enums/transaction_type.dart';
 import '../../domain/enums/visibility_type.dart';
 import '../../domain/enums/transaction_source.dart';
@@ -188,7 +189,14 @@ class TransactionsNotifier
     required VisibilityType visibility,
     String? groupId,
   }) async {
-    if (_userId == null) return;
+    if (_userId == null) {
+      throw StateError(
+        'Your session has expired. Sign in again before saving.',
+      );
+    }
+    if (!isValidPurchaseAmount(amount, currency)) {
+      throw ArgumentError('The amount does not match the selected currency.');
+    }
     final resolvedGroupId =
         groupId ?? (_groupIds.isEmpty ? null : _groupIds.first);
     if (visibility == VisibilityType.shared && resolvedGroupId == null) {

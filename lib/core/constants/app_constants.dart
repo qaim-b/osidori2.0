@@ -7,6 +7,10 @@ class AppConstants {
 
   // Default currency — can be changed per user in settings
   static const String defaultCurrency = 'JPY';
+  static const bool receiptScanningEnabled = bool.fromEnvironment(
+    'ENABLE_RECEIPT_SCANNING',
+    defaultValue: false,
+  );
 
   // Group limits
   static const int minGroupMembers = 2;
@@ -16,9 +20,10 @@ class AppConstants {
   static const double borderRadius = 12.0;
   static const double cardBorderRadius = 16.0;
 
-  // Supabase 
+  // Supabase
   static const String supabaseUrl = 'https://amybnvltdbtdrmixasxt.supabase.co';
-  static const String supabaseAnonKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFteWJudmx0ZGJ0ZHJtaXhhc3h0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzA2MjA3MTksImV4cCI6MjA4NjE5NjcxOX0.NzXechDoJBk20bYUNRZlkn2X97tpfbf-R7x4mc2aMe8';
+  static const String supabaseAnonKey =
+      'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFteWJudmx0ZGJ0ZHJtaXhhc3h0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzA2MjA3MTksImV4cCI6MjA4NjE5NjcxOX0.NzXechDoJBk20bYUNRZlkn2X97tpfbf-R7x4mc2aMe8';
 
   // CSV export
   static const String csvDateFormat = 'yyyy-MM-dd';
@@ -26,6 +31,4 @@ class AppConstants {
 
   // Pagination
   static const int defaultPageSize = 50;
-
-  
 }
