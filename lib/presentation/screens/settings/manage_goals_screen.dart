@@ -10,7 +10,7 @@ class ManageGoalsScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final goalsAsync = ref.watch(goalsProvider);
+    final goalsAsync = ref.watch(accountLinkedGoalsProvider);
 
     return Scaffold(
       appBar: AppBar(title: const Text('Shared Goals')),
@@ -19,6 +19,12 @@ class ManageGoalsScreen extends ConsumerWidget {
           return ListView(
             padding: const EdgeInsets.all(16),
             children: [
+              const Padding(
+                padding: EdgeInsets.only(bottom: 12),
+                child: Text(
+                  'All savings goals automatically follow the total balance in Accounts. Your targets stay unchanged.',
+                ),
+              ),
               ...goals.map((goal) {
                 return Card(
                   margin: const EdgeInsets.only(bottom: 8),
@@ -83,9 +89,6 @@ class ManageGoalsScreen extends ConsumerWidget {
     final targetController = TextEditingController(
       text: goal.targetAmount.toStringAsFixed(0),
     );
-    final currentController = TextEditingController(
-      text: goal.currentAmount.toStringAsFixed(0),
-    );
 
     final updated = await showDialog<bool>(
       context: context,
@@ -112,13 +115,7 @@ class ManageGoalsScreen extends ConsumerWidget {
               decoration: const InputDecoration(labelText: 'Target Amount'),
             ),
             const SizedBox(height: 8),
-            TextField(
-              controller: currentController,
-              keyboardType: const TextInputType.numberWithOptions(
-                decimal: true,
-              ),
-              decoration: const InputDecoration(labelText: 'Current Amount'),
-            ),
+            const Text('Current amount updates automatically from Accounts.'),
           ],
         ),
         actions: [
@@ -137,7 +134,7 @@ class ManageGoalsScreen extends ConsumerWidget {
     if (updated == true) {
       final name = nameController.text.trim();
       final target = double.tryParse(targetController.text.trim()) ?? 0;
-      final current = double.tryParse(currentController.text.trim()) ?? 0;
+      final current = goal.currentAmount;
       if (name.isEmpty || target <= 0) return;
 
       await ref
@@ -165,7 +162,6 @@ class ManageGoalsScreen extends ConsumerWidget {
     final emojiController = TextEditingController(text: '🎯');
     final nameController = TextEditingController();
     final targetController = TextEditingController();
-    final currentController = TextEditingController(text: '0');
 
     final created = await showDialog<bool>(
       context: context,
@@ -192,13 +188,7 @@ class ManageGoalsScreen extends ConsumerWidget {
               decoration: const InputDecoration(labelText: 'Target Amount'),
             ),
             const SizedBox(height: 8),
-            TextField(
-              controller: currentController,
-              keyboardType: const TextInputType.numberWithOptions(
-                decimal: true,
-              ),
-              decoration: const InputDecoration(labelText: 'Current Amount'),
-            ),
+            const Text('Current amount updates automatically from Accounts.'),
           ],
         ),
         actions: [
@@ -217,7 +207,6 @@ class ManageGoalsScreen extends ConsumerWidget {
     if (created == true) {
       final name = nameController.text.trim();
       final target = double.tryParse(targetController.text.trim()) ?? 0;
-      final current = double.tryParse(currentController.text.trim()) ?? 0;
       if (name.isNotEmpty && target > 0) {
         await ref
             .read(goalsProvider.notifier)
@@ -227,7 +216,6 @@ class ManageGoalsScreen extends ConsumerWidget {
                   ? '🎯'
                   : emojiController.text.trim(),
               targetAmount: target,
-              currentAmount: current,
             );
       }
     }

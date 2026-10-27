@@ -12,7 +12,7 @@ class GoalsCard extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final goalsAsync = ref.watch(goalsProvider);
+    final goalsAsync = ref.watch(accountLinkedGoalsProvider);
     final roleColors = ref.watch(roleColorsProvider);
     final currentCurrency = ref.watch(currentCurrencyProvider);
 
@@ -30,8 +30,10 @@ class GoalsCard extends ConsumerWidget {
                     children: [
                       const Icon(Icons.flag_rounded, size: 18),
                       const SizedBox(width: 6),
-                      const Text('Shared Goals',
-                          style: TextStyle(fontWeight: FontWeight.w700)),
+                      const Text(
+                        'Shared Goals',
+                        style: TextStyle(fontWeight: FontWeight.w700),
+                      ),
                       const Spacer(),
                       TextButton(
                         onPressed: () => context.push('/settings/goals'),
@@ -53,14 +55,26 @@ class GoalsCard extends ConsumerWidget {
                   children: [
                     const Icon(Icons.flag_rounded, size: 18),
                     const SizedBox(width: 6),
-                    const Text('Shared Goals',
-                        style: TextStyle(fontWeight: FontWeight.w700)),
+                    const Text(
+                      'Shared Goals',
+                      style: TextStyle(fontWeight: FontWeight.w700),
+                    ),
                     const Spacer(),
                     TextButton(
                       onPressed: () => context.push('/settings/goals'),
                       child: const Text('Edit Goals'),
                     ),
                   ],
+                ),
+                const Padding(
+                  padding: EdgeInsets.only(bottom: 12),
+                  child: Text(
+                    'Progress follows your Accounts total',
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: AppColors.textSecondary,
+                    ),
+                  ),
                 ),
                 ...displayGoals.map((goal) {
                   final progress = goal.progressPercent;
@@ -90,7 +104,8 @@ class GoalsCard extends ConsumerWidget {
                             value: progress,
                             backgroundColor: AppColors.surfaceVariant,
                             valueColor: AlwaysStoppedAnimation<Color>(
-                                roleColors.primary),
+                              roleColors.primary,
+                            ),
                           ),
                         ),
                         const SizedBox(height: 4),

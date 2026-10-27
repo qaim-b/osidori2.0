@@ -367,6 +367,13 @@ class SettingsScreen extends ConsumerWidget {
               child: Column(
                 children: [
                   _SettingsTile(
+                    label: 'Monthly Excel exports',
+                    subtitle: 'Planning summary and transaction spreadsheets',
+                    icon: Icons.table_chart_outlined,
+                    onTap: () => context.push('/summary'),
+                  ),
+                  const Divider(height: 1, indent: 56),
+                  _SettingsTile(
                     label: 'Export CSV',
                     subtitle: 'Download this month transactions',
                     icon: Icons.download_rounded,

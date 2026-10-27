@@ -8,17 +8,37 @@ import '../../../data/models/account_model.dart';
 import '../../../domain/enums/account_type.dart';
 import '../../providers/account_provider.dart';
 
-class AccountsScreen extends ConsumerWidget {
+class AccountsScreen extends ConsumerStatefulWidget {
   const AccountsScreen({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final accountsAsync = ref.watch(accountsProvider);
+  ConsumerState<AccountsScreen> createState() => _AccountsScreenState();
+}
+
+class _AccountsScreenState extends ConsumerState<AccountsScreen> {
+  bool _showEmpty = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final accountsAsync = ref.watch(
+      _showEmpty ? accountsProvider : fundedAccountsProvider,
+    );
 
     return Scaffold(
       appBar: AppBar(
         title: const Text('Accounts'),
         actions: [
+          IconButton(
+            tooltip: _showEmpty
+                ? 'Hide zero-balance accounts'
+                : 'Show zero-balance accounts',
+            icon: Icon(
+              _showEmpty
+                  ? Icons.visibility_off_outlined
+                  : Icons.visibility_outlined,
+            ),
+            onPressed: () => setState(() => _showEmpty = !_showEmpty),
+          ),
           IconButton(
             icon: const Icon(Icons.add_circle_outline),
             onPressed: () => context.push('/accounts/add'),
@@ -35,12 +55,16 @@ class AccountsScreen extends ConsumerWidget {
                   const Icon(Icons.account_balance_wallet_outlined, size: 48),
                   const SizedBox(height: 12),
                   Text(
-                    'No accounts yet',
+                    _showEmpty
+                        ? 'No accounts yet'
+                        : 'No accounts with a balance',
                     style: Theme.of(context).textTheme.titleMedium,
                   ),
                   const SizedBox(height: 8),
                   Text(
-                    'Create your first account to start tracking',
+                    _showEmpty
+                        ? 'Create your first account to start tracking'
+                        : 'Zero-balance accounts are hidden. Use the eye icon to show them.',
                     style: Theme.of(context).textTheme.bodyMedium,
                   ),
                   const SizedBox(height: 20),

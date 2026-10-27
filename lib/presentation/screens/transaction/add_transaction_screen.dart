@@ -192,7 +192,9 @@ class _AddTransactionScreenState extends ConsumerState<AddTransactionScreen> {
   void _syncHiddenAccountSelection(List<AccountEntity> accounts) {
     if (accounts.isEmpty) return;
 
-    final firstAccountId = accounts.first.id;
+    final firstAccountId =
+        accounts.where((a) => a.initialBalance > 0).firstOrNull?.id ??
+        accounts.first.id;
     final fallbackToId = accounts
         .where((a) => a.id != (_selectedFromAccountId ?? firstAccountId))
         .map((a) => a.id)

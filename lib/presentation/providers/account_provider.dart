@@ -30,6 +30,26 @@ final accountsProvider =
       );
     });
 
+/// Keep zero-balance accounts in storage for their transaction history and for
+/// entering new purchases, but remove them from the displayed account lists.
+final fundedAccountsProvider = Provider<AsyncValue<List<AccountModel>>>((ref) {
+  return ref
+      .watch(accountsProvider)
+      .whenData(
+        (accounts) => accounts.where((a) => a.initialBalance != 0).toList(),
+      );
+});
+
+/// Uses the same converted balances as the Accounts page, including debts.
+final accountsTotalProvider = Provider<AsyncValue<double>>((ref) {
+  return ref
+      .watch(accountsProvider)
+      .whenData(
+        (accounts) =>
+            accounts.fold<double>(0, (total, a) => total + a.initialBalance),
+      );
+});
+
 class AccountsNotifier extends StateNotifier<AsyncValue<List<AccountModel>>> {
   final AccountRepository _repo;
   final String? _userId;
@@ -59,7 +79,8 @@ class AccountsNotifier extends StateNotifier<AsyncValue<List<AccountModel>>> {
       );
       final converted = await Future.wait(
         accounts.map((account) async {
-          if (account.currency.toUpperCase() == _displayCurrency.toUpperCase()) {
+          if (account.currency.toUpperCase() ==
+              _displayCurrency.toUpperCase()) {
             return account;
           }
           final amount = await FxConverter.convert(
@@ -67,7 +88,10 @@ class AccountsNotifier extends StateNotifier<AsyncValue<List<AccountModel>>> {
             fromCurrency: account.currency,
             toCurrency: _displayCurrency,
           );
-          return account.copyWith(initialBalance: amount, currency: _displayCurrency);
+          return account.copyWith(
+            initialBalance: amount,
+            currency: _displayCurrency,
+          );
         }),
       );
       state = AsyncValue.data(converted);

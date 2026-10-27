@@ -11,7 +11,7 @@ class AccountsSummaryCard extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final accountsAsync = ref.watch(accountsProvider);
+    final accountsAsync = ref.watch(fundedAccountsProvider);
     final currentCurrency = ref.watch(currentCurrencyProvider);
 
     return Card(
@@ -20,10 +20,13 @@ class AccountsSummaryCard extends ConsumerWidget {
         padding: const EdgeInsets.all(16),
         child: accountsAsync.when(
           data: (accounts) {
-            final total = accounts.fold<double>(0, (sum, a) => sum + a.initialBalance);
-            final top = [...accounts]..sort((a, b) => b.initialBalance.compareTo(a.initialBalance));
+            final total = accounts.fold<double>(
+              0,
+              (sum, a) => sum + a.initialBalance,
+            );
+            final top = [...accounts]
+              ..sort((a, b) => b.initialBalance.compareTo(a.initialBalance));
             final topAccounts = top.take(3).toList();
-
 
             return Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -32,7 +35,10 @@ class AccountsSummaryCard extends ConsumerWidget {
                   children: [
                     const Icon(Icons.account_balance_wallet_rounded, size: 18),
                     const SizedBox(width: 6),
-                    const Text('Accounts', style: TextStyle(fontWeight: FontWeight.w700)),
+                    const Text(
+                      'Accounts',
+                      style: TextStyle(fontWeight: FontWeight.w700),
+                    ),
                     const Spacer(),
                     TextButton(
                       onPressed: () => context.push('/accounts'),
@@ -42,11 +48,14 @@ class AccountsSummaryCard extends ConsumerWidget {
                 ),
                 Text(
                   CurrencyFormatter.format(total, currency: currentCurrency),
-                  style: const TextStyle(fontSize: 24, fontWeight: FontWeight.w800),
+                  style: const TextStyle(
+                    fontSize: 24,
+                    fontWeight: FontWeight.w800,
+                  ),
                 ),
                 const SizedBox(height: 10),
                 if (topAccounts.isEmpty)
-                  const Text('No accounts yet')
+                  const Text('No accounts with a balance')
                 else
                   ...topAccounts.map((a) {
                     return Padding(

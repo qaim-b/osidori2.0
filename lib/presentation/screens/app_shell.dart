@@ -5,7 +5,7 @@ import 'package:google_fonts/google_fonts.dart';
 import '../../core/theme/app_colors.dart';
 
 /// Main app shell with bottom navigation:
-/// Home | Summary | + Input | Budget | Calendar
+/// Home | + Input | Spending | Calendar. Summary remains available by route.
 class AppShell extends StatelessWidget {
   final StatefulNavigationShell navigationShell;
 
@@ -47,18 +47,10 @@ class AppShell extends StatelessWidget {
                     onTap: () => navigationShell.goBranch(0),
                   ),
                 ),
-                Expanded(
-                  child: _NavItem(
-                    label: 'Summary',
-                    icon: Icons.analytics_rounded,
-                    selected: navigationShell.currentIndex == 1,
-                    onTap: () => navigationShell.goBranch(1),
-                  ),
-                ),
                 _AddButton(onTap: () => context.push('/add')),
                 Expanded(
                   child: _NavItem(
-                    label: 'Budget',
+                    label: 'Spending',
                     icon: Icons.pie_chart_rounded,
                     selected: navigationShell.currentIndex == 2,
                     onTap: () => navigationShell.goBranch(2),
@@ -98,7 +90,7 @@ class _NavItem extends StatelessWidget {
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
     return SizedBox(
-      height: 52,
+      height: 68,
       child: Material(
         color: Colors.transparent,
         child: InkWell(
@@ -109,7 +101,7 @@ class _NavItem extends StatelessWidget {
             children: [
               Icon(
                 icon,
-                size: 20,
+                size: 28,
                 color: selected
                     ? colorScheme.primary
                     : AppColors.mutedForeground,
@@ -131,7 +123,7 @@ class _NavItem extends StatelessWidget {
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
                 style: GoogleFonts.manrope(
-                  fontSize: 11,
+                  fontSize: 13,
                   fontWeight: selected ? FontWeight.w800 : FontWeight.w700,
                   letterSpacing: -0.08,
                   color: selected
@@ -156,8 +148,8 @@ class _AddButton extends StatelessWidget {
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
     return SizedBox(
-      width: 56,
-      height: 56,
+      width: 64,
+      height: 64,
       child: Material(
         color: colorScheme.primary,
         shape: const CircleBorder(),
@@ -166,7 +158,11 @@ class _AddButton extends StatelessWidget {
         child: InkWell(
           onTap: onTap,
           customBorder: const CircleBorder(),
-          child: const Icon(Icons.add, color: AppColors.accentForeground),
+          child: const Icon(
+            Icons.add,
+            size: 32,
+            color: AppColors.accentForeground,
+          ),
         ),
       ),
     );
