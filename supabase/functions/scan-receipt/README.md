@@ -27,8 +27,8 @@ token, as well as using the gateway's default JWT verification. No database
 migration is needed for this feature.
 
 Receipt controls are hidden by default while the manual-entry release is active.
-After setting the server key, set the Vercel environment variable
-`ENABLE_RECEIPT_SCANNING=true` and redeploy. For local builds use
+After setting the server key, add `--dart-define=ENABLE_RECEIPT_SCANNING=true`
+to the Flutter build command and redeploy. For local builds use
 `flutter run --dart-define=ENABLE_RECEIPT_SCANNING=true`.
 
 Photos are sent to OpenAI for extraction with `store: false`. Review the deployment
